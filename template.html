@@ -34,6 +34,8 @@
     --good-wash:       rgba(12,163,12,0.10);
     --bad:             #b3221f;
     --bad-wash:        rgba(227,73,72,0.10);
+    --warn:            #a15c00;
+    --warn-wash:       rgba(177,124,0,0.14);
     --ma1:             #4a3aa7;
     --ma2:             #eb6834;
     --ma3:             #e87ba4;
@@ -55,6 +57,8 @@
       --good-wash:       rgba(12,163,12,0.16);
       --bad:             #e66767;
       --bad-wash:        rgba(230,103,103,0.14);
+      --warn:            #e8a33d;
+      --warn-wash:       rgba(232,163,61,0.16);
       --ma1:             #9085e9;
       --ma2:             #d95926;
       --ma3:             #d55181;
@@ -76,6 +80,8 @@
     --good-wash:       rgba(12,163,12,0.16);
     --bad:             #e66767;
     --bad-wash:        rgba(230,103,103,0.14);
+    --warn:            #e8a33d;
+    --warn-wash:       rgba(232,163,61,0.16);
     --ma1:             #9085e9;
     --ma2:             #d95926;
     --ma3:             #d55181;
@@ -96,6 +102,8 @@
     --good-wash:       rgba(12,163,12,0.10);
     --bad:             #b3221f;
     --bad-wash:        rgba(227,73,72,0.10);
+    --warn:            #a15c00;
+    --warn-wash:       rgba(177,124,0,0.14);
     --ma1:             #4a3aa7;
     --ma2:             #eb6834;
     --ma3:             #e87ba4;
@@ -810,6 +818,27 @@
   }
   .credit .name { color: var(--ink-primary); font-weight: 650; }
 
+  /* Opens each modal: what the figure is and how to read it. Plainer than the data below so
+     the two do not compete - this is read once, the numbers change every run. */
+  .m-about {
+    font-size: 13px; line-height: 1.7; color: var(--ink-secondary);
+    border-left: 3px solid var(--gridline); padding: 2px 0 2px 12px;
+    margin: 0 0 16px;
+  }
+  .m-about b { color: var(--ink-primary); }
+  .m-about-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--ink-muted); margin: 0 0 6px;
+  }
+  /* Quarterly figures can be a full quarter behind the daily price beside them, in the same
+     small grey. Amber, and worded as when it was published, because the lag is the source's
+     reporting cycle and not a failed fetch. */
+  .stale-tag {
+    display: inline-block; font-size: 10.5px; font-weight: 700; white-space: nowrap;
+    background: var(--warn-wash); color: var(--warn);
+    padding: 1px 6px; border-radius: 4px; margin-left: 6px;
+  }
+
   /* Printed for a meeting this spent a page on controls and split cards across sheets. Colours
      are forced on because browsers drop backgrounds by default, which would take the up/down
      tinting with them - the one thing a printed price table is read for. */
@@ -845,15 +874,16 @@
 
   <div class="grid" id="card-grid"></div>
 
+  <!-- Was eight items, several of them explaining a specific card. Those moved into the modal
+       of the thing they qualify, where they sit next to the number instead of in a block at the
+       bottom that gets skipped. What stays is sourcing and the caveats that belong to no single
+       card. -->
   <ul class="footnote">
-    <li>시세 출처: Yahoo Finance 무료 API(최대 15~20분 지연 가능).</li>
-    <li>최근 이슈는 Google 뉴스 검색 상위 기사의 원문 제목이며 AI가 작성한 요약이 아닙니다.</li>
-    <li>미국 종목의 영문 기사 제목은 Google 번역으로 자동 번역되어 표시되며("번역됨" 표시, 마우스를 올리면 원문 확인 가능), 기계 번역이라 원문과 뉘앙스가 다를 수 있습니다 — 링크는 항상 영문 원문 기사로 연결됩니다.</li>
-    <li>[호재]/[악재] 표시는 기사 <em>제목</em>에 포함된 키워드만으로 자동 분류한 참고 표시입니다 — 기사 본문을 읽고 판단한 것이 아니므로 실제 내용과 다를 수 있고, 애매한 기사는 표시되지 않습니다.</li>
-    <li>실적·목표주가·환율 데이터 출처: 네이버 증권 / Yahoo Finance(증권사 컨센서스 포함, 종목별로 제공 여부가 다를 수 있음).</li>
-    <li>공포·탐욕지수 출처: CNN Business Fear &amp; Greed Index(미국 증시 전반 투자심리 지표 — 나스닥 개별 종목이 아닌 시장 전체 기준).</li>
+    <li>출처 — 시세: Yahoo Finance(15~20분 지연 가능) · 실적·목표주가: 네이버 증권 / Yahoo Finance · 공포·탐욕지수: CNN Business · 뉴스: Google 뉴스.</li>
+    <li>각 지표의 <b>읽는 법과 한계</b>는 해당 카드의 실적·목표주가·공포탐욕 팝업 안에 적어두었습니다.</li>
+    <li>[호재]/[악재]는 기사 <em>제목</em>의 키워드만으로 자동 분류한 참고 표시입니다 — 본문을 읽고 판단한 것이 아니라 실제 내용과 다를 수 있습니다. 영문 기사 제목은 기계 번역이며, 링크는 항상 원문으로 연결됩니다.</li>
+    <li>레버리지·인버스 상품은 일간 수익률을 추종하므로 장기 보유 시 누적 수익률이 기초자산과 크게 달라집니다.</li>
     <li>투자 판단의 참고용으로만 사용하세요 — 개인 용도 조회입니다.</li>
-    <li>레버리지·인버스 상품은 일간 수익률을 추종하므로 장기 보유 시 실제 누적 수익률이 기초자산과 크게 달라질 수 있습니다.</li>
   </ul>
 
   <div class="credit">
@@ -1154,10 +1184,28 @@
   function openFinanceModal(stock) {
     const modal = document.getElementById("finance-modal");
     document.getElementById("finance-modal-name").textContent = stock.name + " 실적";
-    document.getElementById("finance-modal-unit").textContent = "단위: " + (stock.finance.unit || "-");
+    const unitEl = document.getElementById("finance-modal-unit");
+    unitEl.textContent = "단위: " + (stock.finance.unit || "-");
+    // Tagged off the newest *reported* quarter, skipping consensus columns - a forecast for next
+    // quarter is not evidence that the last actual figure is recent.
+    const reported = (stock.finance.periods || []).filter(p => !p.isEstimate);
+    if (reported.length) {
+      const tag = staleTagEl(reported[reported.length - 1].label);
+      if (tag) unitEl.appendChild(tag);
+    }
 
     const body = document.getElementById("finance-modal-body");
     body.innerHTML = "";
+
+    body.appendChild(aboutBlock(
+      '<b>분기별</b> 실적입니다. 연간이 아니라 분기를 쓰는 이유는, 연간은 1년에 한 번 갱신돼 ' +
+      '대부분의 기간 동안 낡은 숫자이기 때문입니다.<br><br>' +
+      '<b>기울임체로 표시된 기간은 아직 발표되지 않은 증권사 컨센서스(추정치)</b>입니다 — ' +
+      '확정 실적이 아니고, 발표 때 크게 어긋나기도 합니다. 확정치와 추정치를 이어서 추세로 ' +
+      '읽으실 때 이 경계를 염두에 두세요.<br><br>' +
+      '실적은 <b>분기마다</b> 나오므로, 옆의 주가가 오늘 값이어도 이 표는 최대 한 분기 전 ' +
+      '기준일 수 있습니다.'
+    ));
 
     const table = document.createElement("table");
     table.className = "finance-table";
@@ -1232,10 +1280,57 @@
     { key: "extreme greed", ko: "극단적 탐욕", range: "76-100", action: "적극 매도", actionTone: "down" }
   ];
 
+  // Shared opener for the modals: what the figure is, and the reading to avoid. Prepended so it
+  // is read before the numbers, since each of these three means something different and the
+  // wrong reading of any of them is a plausible one.
+  function aboutBlock(html) {
+    const wrap = document.createElement("div");
+    const title = document.createElement("div");
+    title.className = "m-about-title";
+    title.textContent = "이 지표는 어떻게 읽나";
+    const box = document.createElement("div");
+    box.className = "m-about";
+    box.innerHTML = html;
+    wrap.appendChild(title);
+    wrap.appendChild(box);
+    return wrap;
+  }
+
+  // Quarterly and analyst figures can sit a full quarter behind the price beside them. Anything
+  // past 45 days says how long ago it was published.
+  // Returns an element rather than markup: the dates it labels come from upstream, and building
+  // a node keeps them out of any innerHTML path. This repo has no escaping helper to reach for.
+  function staleTagEl(dateish) {
+    if (!dateish) return null;
+    const m = String(dateish).match(/(\d{4})[-.\/](\d{1,2})(?:[-.\/](\d{1,2}))?/);
+    if (!m) return null;
+    // A month-only value means the whole month, so measure from its end.
+    const d = m[3]
+      ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
+      : new Date(Date.UTC(+m[1], +m[2], 0));
+    const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (!isFinite(days) || days < 45) return null;
+    const months = Math.floor(days / 30);
+    const el = document.createElement("span");
+    el.className = "stale-tag";
+    el.textContent = months + "개월 전 발표";
+    el.title = "이 자료의 최신 발표가 " + months + "개월 전입니다";
+    return el;
+  }
+
   function openFearGreedModal() {
     const modal = document.getElementById("feargreed-modal");
     const body = document.getElementById("feargreed-modal-body");
     body.innerHTML = "";
+
+    body.appendChild(aboutBlock(
+      'CNN이 미국 증시의 <b>투자 심리</b>를 0~100으로 환산한 지표입니다. 주가 모멘텀, 변동성, ' +
+      '풋/콜 비율 등 7개 요소를 묶은 값이라 <b>가격이 아니라 분위기</b>를 잽니다.<br><br>' +
+      '통상 <b>역발상 지표</b>로 읽습니다 — 극단적 공포는 과매도, 극단적 탐욕은 과열 신호로 봅니다. ' +
+      '다만 <b>방향이나 시점을 알려주지는 않습니다.</b> 공포 구간이 몇 달 이어지기도 하고, ' +
+      '그 사이 주가는 더 내릴 수 있습니다.<br><br>' +
+      '<b>미국 증시 전체</b> 기준이라 특정 종목, 특히 국내 종목과는 직접 관계가 없습니다.'
+    ));
 
     const currentBand = FG_BANDS.find(b => b.key === fearGreed.rating);
 
@@ -1654,10 +1749,25 @@
     const c = stock.consensus;
     const modal = document.getElementById("consensus-modal");
     document.getElementById("consensus-modal-name").textContent = stock.name + " 목표주가 컨센서스";
-    document.getElementById("consensus-modal-asof").textContent = c.asOf ? "집계 기준일: " + c.asOf : "";
+    const asOfEl = document.getElementById("consensus-modal-asof");
+    asOfEl.textContent = c.asOf ? "집계 기준일: " + c.asOf : "";
+    if (c.asOf) {
+      const tag = staleTagEl(c.asOf);
+      if (tag) asOfEl.appendChild(tag);
+    }
 
     const body = document.getElementById("consensus-modal-body");
     body.innerHTML = "";
+
+    body.appendChild(aboutBlock(
+      '증권사 애널리스트들이 낸 목표주가의 <b>평균</b>입니다. 기업 가치 평가가 아니라 ' +
+      '<b>여러 사람의 의견을 모은 값</b>이라는 점이 핵심입니다.<br><br>' +
+      '알아두실 것 세 가지. 목표주가는 보통 <b>12개월 후</b>를 보고 내며, 애널리스트 커버리지가 ' +
+      '적은 종목은 <b>한두 명의 의견이 평균 전체를 좌우</b>합니다. 그리고 업계 특성상 ' +
+      '<b>매수 의견에 치우치는 경향</b>이 있어, 목표가가 현재가보다 높은 것이 기본값에 가깝습니다.<br><br>' +
+      '<b>집계 기준일을 꼭 보세요.</b> 실적 발표나 급락 이후 갱신되지 않았다면 지금 상황을 ' +
+      '반영하지 않은 숫자입니다.'
+    ));
 
     const stats = document.createElement("div");
     stats.className = "consensus-stats";
