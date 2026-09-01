@@ -4,6 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>JH 투자 DASHBOARD</title>
+
+<!-- Inline SVG data URI rather than a file, so Pages has nothing extra to keep in step. Green
+     badge to tell this tab apart from the work dashboard's blue one at a glance - both are
+     pinned side by side, and identical icons would defeat the point of having one. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a6b0a'/%3E%3Ctext x='16' y='22.5' font-family='system-ui,-apple-system,sans-serif' font-size='15' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EJH%3C/text%3E%3C/svg%3E">
+
+<meta name="description" content="관심 종목의 시세·이동평균 추세·실적·목표주가와 최근 이슈를 하루 한 번 모아 보는 투자 참고용 대시보드.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JH 투자 DASHBOARD">
+<meta property="og:description" content="관심 종목의 시세·추세·실적·최근 이슈를 하루 한 번 모아 보는 투자 참고용 대시보드.">
+<meta property="og:locale" content="ko_KR">
 <style>
   .viz-root {
     color-scheme: light;
@@ -771,8 +784,45 @@
   .flow-table tbody td.up   { color: var(--good); }
   .flow-table tbody td.down { color: var(--bad); }
 
+  /* Was scoped to the one tooltip; the page has since grown hover fades and a modal. */
   @media (prefers-reduced-motion: reduce) {
-    .spark-tooltip { transition: none; }
+    .viz-root *, .viz-root *::before, .viz-root *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Sits under the footnotes and separated from them: those are caveats about the data, this
+     is authorship, and running them together reads as one more disclaimer. */
+  .credit {
+    max-width: 1320px; margin: 18px auto 0; padding-top: 14px;
+    border-top: 1px solid var(--gridline);
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; color: var(--ink-muted);
+  }
+  .credit .by { display: inline-flex; align-items: center; gap: 7px; }
+  .credit .mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--good); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: -0.02em;
+  }
+  .credit .name { color: var(--ink-primary); font-weight: 650; }
+
+  /* Printed for a meeting this spent a page on controls and split cards across sheets. Colours
+     are forced on because browsers drop backgrounds by default, which would take the up/down
+     tinting with them - the one thing a printed price table is read for. */
+  @media print {
+    .viz-root {
+      padding: 0; background: #fff;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .update-btn, .update-hint, .detail-btn, .modal-backdrop,
+    .range-toggle, .ch-tip, .spark-tooltip { display: none !important; }
+    .card { break-inside: avoid; page-break-inside: avoid; }
+    .footnote, .credit { break-inside: avoid; }
+    a { text-decoration: none; color: inherit; }
   }
 </style>
 </head>
@@ -805,6 +855,15 @@
     <li>투자 판단의 참고용으로만 사용하세요 — 개인 용도 조회입니다.</li>
     <li>레버리지·인버스 상품은 일간 수익률을 추종하므로 장기 보유 시 실제 누적 수익률이 기초자산과 크게 달라질 수 있습니다.</li>
   </ul>
+
+  <div class="credit">
+    <!-- Initials rather than a full name: this page is public, and the repo's commit history
+         already carries the identity for anyone with reason to look. -->
+    <span class="by">
+      <span class="mark" aria-hidden="true">JH</span>
+      제작 <span class="name">JH</span>
+    </span>
+  </div>
 
   <div class="modal-overlay" id="finance-modal" hidden>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="finance-modal-name">
