@@ -65,20 +65,78 @@ $newsLocales = @{
 }
 $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
 
+# Retries on 429 with a growing pause, because that is what this endpoint actually returns.
+# A single attempt every 200ms was losing 35 of 79 headlines a run - nearly half the US titles
+# reaching a Korean page in English - and the failure looked like "no translation available"
+# rather than "we asked too fast".
 function Get-KoreanTranslation {
-    param($text)
+    param($text, $attempts = 3)
 
-    try {
-        $uri = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=" + [uri]::EscapeDataString($text)
-        $resp = Invoke-WebRequest -Uri $uri -Headers $headers -UseBasicParsing
-        $parsed = $resp.Content | ConvertFrom-Json
-        # Google splits long input into several segments under $parsed[0]; each segment's
-        # translated text is element [0] — join them back into one string.
-        (($parsed[0] | ForEach-Object { $_[0] }) -join "").Trim()
-    } catch {
-        Write-Warning "Translation failed for '$text': $($_.Exception.Message)"
-        $null
+    $uri = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=" + [uri]::EscapeDataString($text)
+    for ($try = 1; $try -le $attempts; $try++) {
+        try {
+            $resp = Invoke-WebRequest -Uri $uri -Headers $headers -UseBasicParsing -TimeoutSec 20
+            $parsed = $resp.Content | ConvertFrom-Json
+            # Google splits long input into several segments under $parsed[0]; each segment's
+            # translated text is element [0] — join them back into one string.
+            return (($parsed[0] | ForEach-Object { $_[0] }) -join "").Trim()
+        } catch {
+            $status = $null
+            if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
+            # Anything other than a rate limit will not improve by asking again.
+            if ($status -ne 429 -or $try -eq $attempts) {
+                Write-Warning "Translation failed ($try/$attempts, HTTP $status) for '$text'"
+                return $null
+            }
+            Start-Sleep -Seconds ($try * 3)
+        }
     }
+    $null
+}
+
+# One request for a whole batch of headlines instead of one per headline. This is the fix that
+# actually works: the endpoint blocks on the number of requests from an IP, not on how fast they
+# arrive, so spacing them out just moved the wall later into the run. Sending 4 titles as 4 lines
+# of one query cuts the run from ~79 requests to ~20.
+#
+# The line-for-line correspondence is not a documented guarantee, so it is checked rather than
+# assumed: if the reply does not come back with exactly one line per title, the batch is thrown
+# away and the titles are translated one at a time. A silently mis-aligned batch would put the
+# wrong Korean headline under the wrong link, which is worse than no translation at all.
+function Get-KoreanTranslationBatch {
+    param([string[]]$texts)
+
+    $clean = @($texts | Where-Object { $_ })
+    if ($clean.Count -eq 0) { return @{} }
+    if ($clean.Count -eq 1) {
+        $one = Get-KoreanTranslation $clean[0]
+        return @{ $clean[0] = $one }
+    }
+
+    $map = @{}
+    # A newline inside a title would break the split, so those never go into a batch.
+    $batchable = @($clean | Where-Object { $_ -notmatch "[`r`n]" })
+    $solo = @($clean | Where-Object { $_ -match "[`r`n]" })
+
+    if ($batchable.Count -gt 0) {
+        $joined = $batchable -join "`n"
+        $result = Get-KoreanTranslation $joined
+        $lines = if ($result) { @($result -split "`r?`n") } else { @() }
+        if ($lines.Count -eq $batchable.Count) {
+            for ($i = 0; $i -lt $batchable.Count; $i++) { $map[$batchable[$i]] = $lines[$i].Trim() }
+        } else {
+            Write-Warning "번역 배치 줄 수 불일치 ($($lines.Count)/$($batchable.Count)) — 개별 번역으로 전환"
+            foreach ($t in $batchable) {
+                $map[$t] = Get-KoreanTranslation $t
+                Start-Sleep -Milliseconds 700
+            }
+        }
+    }
+    foreach ($t in $solo) {
+        $map[$t] = Get-KoreanTranslation $t
+        Start-Sleep -Milliseconds 700
+    }
+    $map
 }
 
 # 호재/악재 판별 키워드. 기사 제목만 보고 판단하는 단순 규칙 기반 분류라 100% 정확하지 않음 —
@@ -120,7 +178,10 @@ function Get-NewsHeadlines {
         $raw = Invoke-WebRequest -Uri $uri -Headers $headers -UseBasicParsing
         [xml]$rss = $raw.Content
         $items = $rss.rss.channel.item | Select-Object -First $max
-        @(foreach ($it in $items) {
+
+        # Titles are cleaned up first, so this query's headlines can be translated as one batch
+        # below rather than one request each.
+        $parsed = @(foreach ($it in $items) {
             $title = $it.title
             $source = $null
             # Google News sometimes appends the outlet name twice (native + romanized), e.g. "... - 조선비즈 - Chosunbiz"
@@ -129,14 +190,30 @@ function Get-NewsHeadlines {
                     $title = $matches[1].Trim(); $source = $matches[2].Trim()
                 } else { break }
             }
-            $pubDate = [System.DateTimeOffset]::Parse($it.pubDate)
+            [PSCustomObject]@{
+                title   = $title
+                source  = $source
+                pubDate = [System.DateTimeOffset]::Parse($it.pubDate)
+                link    = $it.link
+            }
+        })
+
+        $koMap = @{}
+        if ($lang -eq "en" -and $parsed.Count -gt 0) {
+            $koMap = Get-KoreanTranslationBatch @($parsed | ForEach-Object { $_.title })
+            # Still a pause between queries — one batch per query is few enough requests to stay
+            # under the limit, but not so few that hammering them back-to-back is safe.
+            Start-Sleep -Milliseconds 700
+        }
+
+        @(foreach ($p in $parsed) {
+            $title = $p.title
+            $source = $p.source
+            $pubDate = $p.pubDate
 
             $titleKo = $null
-            if ($lang -eq "en") {
-                $translated = Get-KoreanTranslation $title
-                if ($translated -and $translated -ne $title) { $titleKo = $translated }
-                Start-Sleep -Milliseconds 200  # be gentle with the unofficial translate endpoint
-            }
+            $translated = $koMap[$title]
+            if ($translated -and $translated -ne $title) { $titleKo = $translated }
 
             $displayTitle = if ($titleKo) { $titleKo } else { $title }
             # 번역본과 원문 둘 다에서 키워드를 찾도록 합쳐서 판별 (번역이 키워드를 흐리는 경우 대비)
@@ -147,7 +224,7 @@ function Get-NewsHeadlines {
                 titleOriginal = if ($titleKo) { $title } else { $null }
                 source        = $source
                 date          = $pubDate.ToString("yyyy-MM-dd")
-                link          = $it.link
+                link          = $p.link
                 sentiment     = $sentiment
             }
         })
