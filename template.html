@@ -190,6 +190,14 @@
   .feargreed-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .feargreed-pill.down { color: var(--bad); background: var(--bad-wash); border-color: transparent; }
   .feargreed-pill.up   { color: var(--good); background: var(--good-wash); border-color: transparent; }
+  /* 알약 안에서 지수와 구간 문구를 가르는 선. 칩 위에 칩을 얹으면 지저분해져서 배경 없이
+     세로선 하나로만 나눈다. */
+  .fg-pill-action {
+    margin-left: 8px; padding-left: 8px; border-left: 1px solid currentColor;
+    font-weight: 700; opacity: 0.95;
+  }
+  .fg-pill-action.up   { color: var(--good); }
+  .fg-pill-action.down { color: var(--bad); }
 
   .fg-score-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
   .fg-score { font-size: 34px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
@@ -2250,7 +2258,18 @@
     fgPill.hidden = false;
     const tone = fgTone(fearGreed.rating);
     fgPill.className = "feargreed-pill" + (tone ? " " + tone : "");
+    // 구간 문구를 알약에 같이 싣는다. 여태 "적극 매수"는 모달 안에만 있어서, 이 숫자로 매수
+    // 시점을 잡는 사람에게 정작 결론이 클릭 한 번 뒤에 숨어 있었다.
     fgPill.textContent = "공포·탐욕지수 " + fearGreed.score + " (" + fearGreed.ratingKo + ")";
+    const pillBand = FG_BANDS.find(b => b.key === fearGreed.rating);
+    if (pillBand) {
+      // 밴드 색이 아니라 '행동' 색. 알약 바탕은 공포면 빨강인데, 그 위의 문구는 매수라서
+      // 같은 색으로 칠하면 한눈에 반대로 읽힌다.
+      const act = document.createElement("span");
+      act.className = "fg-pill-action" + (pillBand.actionTone ? " " + pillBand.actionTone : "");
+      act.textContent = pillBand.action;
+      fgPill.appendChild(act);
+    }
     fgPill.title = "CNN Fear & Greed Index — 미국 증시 전반의 투자심리 지표. 클릭하면 자세히 볼 수 있습니다.";
     fgPill.addEventListener("click", openFearGreedModal);
   }

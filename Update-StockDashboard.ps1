@@ -650,6 +650,26 @@ function Get-FearGreedBand {
     return @{ en = "extreme greed"; ko = "극단적 탐욕" }
 }
 
+function Get-FearGreedAction {
+    # "공포에 사고 탐욕에 팔라"는 역발상 원칙을 밴드에 그대로 얹은 것. template.html 의 FG_BANDS
+    # 와 같은 문구를 써야 페이지와 메일이 서로 다른 말을 하지 않는다 — 한쪽을 고치면 다른 쪽도
+    # 같이 고칠 것.
+    #
+    # 이건 매매 신호가 아니라 "원칙상 지금이 어느 구간인가"를 말해주는 참고 문구다. 극단적 공포는
+    # 바닥 직전에도 나오지만 하락이 더 이어지는 구간에도 나오고, 공포가 깊어질수록 매수를 키우는
+    # 건 하락장에서는 물타기와 같은 동작이 된다. 그래서 문구 옆에 항상 근거(지수와 전일 대비
+    # 방향)를 같이 붙여서, 숫자를 보지 않고 문구만 따라가지 않도록 한다.
+    param([string]$rating)
+    switch ($rating) {
+        "extreme fear"  { return @{ text = "적극 매수"; tone = "buy-strong" } }
+        "fear"          { return @{ text = "매수 고려"; tone = "buy" } }
+        "neutral"       { return @{ text = "관망";      tone = "hold" } }
+        "greed"         { return @{ text = "매도 고려"; tone = "sell" } }
+        "extreme greed" { return @{ text = "적극 매도"; tone = "sell-strong" } }
+        default         { return $null }
+    }
+}
+
 Write-Host "Fetching CNN Fear & Greed Index..."
 $fearGreed = $null
 try {
@@ -823,6 +843,59 @@ $rowsHtml = foreach ($s in $stocks) {
 $fxLine = if ($usdKrw) { " · USD/KRW $($usdKrw.ToString('N2'))" } else { "" }
 $fgLine = if ($fearGreed) { " · 공포·탐욕지수 $($fearGreed.score)($($fearGreed.ratingKo))" } else { "" }
 
+# 공포·탐욕지수 안내 블록. 지금까지 메일에는 제목줄에 점수와 밴드만 붙어 있었는데, 이 숫자 하나로
+# 매수 시점을 잡는다면 판단에 필요한 절반이 빠져 있는 셈이었다 — 원칙상 어느 구간인지가 없었다.
+#
+# 방향을 같이 싣는 이유: 같은 "공포 40" 이라도 어제 52 에서 내려온 40 과 어제 28 에서 올라온 40 은
+# 역발상 전략에서 다른 뜻이다. 전자는 공포가 깊어지는 중이고 후자는 풀리는 중이다. 숫자 하나만
+# 던져두면 그 차이가 안 보인다.
+$fgBlockHtml = ""
+if ($fearGreed) {
+    $act = Get-FearGreedAction -rating $fearGreed.rating
+    if ($act) {
+        # 메일은 라이트 전용이라 페이지 토큰 대신 고정 hex 를 쓴다. 매수 구간은 초록, 매도 구간은
+        # 빨강 — 밴드 색(공포=빨강)이 아니라 '행동' 색이다. 공포 구간이 빨간 배경에 "매수"라고
+        # 적혀 있으면 한눈에 반대로 읽힌다.
+        $pal = switch ($act.tone) {
+            "buy-strong"  { @{ fg = "#0a6b0a"; bg = "#eaf4ea"; br = "#bcd9bc"; edge = "#0a6b0a" } }
+            "buy"         { @{ fg = "#0a6b0a"; bg = "#f1f6f1"; br = "#cfe3cf"; edge = "#5ba25b" } }
+            "hold"        { @{ fg = "#52514e"; bg = "#f5f5f3"; br = "#e1e0d9"; edge = "#a3a199" } }
+            "sell"        { @{ fg = "#b3221f"; bg = "#fdeeee"; br = "#f3caca"; edge = "#d97a78" } }
+            "sell-strong" { @{ fg = "#b3221f"; bg = "#fbe3e3"; br = "#eebbbb"; edge = "#b3221f" } }
+        }
+
+        $prev = @($fearGreed.history | Where-Object { $_.label -eq "전일" })[0]
+        $trendHtml = ""
+        if ($prev) {
+            $delta = $fearGreed.score - $prev.score
+            $trendHtml = if ($delta -lt 0) {
+                "전일 $($prev.score) → 오늘 $($fearGreed.score) · <b>공포가 $([math]::Abs($delta))p 깊어지는 중</b>"
+            } elseif ($delta -gt 0) {
+                "전일 $($prev.score) → 오늘 $($fearGreed.score) · <b>공포가 ${delta}p 풀리는 중</b>"
+            } else {
+                "전일과 같은 $($fearGreed.score)"
+            }
+        }
+        $trendRow = if ($trendHtml) { "<div style='font-size:12px;color:#52514e;margin-top:6px;'>$trendHtml</div>" } else { "" }
+
+        $fgBlockHtml = @"
+<div style="margin:0 0 16px;padding:13px 15px;background:$($pal.bg);border:1px solid $($pal.br);border-left:4px solid $($pal.edge);border-radius:6px;">
+  <div style="font-size:11px;font-weight:bold;color:#898781;letter-spacing:0.04em;">공포·탐욕지수 기준 참고 구간</div>
+  <div style="margin-top:5px;">
+    <span style="font-size:26px;font-weight:bold;color:#0b0b0b;vertical-align:middle;">$($fearGreed.score)</span>
+    <span style="font-size:13px;color:#52514e;vertical-align:middle;">$($fearGreed.ratingKo)</span>
+    <span style="font-size:14px;font-weight:bold;color:$($pal.fg);vertical-align:middle;margin-left:6px;">$($act.text)</span>
+  </div>
+  $trendRow
+  <div style="font-size:11px;color:#898781;margin-top:7px;line-height:1.5;">
+    "공포에 사고 탐욕에 팔라" 원칙을 CNN 밴드에 얹은 참고 문구입니다. 매매 신호가 아닙니다 —
+    극단적 공포는 바닥 직전에도, 하락이 더 이어지는 구간에도 나옵니다.
+  </div>
+</div>
+"@
+    }
+}
+
 # Email subject lines are plain text by spec — a hyperlink can't live there. The equivalent is a
 # prominent button at the very top of the body, which is one tap away in any mail client.
 $dashboardUrl = "https://jhkim0603.github.io/stockdashboard/"
@@ -847,6 +920,7 @@ $emailHtml = @"
   <div style="margin-bottom:16px;">
     <a href="$dashboardUrl" style="display:inline-block;background:#2a78d6;color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 18px;border-radius:6px;">📊 대시보드 열기 →</a>
   </div>
+  $fgBlockHtml
   <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e1e0d9;border-radius:8px;">
     $($rowsHtml -join "`n")
   </table>
@@ -862,5 +936,11 @@ $emailHtml = @"
 # stray character in some clients — write both files BOM-less instead.
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllText((Join-Path $root "email-summary.html"), $emailHtml, $utf8NoBom)
-[System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 주식 투자 Dashboard - $emailDateStr", $utf8NoBom)
+# 제목에도 지수와 구간을 넣는다. 받은편지함 목록에서 메일을 열지 않고도 오늘이 어느 구간인지
+# 보이고, 나중에 "공포 20" 같은 말로 지난 메일을 찾을 수도 있다.
+$fgSubject = if ($fearGreed) {
+    $a = Get-FearGreedAction -rating $fearGreed.rating
+    if ($a) { " · $($fearGreed.ratingKo) $($fearGreed.score) · $($a.text)" } else { "" }
+} else { "" }
+[System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 주식 투자 Dashboard - $emailDateStr$fgSubject", $utf8NoBom)
 Write-Host "Email summary written: email-summary.html"
