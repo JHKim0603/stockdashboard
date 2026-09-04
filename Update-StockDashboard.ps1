@@ -827,9 +827,20 @@ $fgLine = if ($fearGreed) { " · 공포·탐욕지수 $($fearGreed.score)($($fea
 # prominent button at the very top of the body, which is one tap away in any mail client.
 $dashboardUrl = "https://jhkim0603.github.io/stockdashboard/"
 
+# The color-scheme meta pair says this mail is designed for light and only light. Without it,
+# Gmail's and Apple Mail's dark modes decide for themselves which colours to invert, and they
+# invert backgrounds more eagerly than text - which is how a card ends up dark grey with the
+# near-black heading still sitting on it. Declaring one scheme opts the message out of that
+# guesswork. Kept as a PowerShell comment rather than an HTML one so it is not mailed.
 $emailHtml = @"
 <!DOCTYPE html>
-<html><body style="margin:0;padding:0;background:#f9f9f7;font-family:'Malgun Gothic',sans-serif;">
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+</head>
+<body style="margin:0;padding:0;background:#f9f9f7;font-family:'Malgun Gothic',sans-serif;">
 <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
   <h2 style="margin:0 0 4px;color:#0b0b0b;">JH 주식 투자 Dashboard</h2>
   <div style="font-size:12px;color:#898781;margin-bottom:14px;">$emailDateStr 기준$fxLine$fgLine</div>
