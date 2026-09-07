@@ -789,15 +789,34 @@ Write-Host "Building email summary..."
 $dayNames = @("일", "월", "화", "수", "목", "금", "토")
 $emailDateStr = "{0}년 {1}월 {2}일 ({3})" -f $nowKst.Year, $nowKst.Month, $nowKst.Day, $dayNames[[int]$nowKst.DayOfWeek]
 
+# Notable-condition scan for the subject line — 공포·탐욕지수 already covers the market-wide
+# mood there, but a per-stock event (big move, fresh cross, 52-week extreme) can still get lost
+# inside the body's per-row list. This pulls the loudest ones up to the subject, same spot the
+# Fear & Greed suffix already lives, so the inbox list alone says whether today needs a look.
+# Priority: 52-week extreme > fresh cross > plain move (biggest move first within that tier).
+$MOVE_THRESHOLD_PCT = 7
+$highlights = New-Object System.Collections.ArrayList
+
 $rowsHtml = foreach ($s in $stocks) {
     $last = $s.series[-1]
     $prev = $s.series[-2]
     $diff = $last - $prev
     $pct = if ($prev -ne 0) { ($diff / $prev) * 100 } else { 0 }
     $up = $diff -ge 0
+    $sign = if ($up) { "+" } else { "" }
     $color = if ($up) { "#0ca30c" } else { "#e34948" }
     $arrow = if ($up) { "▲" } else { "▼" }
     $priceFmt = if ($s.currency -eq "₩") { "{0:N0}" -f $last } else { "{0:N2}" -f $last }
+
+    if ([math]::Abs($pct) -ge $MOVE_THRESHOLD_PCT) {
+        $dir = if ($up) { "급등" } else { "급락" }
+        [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $dir $sign$($pct.ToString('N1'))%"; priority = [math]::Abs($pct) })
+    }
+    $cross = Get-CrossSignal -series $s.series
+    if ($cross -eq "golden") { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 골든크로스"; priority = 80 }) }
+    elseif ($cross -eq "dead") { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 데드크로스"; priority = 80 }) }
+    if ($last -ge ($s.rangeHigh * 0.999)) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 52주 신고가"; priority = 100 }) }
+    elseif ($last -le ($s.rangeLow * 1.001)) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 52주 신저가"; priority = 100 }) }
 
     $trend = Get-MaTrendComment -series $s.series
     $trendHtml = ""
@@ -942,5 +961,7 @@ $fgSubject = if ($fearGreed) {
     $a = Get-FearGreedAction -rating $fearGreed.rating
     if ($a) { " · $($fearGreed.ratingKo) $($fearGreed.score) · $($a.text)" } else { "" }
 } else { "" }
-[System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 주식 투자 Dashboard - $emailDateStr$fgSubject", $utf8NoBom)
+$topHighlights = @($highlights | Sort-Object priority -Descending | Select-Object -First 3 -ExpandProperty text)
+$highlightSubject = if ($topHighlights.Count -gt 0) { " · ⚠ " + ($topHighlights -join ", ") } else { "" }
+[System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 주식 투자 Dashboard - $emailDateStr$fgSubject$highlightSubject", $utf8NoBom)
 Write-Host "Email summary written: email-summary.html"
