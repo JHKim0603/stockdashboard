@@ -487,12 +487,20 @@ Write-Host "Building email summary..."
 $dayNames = @("일", "월", "화", "수", "목", "금", "토")
 $emailDateStr = "{0}년 {1}월 {2}일 ({3})" -f $nowKst.Year, $nowKst.Month, $nowKst.Day, $dayNames[[int]$nowKst.DayOfWeek]
 
+# Notable-condition detection for the email subject — so a glance at the inbox list is enough
+# to know something happened, without opening the mail. Each finding gets a priority so the
+# subject (kept to the top 3) leads with the most significant kind: 52-week extreme > cross >
+# plain big move, and within the "big move" tier, bigger moves outrank smaller ones.
+$MOVE_THRESHOLD_PCT = 7
+$highlights = New-Object System.Collections.ArrayList
+
 $rowsHtml = foreach ($s in $stocks) {
     $last = $s.series[-1]
     $prev = $s.series[-2]
     $diff = $last - $prev
     $pct = if ($prev -ne 0) { ($diff / $prev) * 100 } else { 0 }
     $up = $diff -ge 0
+    $sign = if ($up) { "+" } else { "" }
     $color = if ($up) { "#0ca30c" } else { "#e34948" }
     $arrow = if ($up) { "▲" } else { "▼" }
     $priceFmt = if ($s.currency -eq "₩") { "{0:N0}" -f $last } else { "{0:N2}" -f $last }
@@ -502,6 +510,16 @@ $rowsHtml = foreach ($s in $stocks) {
         if ($cross -eq "golden") { " <span style='color:#0ca30c;font-weight:700;'>[골든크로스]</span>" }
         elseif ($cross -eq "dead") { " <span style='color:#e34948;font-weight:700;'>[데드크로스]</span>" }
         else { "" }
+
+    if ([math]::Abs($pct) -ge $MOVE_THRESHOLD_PCT) {
+        $dir = if ($up) { "급등" } else { "급락" }
+        [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $dir $sign$($pct.ToString('N1'))%"; priority = [math]::Abs($pct) })
+    }
+    if ($cross -eq "golden") { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 골든크로스"; priority = 80 }) }
+    elseif ($cross -eq "dead") { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 데드크로스"; priority = 80 }) }
+
+    if ($last -ge ($s.rangeHigh * 0.999)) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 52주 신고가"; priority = 100 }) }
+    elseif ($last -le ($s.rangeLow * 1.001)) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 52주 신저가"; priority = 100 }) }
 
     $newsHtml = ""
     if ($s.news -and $s.news.Count -gt 0) {
@@ -528,12 +546,25 @@ $rowsHtml = foreach ($s in $stocks) {
 
 $fxLine = if ($usdKrw) { " · USD/KRW $($usdKrw.ToString('N2'))" } else { "" }
 
+$topHighlights = @($highlights | Sort-Object priority -Descending | Select-Object -First 3 -ExpandProperty text)
+$highlightBannerHtml = ""
+if ($topHighlights.Count -gt 0) {
+    $items = ($topHighlights | ForEach-Object { "<li style='margin:2px 0;'>$_</li>" }) -join ""
+    $highlightBannerHtml = @"
+  <div style="background:#fff4e5;border:1px solid #f0c987;border-radius:8px;padding:10px 14px;margin-bottom:16px;">
+    <div style="font-weight:700;font-size:12.5px;color:#8a5a00;">⚠ 오늘의 특이사항</div>
+    <ul style="margin:4px 0 0;padding-left:18px;font-size:12.5px;color:#5c4300;">$items</ul>
+  </div>
+"@
+}
+
 $emailHtml = @"
 <!DOCTYPE html>
 <html><body style="margin:0;padding:0;background:#f9f9f7;font-family:'Malgun Gothic',sans-serif;">
 <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
   <h2 style="margin:0 0 4px;color:#0b0b0b;">JH 투자 DASHBOARD</h2>
   <div style="font-size:12px;color:#898781;margin-bottom:16px;">$emailDateStr 기준$fxLine</div>
+  $highlightBannerHtml
   <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e1e0d9;border-radius:8px;">
     $($rowsHtml -join "`n")
   </table>
@@ -549,5 +580,6 @@ $emailHtml = @"
 # stray character in some clients — write both files BOM-less instead.
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllText((Join-Path $root "email-summary.html"), $emailHtml, $utf8NoBom)
-[System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 투자 DASHBOARD 요약 - $emailDateStr", $utf8NoBom)
+$subjectSuffix = if ($topHighlights.Count -gt 0) { " — ⚠ " + ($topHighlights -join ", ") } else { "" }
+[System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 투자 DASHBOARD 요약 - $emailDateStr$subjectSuffix", $utf8NoBom)
 Write-Host "Email summary written: email-summary.html"
