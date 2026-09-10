@@ -2,17 +2,33 @@ name: Update Stock Dashboard
 
 on:
   schedule:
-    # 08:30 KST, Tue-Sat mornings only. Cron runs on UTC, and KST is UTC+9, so this UTC Mon-Fri
-    # (1-5) window lands as KST Tue-Sat 08:30 — i.e. it skips the KST Sun/Mon morning sends,
-    # since those would just repeat Friday's close again (no trading happens Sat/Sun KST, and
-    # Monday's KST morning is still before that day's own market open).
-    - cron: '30 23 * * 1-5'
+    # KST Tue-Sat 아침. 이 저장소는 KST Sun/Mon 아침을 건너뛴다 — 금요일 종가를 한 번 더
+    # 반복할 뿐이기 때문이다(KST 토·일에는 장이 없고, 월요일 아침은 아직 그날 장 시작 전이다).
+    #
+    # 슬롯이 하나였을 때의 문제: GitHub 의 예약 실행은 best-effort 라 부하가 걸리면 그냥
+    # 버려진다. 실측으로 이 저장소의 실행은 매일 2~5시간씩 밀리고 있었다. 슬롯이 하나면
+    # 그게 버려지는 날은 메일도 페이지 갱신도 통째로 없다.
+    #
+    # UTC 요일 지정에 주의할 것. KST 는 UTC+9 이므로,
+    #   UTC 23시대 → 다음날 KST 08시대. KST 화~토를 얻으려면 UTC 월~금(1-5).
+    #   UTC 00~05시 → 같은 날 KST 09~14시. KST 화~토를 얻으려면 UTC 화~토(2-6).
+    # 두 줄의 요일이 다른 건 오타가 아니다. 같게 맞추면 토요일이 빠지거나 월요일이 붙는다.
+    #
+    # 정시·30분을 피한 것도 의도적이다 — 그 시각이 GitHub 큐가 가장 붐비는 지점이다.
+    - cron: '11 23 * * 1-5'   # KST 08:11 (화~토)
+    - cron: '37 0 * * 2-6'    # KST 09:37 (화~토)
+    - cron: '19 2 * * 2-6'    # KST 11:19 (화~토)
+    - cron: '43 4 * * 2-6'    # KST 13:43 (화~토)
   workflow_dispatch:
     inputs:
       send_email:
         description: '메일도 보낼지 (검증만 할 때는 false)'
         type: boolean
         default: true
+      force_email:
+        description: '이미 오늘 보냈어도 강제로 다시 보내기'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -39,11 +55,45 @@ jobs:
         id: subject
         run: echo "text=$(cat email-subject.txt)" >> "$GITHUB_OUTPUT"
 
-      # 예약 실행은 항상 보낸다. 손으로 돌릴 때만 끌 수 있게 한 이유는, 고친 걸 러너에서
-      # 확인하려면 실행을 시켜야 하는데 그때마다 받은편지함에 예정에 없던 메일이 한 통씩
-      # 쌓이기 때문이다.
+      # 아침마다 슬롯이 여러 개 뜨는데, 평소에는 그중 둘 이상이 살아남는다. 그대로 두면
+      # 같은 요약이 받은편지함에 반복해서 쌓인다.
+      #
+      # 그래서 .last-digest 를 커밋해 두고 읽는다. 실제로 SMTP 를 떠난 마지막 발송의 KST
+      # 날짜다. 실행 이력으로 대신 판단하면 정작 중요한 경우에 틀린다 — 메일 스텝이
+      # continue-on-error 라 발송이 실패해도 실행은 성공으로 남고, 그러면 이후 모든 슬롯이
+      # "오늘은 보냈다"고 판단해 조용히 넘어간다. 발송이 확인된 뒤에만 기록하면, 실패한 날은
+      # 마커가 옛 날짜로 남아 다음 슬롯이 다시 시도한다.
+      - name: Check whether today's digest already went out
+        id: mailgate
+        run: |
+          today=$(TZ=Asia/Seoul date +%F)
+          echo "today=$today" >> "$GITHUB_OUTPUT"
+          if [[ "${{ inputs.send_email }}" == "false" ]]; then
+            echo "send=false" >> "$GITHUB_OUTPUT"
+            echo "send_email=false - 검증 실행이므로 보내지 않습니다"
+            exit 0
+          fi
+          if [[ "${{ inputs.force_email }}" == "true" ]]; then
+            echo "send=true" >> "$GITHUB_OUTPUT"
+            echo "force_email requested - 마커와 무관하게 발송"
+            exit 0
+          fi
+          last=$(cat .last-digest 2>/dev/null | tr -d '[:space:]')
+          if [[ "$last" == "$today" ]]; then
+            echo "send=false" >> "$GITHUB_OUTPUT"
+            echo "already delivered for $today KST - skipping mail"
+          else
+            echo "send=true" >> "$GITHUB_OUTPUT"
+            echo "last delivery was '${last:-never}', today is $today KST - sending"
+          fi
+
+      # Non-blocking. 배포된 페이지가 이 실행의 주 산출물이라, 메일 실패(만료된 Gmail 앱
+      # 비밀번호, SMTP 장애)가 아래 Pages 배포까지 막으면 안 된다. 예전에는 막았다 —
+      # 메일이 죽으면 그날 페이지도 안 올라갔다.
       - name: Send email summary
-        if: github.event_name != 'workflow_dispatch' || inputs.send_email
+        id: mail
+        if: steps.mailgate.outputs.send == 'true'
+        continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -55,22 +105,30 @@ jobs:
           from: JH 투자 DASHBOARD <${{ secrets.GMAIL_USERNAME }}>
           html_body: file://email-summary.html
 
-      # 번역 캐시는 커밋해야 의미가 있다. 러너는 매번 새 컨테이너라, 여기서 되돌려놓지 않으면
-      # 다음 실행이 다시 빈 캐시로 시작하고 또 전부 429 에 막힌다.
+      - name: Mark today as delivered
+        if: steps.mail.outcome == 'success'
+        run: echo "${{ steps.mailgate.outputs.today }}" > .last-digest
+
+      # 번역 캐시와 발송 마커를 한 커밋으로 되돌려놓는다. 러너는 매번 새 컨테이너라, 여기서
+      # 커밋하지 않으면 다음 실행이 빈 캐시로 시작해 또 전부 429 에 막히고, 마커가 없으면
+      # 슬롯마다 메일이 한 통씩 나간다.
       #
-      # 메일 뒤에 두고 non-blocking 으로 둔 이유는 work-dashboard 와 같다: 실행 중에 main 으로
+      # 메일 뒤에 두고 non-blocking 으로 둔 이유는 work-dashboard 와 같다: 실행 중에 master 로
       # 커밋이 하나 들어오면 평범한 push 는 거절되는데, 이 스텝이 치명적이면 그 거절이 메일과
       # Pages 배포까지 같이 죽인다. 캐시 하루치를 잃는 편이 훨씬 싸다.
-      - name: Commit translation cache
+      #
+      # 마커의 push 가 경합에서 지면 그날 메일은 이미 나간 뒤라 다음 슬롯이 한 통 더 보낸다.
+      # 중복 한 통이 조용한 누락보다 낫고, 이 사다리 전체가 막으려는 게 그 누락이다.
+      - name: Commit translation cache and delivery marker
         continue-on-error: true
         run: |
-          if [[ -z "$(git status --porcelain translation-cache.json)" ]]; then
-            echo "no cache change"
+          if [[ -z "$(git status --porcelain translation-cache.json .last-digest)" ]]; then
+            echo "no cache or marker change"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add translation-cache.json
+          git add translation-cache.json .last-digest
           git commit -m "chore: accumulate translation cache $(TZ=Asia/Seoul date +%F)"
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
           git push
