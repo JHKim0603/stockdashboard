@@ -7,7 +7,12 @@ on:
     # since those would just repeat Friday's close again (no trading happens Sat/Sun KST, and
     # Monday's KST morning is still before that day's own market open).
     - cron: '30 23 * * 1-5'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      send_email:
+        description: '메일도 보낼지 (검증만 할 때는 false)'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -34,7 +39,11 @@ jobs:
         id: subject
         run: echo "text=$(cat email-subject.txt)" >> "$GITHUB_OUTPUT"
 
+      # 예약 실행은 항상 보낸다. 손으로 돌릴 때만 끌 수 있게 한 이유는, 고친 걸 러너에서
+      # 확인하려면 실행을 시켜야 하는데 그때마다 받은편지함에 예정에 없던 메일이 한 통씩
+      # 쌓이기 때문이다.
       - name: Send email summary
+        if: github.event_name != 'workflow_dispatch' || inputs.send_email
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
@@ -45,6 +54,26 @@ jobs:
           to: jhyupkim@unid.co.kr
           from: JH 투자 DASHBOARD <${{ secrets.GMAIL_USERNAME }}>
           html_body: file://email-summary.html
+
+      # 번역 캐시는 커밋해야 의미가 있다. 러너는 매번 새 컨테이너라, 여기서 되돌려놓지 않으면
+      # 다음 실행이 다시 빈 캐시로 시작하고 또 전부 429 에 막힌다.
+      #
+      # 메일 뒤에 두고 non-blocking 으로 둔 이유는 work-dashboard 와 같다: 실행 중에 main 으로
+      # 커밋이 하나 들어오면 평범한 push 는 거절되는데, 이 스텝이 치명적이면 그 거절이 메일과
+      # Pages 배포까지 같이 죽인다. 캐시 하루치를 잃는 편이 훨씬 싸다.
+      - name: Commit translation cache
+        continue-on-error: true
+        run: |
+          if [[ -z "$(git status --porcelain translation-cache.json)" ]]; then
+            echo "no cache change"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add translation-cache.json
+          git commit -m "chore: accumulate translation cache $(TZ=Asia/Seoul date +%F)"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git push
 
       - name: Prepare Pages content
         run: cp dashboard.html index.html

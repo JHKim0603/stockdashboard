@@ -65,78 +65,111 @@ $newsLocales = @{
 }
 $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
 
-# Retries on 429 with a growing pause, because that is what this endpoint actually returns.
-# A single attempt every 200ms was losing 35 of 79 headlines a run - nearly half the US titles
-# reaching a Korean page in English - and the failure looked like "no translation available"
-# rather than "we asked too fast".
-function Get-KoreanTranslation {
-    param($text, $attempts = 3)
+# 같은 엔드포인트를 client 파라미터만 바꿔 순서대로 시도한다.
+#
+# 쿼터가 IP 하나로만 잡히는 게 아니라 client 값마다 따로 잡힌다. 실측으로, 같은 회선에서
+# client=gtx 는 429 를 돌려주는 순간에도 client=dict-chrome-ex 는 10줄 배치를 정상 응답했다.
+# 그래서 하나가 막히면 다음 것으로 넘어간다 — 같은 것을 더 조르는 재시도와는 다르다.
+#
+# dict-chrome-ex 를 앞에 둔 이유는 지금 살아 있는 쪽이기 때문이고, 응답 모양이 gtx 와 같아서
+# 파서를 하나만 쓰면 된다.
+$translateClients = @("dict-chrome-ex", "gtx")
 
-    $uri = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=" + [uri]::EscapeDataString($text)
-    for ($try = 1; $try -le $attempts; $try++) {
+function Get-KoreanTranslation {
+    param($text)
+
+    foreach ($client in $translateClients) {
+        $uri = "https://translate.googleapis.com/translate_a/single?client=$client&sl=en&tl=ko&dt=t&q=" + [uri]::EscapeDataString($text)
         try {
             $resp = Invoke-WebRequest -Uri $uri -Headers $headers -UseBasicParsing -TimeoutSec 20
             $parsed = $resp.Content | ConvertFrom-Json
-            # Google splits long input into several segments under $parsed[0]; each segment's
-            # translated text is element [0] — join them back into one string.
+            # 입력이 길면 Google 이 $parsed[0] 아래 여러 세그먼트로 쪼개 돌려준다. 각 세그먼트의
+            # 번역문이 [0] 이라, 이어 붙이면 원래 줄바꿈이 그대로 살아난다.
             return (($parsed[0] | ForEach-Object { $_[0] }) -join "").Trim()
         } catch {
-            $status = $null
-            if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
-            # Anything other than a rate limit will not improve by asking again.
-            if ($status -ne 429 -or $try -eq $attempts) {
-                Write-Warning "Translation failed ($try/$attempts, HTTP $status) for '$text'"
-                return $null
-            }
-            Start-Sleep -Seconds ($try * 3)
+            $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { "?" }
+            Write-Warning "번역 실패 (client=$client, HTTP $status)"
         }
     }
     $null
 }
 
-# One request for a whole batch of headlines instead of one per headline. This is the fix that
-# actually works: the endpoint blocks on the number of requests from an IP, not on how fast they
-# arrive, so spacing them out just moved the wall later into the run. Sending 4 titles as 4 lines
-# of one query cuts the run from ~79 requests to ~20.
+# 번역 캐시. 한 번 번역한 제목은 다시 물어보지 않는다.
 #
-# The line-for-line correspondence is not a documented guarantee, so it is checked rather than
-# assumed: if the reply does not come back with exactly one line per title, the batch is thrown
-# away and the titles are translated one at a time. A silently mis-aligned batch would put the
-# wrong Korean headline under the wrong link, which is worse than no translation at all.
-function Get-KoreanTranslationBatch {
-    param([string[]]$texts)
+# 이게 핵심인 이유: 이 엔드포인트는 IP 단위 누적 요청 수로 막는데, GitHub Actions 러너는 수많은
+# 워크플로가 공유하는 클라우드 IP를 쓴다. 집 IP 에서는 통과하던 요청량이 러너에서는 첫 요청부터
+# 429 로 막힌다 — 실제로 한 주 내내 매 실행 40건 넘게 실패했고 페이지 제목의 82% 가 영문으로
+# 나갔다. 그러니 "요청을 잘 나눠 보낸다"로는 풀리지 않고, 요청 자체를 없애야 한다.
+#
+# 캐시가 있으면 어제 번역한 제목은 오늘 네트워크를 타지 않는다. 뉴스 제목은 며칠씩 같은 것이
+# 반복되므로, 하루 몇 건만 새로 물어보면 되고 그 몇 건이 429 로 실패해도 나머지는 한글로 남는다.
+$translationCachePath = Join-Path $root "translation-cache.json"
 
-    $clean = @($texts | Where-Object { $_ })
-    if ($clean.Count -eq 0) { return @{} }
-    if ($clean.Count -eq 1) {
-        $one = Get-KoreanTranslation $clean[0]
-        return @{ $clean[0] = $one }
-    }
-
-    $map = @{}
-    # A newline inside a title would break the split, so those never go into a batch.
-    $batchable = @($clean | Where-Object { $_ -notmatch "[`r`n]" })
-    $solo = @($clean | Where-Object { $_ -match "[`r`n]" })
-
-    if ($batchable.Count -gt 0) {
-        $joined = $batchable -join "`n"
-        $result = Get-KoreanTranslation $joined
-        $lines = if ($result) { @($result -split "`r?`n") } else { @() }
-        if ($lines.Count -eq $batchable.Count) {
-            for ($i = 0; $i -lt $batchable.Count; $i++) { $map[$batchable[$i]] = $lines[$i].Trim() }
-        } else {
-            Write-Warning "번역 배치 줄 수 불일치 ($($lines.Count)/$($batchable.Count)) — 개별 번역으로 전환"
-            foreach ($t in $batchable) {
-                $map[$t] = Get-KoreanTranslation $t
-                Start-Sleep -Milliseconds 700
-            }
+function Import-TranslationCache {
+    $cache = @{}
+    if (-not (Test-Path $translationCachePath)) { return $cache }
+    try {
+        $raw = Get-Content -Path $translationCachePath -Raw -Encoding UTF8 | ConvertFrom-Json
+        foreach ($p in $raw.PSObject.Properties) {
+            $cache[$p.Name] = [PSCustomObject]@{ ko = $p.Value.ko; seen = $p.Value.seen }
         }
+    } catch {
+        Write-Warning "번역 캐시를 읽지 못해 빈 캐시로 시작합니다: $($_.Exception.Message)"
     }
-    foreach ($t in $solo) {
-        $map[$t] = Get-KoreanTranslation $t
+    $cache
+}
+
+function Export-TranslationCache {
+    param($cache, $today)
+    # 오래 안 쓴 항목은 버린다. 안 그러면 파일이 무한정 자라고, 지난달 헤드라인은 다시 나오지 않는다.
+    $cutoff = ([datetime]$today).AddDays(-60).ToString("yyyy-MM-dd")
+    $out = [ordered]@{}
+    foreach ($k in ($cache.Keys | Sort-Object)) {
+        $v = $cache[$k]
+        if ($v.ko -and $v.seen -ge $cutoff) { $out[$k] = @{ ko = $v.ko; seen = $v.seen } }
+    }
+    $json = ConvertTo-Json -InputObject $out -Depth 4
+    [System.IO.File]::WriteAllText($translationCachePath, $json, (New-Object System.Text.UTF8Encoding $false))
+    $out.Count
+}
+
+# 캐시에 없는 제목만, 여러 건을 줄바꿈으로 이어 한 요청에 보낸다.
+#
+# 실패했을 때 개별 번역으로 되돌리지 않는 것이 지난번과 달라진 점이다. 그 되돌림이 상황을 정확히
+# 거꾸로 만들고 있었다 — 배치가 429 로 막히면 제목 4건을 각각 3회씩 다시 물어봐서, 이미 우리를
+# 거절한 엔드포인트에 요청을 1건에서 13건으로 늘렸다. 거절당했을 때 할 일은 더 조르는 게 아니라
+# 물러나는 것이다. 줄 수가 어긋난 경우(응답은 왔는데 대응이 깨진 경우)에만 그 묶음을 버린다.
+function Invoke-TranslationBatch {
+    param([string[]]$texts, $cache, $today)
+
+    # 줄바꿈이 든 제목은 split 을 깨뜨리므로 묶지 않는다 — 그냥 번역하지 않고 원문으로 둔다.
+    $batchable = @($texts | Where-Object { $_ -and $_ -notmatch "[`r`n]" })
+    if ($batchable.Count -eq 0) { return 0 }
+
+    $done = 0
+    # 한 요청에 10줄씩. URL 길이(제목 10건이면 인코딩 후 2~3KB)와 정렬 실패 시 잃는 양 사이의 절충.
+    for ($i = 0; $i -lt $batchable.Count; $i += 10) {
+        $chunk = @($batchable[$i..([Math]::Min($i + 9, $batchable.Count - 1))])
+        $result = Get-KoreanTranslation ($chunk -join "`n")
+        if (-not $result) {
+            # 429 이거나 응답이 없다. 다음 묶음도 같은 벽에 부딪힐 테니 이번 실행은 여기서 접는다.
+            Write-Warning "번역 배치 실패 — 남은 $($batchable.Count - $i)건은 이번 실행에서 원문으로 둡니다."
+            break
+        }
+        $lines = @($result -split "`r?`n")
+        if ($lines.Count -ne $chunk.Count) {
+            # 응답은 왔지만 줄 대응이 깨졌다. 엉뚱한 링크에 엉뚱한 한글 제목이 붙는 것보다
+            # 번역이 안 되는 편이 낫다.
+            Write-Warning "번역 배치 줄 수 불일치 ($($lines.Count)/$($chunk.Count)) — 이 묶음은 원문으로 둡니다."
+            continue
+        }
+        for ($j = 0; $j -lt $chunk.Count; $j++) {
+            $ko = $lines[$j].Trim()
+            if ($ko) { $cache[$chunk[$j]] = [PSCustomObject]@{ ko = $ko; seen = $today }; $done++ }
+        }
         Start-Sleep -Milliseconds 700
     }
-    $map
+    $done
 }
 
 # 호재/악재 판별 키워드. 기사 제목만 보고 판단하는 단순 규칙 기반 분류라 100% 정확하지 않음 —
@@ -198,34 +231,19 @@ function Get-NewsHeadlines {
             }
         })
 
-        $koMap = @{}
-        if ($lang -eq "en" -and $parsed.Count -gt 0) {
-            $koMap = Get-KoreanTranslationBatch @($parsed | ForEach-Object { $_.title })
-            # Still a pause between queries — one batch per query is few enough requests to stay
-            # under the limit, but not so few that hammering them back-to-back is safe.
-            Start-Sleep -Milliseconds 700
-        }
-
+        # 여기서는 번역하지 않는다. 종목마다 요청을 내면 20회가 되고, 그 20회가 러너 IP 에서
+        # 전부 429 로 막히고 있었다. 전 종목 수집이 끝난 뒤 Resolve-NewsTranslations 가
+        # 캐시에 없는 제목만 모아 한 번에 처리한다.
         @(foreach ($p in $parsed) {
-            $title = $p.title
-            $source = $p.source
-            $pubDate = $p.pubDate
-
-            $titleKo = $null
-            $translated = $koMap[$title]
-            if ($translated -and $translated -ne $title) { $titleKo = $translated }
-
-            $displayTitle = if ($titleKo) { $titleKo } else { $title }
-            # 번역본과 원문 둘 다에서 키워드를 찾도록 합쳐서 판별 (번역이 키워드를 흐리는 경우 대비)
-            $sentiment = Get-NewsSentiment "$displayTitle $title"
-
             [PSCustomObject]@{
-                title         = $displayTitle
-                titleOriginal = if ($titleKo) { $title } else { $null }
-                source        = $source
-                date          = $pubDate.ToString("yyyy-MM-dd")
+                title         = $p.title
+                titleOriginal = $null
+                needsKo       = ($lang -eq "en")
+                source        = $p.source
+                date          = $p.pubDate.ToString("yyyy-MM-dd")
                 link          = $p.link
-                sentiment     = $sentiment
+                # 번역 전이라 원문 기준으로 한 번 잡아두고, 번역이 붙으면 아래에서 다시 판별한다.
+                sentiment     = Get-NewsSentiment $p.title
             }
         })
     } catch {
@@ -452,12 +470,37 @@ function Get-StockSnapshot {
     $closes = $result.indicators.quote[0].close
     $timestamps = $result.timestamp
 
-    $pairs = for ($i = 0; $i -lt $closes.Count; $i++) {
+    # 봉 날짜는 거래소 현지시각으로 정한다. 예전에는 .ToLocalTime() 이었는데, 그건 이 스크립트가
+    # 어느 기계에서 도느냐에 따라 답이 달라진다 — 러너는 UTC, 내 PC 는 KST 다. 장중 봉(미국 13:30
+    # UTC)은 어느 쪽에서도 같은 날짜로 떨어져서 여태 티가 안 났지만, 종가 시각(20:00 UTC)은 KST
+    # 에서 자정을 넘어가 하루가 밀린다. 아래 meta 보정이 바로 그 시각을 쓰므로 여기서 바로잡는다.
+    $exOffset = [TimeSpan]::FromSeconds([int]$meta.gmtoffset)
+    function ConvertTo-ExchangeDate($unix) {
+        [DateTimeOffset]::FromUnixTimeSeconds($unix).ToOffset($exOffset).ToString("yyyy-MM-dd")
+    }
+
+    $pairs = @(for ($i = 0; $i -lt $closes.Count; $i++) {
         if ($null -ne $closes[$i]) {
             [PSCustomObject]@{
-                Date  = [DateTimeOffset]::FromUnixTimeSeconds($timestamps[$i]).ToLocalTime().ToString("yyyy-MM-dd")
+                Date  = ConvertTo-ExchangeDate $timestamps[$i]
                 Close = [math]::Round([double]$closes[$i], 2)
             }
+        }
+    })
+
+    # Yahoo 는 개별종목의 일봉을 지수보다 늦게 확정한다. 미국장 마감 5시간 뒤인 09-10 01:14 UTC
+    # 실행에서 지수는 09-09 봉을 받았는데 MU·NVDA 등은 09-08 이 마지막이었고, 그 상태로 메일이
+    # 나가 전날 주가가 실린 대시보드가 배달됐다. 같은 코드가 그날 12:56 UTC 에는 09-09 를 정상
+    # 수신했으니 코드가 아니라 시점 문제였다.
+    #
+    # 그런데 meta.regularMarketPrice 에는 그 시점에도 09-09 종가가 들어 있었다. 일봉 배열이
+    # 아직 못 따라온 구간에서는 meta 가 유일하게 최신값을 갖고 있으므로, 마지막 봉보다 새로우면
+    # 그 값을 한 점 덧붙인다. 실행 시각을 뒤로 미루는 것보다 낫다 — 아침에 받는 메일은 그대로 두고
+    # 값만 최신이 된다.
+    if ($meta.regularMarketPrice -and $meta.regularMarketTime) {
+        $metaDate = ConvertTo-ExchangeDate $meta.regularMarketTime
+        if ($pairs.Count -eq 0 -or $metaDate -gt $pairs[-1].Date) {
+            $pairs += [PSCustomObject]@{ Date = $metaDate; Close = [math]::Round([double]$meta.regularMarketPrice, 2) }
         }
     }
 
@@ -517,6 +560,9 @@ function Get-StockSnapshot {
         series    = $fullSeries
         dates     = $fullDates
         volume    = $meta.regularMarketVolume
+        # 거래소 자체 이름. 시세 지연 점검에서 같은 장끼리만 비교하려면 이게 필요하다 —
+        # MarketLabel 로는 KOSPI 지수와 나스닥 지수가 똑같이 "지수" 라 한 그룹이 돼버린다.
+        exchangeTz = $meta.exchangeTimezoneName
         rangeLow  = $rangeLow
         rangeHigh = $rangeHigh
         summary   = $summary
@@ -742,6 +788,73 @@ $stocks = foreach ($t in $tickers) {
 # Skipping a flaky ticker is fine; ending up with *nothing* is not. Without this the run would
 # cheerfully publish an empty dashboard and mail out an empty table, all with a green checkmark.
 $stocks = @($stocks)
+
+function Resolve-NewsTranslations {
+    # 전 종목의 영문 제목을 한자리에 모아 캐시를 먼저 적용하고, 남은 것만 네트워크로 보낸다.
+    # 종목별로 부르던 때는 실행당 20요청이었고 전부 429 였다. 이제 캐시 적중분은 0요청이고,
+    # 새 제목은 10건씩 묶여 보통 1~2요청이면 끝난다.
+    param($stocks)
+
+    $today = (Get-Date).ToString("yyyy-MM-dd")
+    $cache = Import-TranslationCache
+    $items = @(foreach ($s in $stocks) { foreach ($n in @($s.news)) { if ($n.needsKo) { $n } } })
+    if ($items.Count -eq 0) { return }
+
+    $titles = @($items | ForEach-Object { $_.title } | Select-Object -Unique)
+    $missing = @($titles | Where-Object { -not $cache.ContainsKey($_) })
+    $fetched = 0
+    if ($missing.Count -gt 0) { $fetched = Invoke-TranslationBatch -texts $missing -cache $cache -today $today }
+
+    $applied = 0
+    foreach ($n in $items) {
+        $hit = $cache[$n.title]
+        if ($hit -and $hit.ko -and $hit.ko -ne $n.title) {
+            $hit.seen = $today          # 계속 쓰이는 제목은 정리 대상에서 살아남는다
+            $n.titleOriginal = $n.title
+            $n.title = $hit.ko
+            # 번역본과 원문 둘 다에서 키워드를 찾도록 합쳐서 판별 (번역이 키워드를 흐리는 경우 대비)
+            $n.sentiment = Get-NewsSentiment "$($n.title) $($n.titleOriginal)"
+            $applied++
+        }
+    }
+
+    # 작업용 표시라 페이지 JSON 까지 따라갈 이유가 없다.
+    foreach ($n in $items) { $n.PSObject.Properties.Remove("needsKo") }
+
+    $kept = Export-TranslationCache -cache $cache -today $today
+    $pct = if ($titles.Count) { [math]::Round($applied * 100 / $items.Count) } else { 100 }
+    # $applied건 처럼 쓰면 안 된다 — PowerShell 은 한글도 변수명 글자로 받아서 $applied건 이라는
+    # 없는 변수를 읽고 빈 칸을 찍는다. 실제로 그렇게 찍혀서 잡았다.
+    Write-Host "번역: 영문 $($items.Count)건 중 $($applied)건 한글화 ($pct%) · 신규 조회 $($fetched)건 · 캐시 $($kept)건"
+
+    # 조용히 나빠지지 않게 한다. 지난주 이 실패는 아무 신호 없이 한 주를 갔고, 그동안 메일과
+    # 페이지에는 영문 제목이 그대로 나갔다.
+    if ($env:CI -and $items.Count -ge 5 -and $pct -lt 50) {
+        Write-Host "::warning::영문 제목 $($items.Count)건 중 $($applied)건만 번역됨($pct%) - 번역 엔드포인트가 러너 IP를 막고 있을 수 있습니다."
+    }
+}
+
+Resolve-NewsTranslations -stocks $stocks
+
+# 시세가 뒤처진 채로 조용히 메일이 나가지 않게 한다. 오늘 아침이 정확히 그랬다 — 지수는 09-09,
+# 개별종목은 09-08 인데 아무 신호 없이 발송됐고, 받는 쪽에서 전날 주가라는 걸 알 방법이 없었다.
+#
+# 실행을 실패시키지는 않는다. 시세가 하루 뒤처진 대시보드도 뉴스와 나머지 종목은 쓸모가 있고,
+# 여기서 던지면 그날은 아무것도 못 받는다. 대신 러너 로그에 경고를 남겨 눈에 띄게 한다.
+# 한국장과 미국장은 마지막 거래일이 원래 다르므로, 같은 거래소끼리만 비교해야 의미가 있다.
+foreach ($grp in ($stocks | Where-Object { $_.exchangeTz } | Group-Object exchangeTz)) {
+    $ds = @($grp.Group | ForEach-Object { @($_.dates)[-1] } | Where-Object { $_ })
+    if ($ds.Count -lt 2) { continue }
+    $newest = ($ds | Sort-Object -Descending)[0]
+    $lagging = @($grp.Group | Where-Object { @($_.dates)[-1] -and @($_.dates)[-1] -lt $newest })
+    if ($lagging.Count -gt 0) {
+        $names = ($lagging | ForEach-Object { "$($_.name)($(@($_.dates)[-1]))" }) -join ", "
+        $msg = "$($grp.Name) 최신 거래일은 $newest 인데 뒤처진 종목: $names"
+        Write-Warning $msg
+        if ($env:CI) { Write-Host "::warning::$msg" }
+    }
+}
+
 if ($stocks.Count -eq 0) {
     if ($env:CI) { Write-Host "::error::All $($tickers.Count) tickers failed to fetch - refusing to publish an empty dashboard." }
     throw "All $($tickers.Count) tickers failed to fetch (Yahoo rate limit or outage?) - aborting so the previous good dashboard/email stays in place."
