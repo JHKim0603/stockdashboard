@@ -25,10 +25,14 @@
   },
   "Dear Nvidia Stock Fans, Mark Your Calendars for September 10": {
     "ko": "친애하는 Nvidia 주식 팬 여러분, 달력에 9월 10일을 표시해 두세요",
-    "seen": "2026-09-10"
+    "seen": "2026-09-11"
   },
   "GOOGL Stock Slips As Legal Risks Rise And AI Battle Heats Up": {
     "ko": "법적 위험이 증가하고 AI 전투가 가열되면서 GOOGL 주식이 하락합니다.",
+    "seen": "2026-09-11"
+  },
+  "GOOGL Stock: Should You Buy the Best-Performing Magnificent Seven Stock Right Now?": {
+    "ko": "GOOGL 주식: 지금 당장 실적이 가장 좋은 매그니피센트 세븐 주식을 사야 할까요?",
     "seen": "2026-09-11"
   },
   "Google Commits $15 Billion to Massive Finland AI Hub": {
@@ -49,6 +53,10 @@
   },
   "How major US stock indexes fared Thursday 9/10/2026": {
     "ko": "2026년 9월 10일 목요일 미국 주요 주가 지수의 흐름",
+    "seen": "2026-09-11"
+  },
+  "Is Microsoft (MSFT) Fully Valued As AI Investment Keeps Building?": {
+    "ko": "AI 투자가 지속적으로 구축됨에 따라 Microsoft(MSFT)는 충분히 가치가 있습니까?",
     "seen": "2026-09-11"
   },
   "Is Microsoft Stock Overvalued At 28x Earnings?": {
@@ -107,16 +115,32 @@
     "ko": "NVDA 주식 알림: Nvidia가 DOJ 조사에 직면함에 따라 알아야 할 사항",
     "seen": "2026-09-11"
   },
+  "Nvidia Is One of the Most Profitable Businesses in the World. Here's Why the Stock Is Worth $311 a Share Right Now -- 39% More Than Its Share Price.": {
+    "ko": "Nvidia는 세계에서 가장 수익성이 높은 기업 중 하나입니다. 현재 주식의 가치가 주당 311달러인 이유는 다음과 같습니다. 이는 주가보다 39% 더 높습니다.",
+    "seen": "2026-09-11"
+  },
   "Nvidia Is Worth $5 Trillion. But This Could Be the Next Big Catalyst for the Stock": {
     "ko": "엔비디아의 가치는 5조 달러입니다. 그러나 이것이 주식의 다음 큰 촉매제가 될 수 있습니다.",
     "seen": "2026-09-10"
+  },
+  "Nvidia Stock (NVDA) Slips 2% Despite an AI Partnership with Palantir Technologies (PLTR)": {
+    "ko": "Nvidia 주식(NVDA)은 Palantir Technologies(PLTR)와의 AI 파트너십에도 불구하고 2% 하락했습니다.",
+    "seen": "2026-09-11"
   },
   "Nvidia Will Pay Its Next Cash Dividend on Oct. 1. Here's How Many Shares of Nvidia (NVDA) Stock You'd Need for $10,000 in Yearly Dividends.": {
     "ko": "Nvidia는 10월 1일에 다음 현금 배당금을 지급할 예정입니다. 연간 배당금으로 10,000달러에 필요한 Nvidia(NVDA) 주식의 주식 수는 다음과 같습니다.",
     "seen": "2026-09-11"
   },
+  "Oil and yields spike as foreigners dump South Korea stocks": {
+    "ko": "외국인들이 한국 주식을 투매하면서 유가와 수익률이 급등합니다.",
+    "seen": "2026-09-11"
+  },
   "Palantir (PLTR) Stock Could Be 9% Undervalued After Fresh Army Contract News": {
     "ko": "Palantir (PLTR) 주식은 새로운 육군 계약 이후 9% 저평가될 수 있습니다.",
+    "seen": "2026-09-11"
+  },
+  "Palantir (PLTR) Stock: Surge as Fujitsu Deepens AIP and Foundry Partnership in Japan": {
+    "ko": "Palantir(PLTR) 주식: Fujitsu가 일본에서 AIP와 파운드리 파트너십을 심화하면서 급등",
     "seen": "2026-09-11"
   },
   "Palantir Stock (PLTR) Is Trending on News that Cathie Wood Cut Her Position": {
@@ -137,7 +161,7 @@
   },
   "Prediction: Micron Stock Could Turn $10,000 Into a Much Larger Sum by 2030": {
     "ko": "예측: Micron 주식은 2030년까지 $10,000를 훨씬 더 큰 금액으로 바꿀 수 있습니다.",
-    "seen": "2026-09-10"
+    "seen": "2026-09-11"
   },
   "Prediction: Sept. 10 Will Be a Big Day for Nvidia Shareholders. Here’s What to Watch.": {
     "ko": "예측: 9월 10일은 Nvidia 주주들에게 중요한 날이 될 것입니다. 볼만한 내용은 다음과 같습니다.",
@@ -145,11 +169,15 @@
   },
   "Price Prediction: Nvidia Stock Could Be Worth This Much by 2030": {
     "ko": "가격 예측: Nvidia 주식은 2030년까지 이만큼 가치가 있을 수 있습니다",
-    "seen": "2026-09-10"
+    "seen": "2026-09-11"
   },
   "S&P 500 ends down as oil tops $100 per barrel": {
     "ko": "S&P 500은 유가가 배럴당 100달러를 넘으면서 하락 마감합니다.",
     "seen": "2026-09-10"
+  },
+  "S&P 500 ends down as Treasury yields rise and traders fret about inflation": {
+    "ko": "S&P 500은 국채 수익률이 상승하고 거래자들이 인플레이션에 대해 걱정하면서 하락합니다.",
+    "seen": "2026-09-11"
   },
   "S&P 500 futures are flat as oil prices gain, traders brace for inflation data: Live updates": {
     "ko": "S&P 500 선물은 유가 상승으로 보합세를 보이고 있으며 트레이더들은 인플레이션 데이터에 대비하고 있습니다: 실시간 업데이트",
@@ -162,6 +190,10 @@
   "S&P 500, Dow futures attempt recovery ahead of inflation report": {
     "ko": "S&P 500, 다우 선물, 인플레이션 보고서 앞두고 회복 시도",
     "seen": "2026-09-10"
+  },
+  "S&P 500, Nasdaq, Dow Futures Mixed Ahead Of CPI As Hot PPI, Oil Surge Keep Fed In Focus: Why Traders Are Eyeing GME, ORCL, USO, ADBE Stocks": {
+    "ko": "S&P 500, 나스닥, 다우 선물이 CPI보다 앞서 혼합되어 뜨거운 PPI로 유가 급등이 계속 초점을 맞추고 있습니다: 트레이더들이 GME, ORCL, USO, ADBE 주식을 주목하는 이유",
+    "seen": "2026-09-11"
   },
   "Sandisk Has Peaked (NASDAQ:SNDK)": {
     "ko": "Sandisk가 정점을 찍었습니다 (NASDAQ:SNDK)",
@@ -179,12 +211,20 @@
     "ko": "Sandisk: 향후 3주가 모든 것을 결정합니다(NASDAQ:SNDK)",
     "seen": "2026-09-10"
   },
+  "Stock futures are little changed as key consumer inflation report looms ahead: Live updates": {
+    "ko": "주요 소비자 인플레이션 보고서가 곧 발표됨에 따라 주식 선물은 거의 변하지 않습니다.",
+    "seen": "2026-09-11"
+  },
   "Stock Market Indexes Drop, But One Megacap Gained 6.3%": {
     "ko": "주식 시장 지수는 하락했지만 One Megacap은 6.3% 상승했습니다.",
     "seen": "2026-09-10"
   },
   "Stock Market on Sept. 10, 2026: Dow, S&P 500 and Nasdaq end lower as U.S. oil prices surge to more than $100 a barrel and Treasury yields jump; stocks book 4th straight day of losses": {
     "ko": "2026년 9월 10일 주식 시장: 미국 유가가 배럴당 100달러 이상으로 급등하고 국채 수익률이 급등하면서 Dow, S&P 500 및 Nasdaq은 하락 마감했습니다. 주식은 4일 연속 손실을 기록했다",
+    "seen": "2026-09-11"
+  },
+  "The Next Palantir Stock Is Hiding in Plain Sight (90% of Fortune 500 Use It)": {
+    "ko": "다음 Palantir 주식은 눈에 잘 띄지 않게 숨겨져 있습니다(Fortune 500대 기업의 90%가 사용)",
     "seen": "2026-09-11"
   },
   "The Stock Market Is Triggering a Warning That Warren Buffett Calls \"Playing With Fire.\" Here's What History Says Comes Next.": {
@@ -202,6 +242,10 @@
   "What It Means for MSFT Stock Investors as Microsoft Switches to 2 Business Segments": {
     "ko": "Microsoft가 두 가지 비즈니스 부문으로 전환함에 따라 MSFT 주식 투자자에게 미치는 영향",
     "seen": "2026-09-10"
+  },
+  "What's Going On With Micron Technology Stock Thursday?": {
+    "ko": "목요일 마이크론 테크놀로지 주식에 무슨 일이 일어나고 있나요?",
+    "seen": "2026-09-11"
   },
   "What's Going On With Sandisk Stock Thursday?": {
     "ko": "목요일에 Sandisk 주식에 무슨 일이 일어나고 있나요?",
@@ -237,6 +281,10 @@
   },
   "Why Stocks Are Defying Gravity and What Could Bring Them Down": {
     "ko": "주식이 중력을 거스르는 이유와 주식을 하락시킬 수 있는 요인",
+    "seen": "2026-09-11"
+  },
+  "World Markets": {
+    "ko": "세계 시장",
     "seen": "2026-09-11"
   }
 }
