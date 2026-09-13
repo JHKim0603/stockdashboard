@@ -11,7 +11,8 @@ $root = $PSScriptRoot
 # Tickers live in watchlist.json, not here — only "Symbol" is required, e.g. { "Symbol": "AAPL" }.
 # Everything else (DisplayName, MarketLabel, NewsQuery, NewsLang, FinanceMode/Code) is optional and
 # auto-derived from the symbol below; set any of them explicitly in watchlist.json to override.
-#   Symbol suffix convention: ".KS" = KOSPI, ".KQ" = KOSDAQ, "^" prefix = index, "XXX-USD" = 코인,
+#   Symbol suffix convention: ".KS" = KOSPI, ".KQ" = KOSDAQ, "^" prefix = index, "XXX-USD"/"XXX-KRW" = 코인
+#   (-KRW 는 Yahoo 가 날짜별 환율로 환산한 원화 시세),
 #   anything else = NASDAQ
 #   (NYSE tickers need an explicit "FinanceCode": "SYMBOL.N" override — the auto-default assumes NASDAQ)
 function Resolve-TickerConfig {
@@ -24,7 +25,7 @@ function Resolve-TickerConfig {
     $isDomestic = $symbol.EndsWith(".KS") -or $symbol.EndsWith(".KQ")
     # 코인은 실적·목표주가가 없다. 판정하지 않으면 해외주식으로 떨어져 네이버에 "BTC-USD.O" 를
     # 묻고, 메일 링크도 존재하지 않는 BTC-USD:NASDAQ 페이지로 간다.
-    $isCrypto = if ($null -ne $raw.IsCrypto) { [bool]$raw.IsCrypto } else { $symbol -match '^[A-Z0-9]+-USD$' }
+    $isCrypto = if ($null -ne $raw.IsCrypto) { [bool]$raw.IsCrypto } else { $symbol -match '^[A-Z0-9]+-(USD|KRW)$' }
 
     $marketLabel =
         if ($raw.MarketLabel) { $raw.MarketLabel }
