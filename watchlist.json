@@ -9,5 +9,7 @@
   { "Symbol": "MSFT", "DisplayName": "마이크로소프트", "NewsQuery": "Microsoft MSFT stock" },
   { "Symbol": "^IXIC", "DisplayName": "나스닥", "NewsQuery": "Nasdaq Composite index" },
   { "Symbol": "^GSPC", "DisplayName": "S&P 500", "NewsQuery": "S&P 500 index" },
-  { "Symbol": "^KS11", "DisplayName": "KOSPI", "NewsQuery": "코스피 지수" }
+  { "Symbol": "^KS11", "DisplayName": "KOSPI", "NewsQuery": "코스피 지수" },
+  { "Symbol": "BTC-USD", "DisplayName": "비트코인", "NewsQuery": "비트코인", "NewsLang": "ko" },
+  { "Symbol": "ETH-USD", "DisplayName": "이더리움", "NewsQuery": "이더리움", "NewsLang": "ko" }
 ]

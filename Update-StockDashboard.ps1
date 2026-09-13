@@ -11,7 +11,8 @@ $root = $PSScriptRoot
 # Tickers live in watchlist.json, not here — only "Symbol" is required, e.g. { "Symbol": "AAPL" }.
 # Everything else (DisplayName, MarketLabel, NewsQuery, NewsLang, FinanceMode/Code) is optional and
 # auto-derived from the symbol below; set any of them explicitly in watchlist.json to override.
-#   Symbol suffix convention: ".KS" = KOSPI, ".KQ" = KOSDAQ, "^" prefix = index, anything else = NASDAQ
+#   Symbol suffix convention: ".KS" = KOSPI, ".KQ" = KOSDAQ, "^" prefix = index, "XXX-USD" = 코인,
+#   anything else = NASDAQ
 #   (NYSE tickers need an explicit "FinanceCode": "SYMBOL.N" override — the auto-default assumes NASDAQ)
 function Resolve-TickerConfig {
     param($raw)
@@ -21,10 +22,14 @@ function Resolve-TickerConfig {
 
     $isIndex = if ($null -ne $raw.IsIndex) { [bool]$raw.IsIndex } else { $symbol.StartsWith("^") }
     $isDomestic = $symbol.EndsWith(".KS") -or $symbol.EndsWith(".KQ")
+    # 코인은 실적·목표주가가 없다. 판정하지 않으면 해외주식으로 떨어져 네이버에 "BTC-USD.O" 를
+    # 묻고, 메일 링크도 존재하지 않는 BTC-USD:NASDAQ 페이지로 간다.
+    $isCrypto = if ($null -ne $raw.IsCrypto) { [bool]$raw.IsCrypto } else { $symbol -match '^[A-Z0-9]+-USD$' }
 
     $marketLabel =
         if ($raw.MarketLabel) { $raw.MarketLabel }
         elseif ($isIndex) { "지수" }
+        elseif ($isCrypto) { "코인" }
         elseif ($symbol.EndsWith(".KS")) { "KOSPI" }
         elseif ($symbol.EndsWith(".KQ")) { "KOSDAQ" }
         else { "NASDAQ" }
@@ -33,7 +38,7 @@ function Resolve-TickerConfig {
 
     $financeMode =
         if ($raw.FinanceMode) { $raw.FinanceMode }
-        elseif ($isIndex) { $null }
+        elseif ($isIndex -or $isCrypto) { $null }
         elseif ($isDomestic) { "domestic" }
         else { "overseas" }
 
@@ -50,6 +55,7 @@ function Resolve-TickerConfig {
         NewsQuery   = $raw.NewsQuery
         NewsLang    = $newsLang
         IsIndex     = $isIndex
+        IsCrypto    = $isCrypto
         FinanceMode = $financeMode
         FinanceCode = $financeCode
     }
@@ -647,6 +653,9 @@ function Get-StockPageUrl {
             "^KS11" { return "https://finance.naver.com/sise/sise_index.naver?code=KOSPI" }
             default { return $null }
         }
+    }
+    if ($cfg.IsCrypto) {
+        return "https://www.google.com/finance/quote/$($cfg.Symbol)"
     }
     if ($cfg.FinanceMode -eq "domestic" -and $cfg.FinanceCode) {
         return "https://finance.naver.com/item/main.naver?code=$($cfg.FinanceCode)"
