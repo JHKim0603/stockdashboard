@@ -416,12 +416,16 @@
     "ko": "나스닥 종합지수와 나스닥 100이 지지에서 반등했습니다. 구매자가 이동평균을 지울 수 있나요?"
   },
   "Nasdaq Composite Index (.IXIC)": {
-    "seen": "2026-09-17",
+    "seen": "2026-09-18",
     "ko": "나스닥 종합지수(.IXIC)"
   },
   "Nasdaq futures and options": {
     "seen": "2026-09-15",
     "ko": "나스닥 선물 및 옵션"
+  },
+  "Nasdaq Index and S&P500: Tech Rebounds as Yields Fall After Fed Hike": {
+    "seen": "2026-09-18",
+    "ko": "나스닥 지수 및 S&P500: 연준 인상 후 수익률 하락으로 기술 반등"
   },
   "Nasdaq, Dow, S&P 500 Futures Rise After 4-Day Market Slide As CPI Looms Large: ORCL, ADBE, MU, TSLA, RKLB, IBRX, HOOD, GME In Focus": {
     "seen": "2026-09-11",
@@ -591,6 +595,10 @@
     "seen": "2026-09-18",
     "ko": "예측: Invesco QQQ Trust는 향후 5년 동안 S&P 500을 다시 능가합니다."
   },
+  "Prediction: This Will Be Palantir's Stock Price 1 Year From Now (Hint: It's a Bigger Move Than You Think)": {
+    "seen": "2026-09-18",
+    "ko": "예측: 이것은 1년 후 Palantir의 주가가 될 것입니다(힌트: 생각보다 더 큰 움직임입니다)"
+  },
   "Price Prediction: Nvidia Stock Could Be Worth This Much by 2030": {
     "seen": "2026-09-12",
     "ko": "가격 예측: Nvidia 주식은 2030년까지 이만큼 가치가 있을 수 있습니다"
@@ -678,6 +686,10 @@
   "SanDisk Stock Looks Cheap, But Can It Keep Earning This Much?": {
     "seen": "2026-09-18",
     "ko": "SanDisk 주식은 저렴해 보이지만 계속해서 이렇게 많은 수익을 올릴 수 있을까요?"
+  },
+  "SanDisk Stock Price Prediction: Correction Over? Up Over 6% in a Single Day, SNDK Stock Poised to Challenge $2,000 Again": {
+    "seen": "2026-09-18",
+    "ko": "SanDisk 주가 예측: 조정이 끝났나요? 하루 만에 6% 이상 상승한 SNDK 주식은 다시 $2,000에 도전할 준비가 되어 있습니다"
   },
   "Sandisk: The Market Is Still Underestimating Its New Earnings Power (NASDAQ:SNDK)": {
     "seen": "2026-09-17",
@@ -926,6 +938,10 @@
   "Where Will the Nasdaq Be in 2036? History Has Good and Bad News for Growth Investors.": {
     "seen": "2026-09-11",
     "ko": "2036년 나스닥은 어디에 있을까? 역사에는 성장 투자자에게 좋은 소식과 나쁜 소식이 있습니다."
+  },
+  "Why Alphabet Inc. (GOOG) Outpaced the Stock Market Today": {
+    "seen": "2026-09-18",
+    "ko": "Alphabet Inc.(GOOG)가 오늘 주식 시장을 능가한 이유"
   },
   "Why Alphabet Stock Just Popped": {
     "seen": "2026-09-13",
