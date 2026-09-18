@@ -28,7 +28,7 @@
     "ko": "중동 긴장에도 불구하고 KOSPI가 상승하면서 AI 낙관론이 한국 주식을 상승시킵니다."
   },
   "Alphabet (GOOG) director gets stock awards that vest monthly": {
-    "seen": "2026-09-17",
+    "seen": "2026-09-18",
     "ko": "Alphabet (GOOG) 이사는 매달 주식을 지급받습니다."
   },
   "Alphabet (GOOG) Surges 24% as Revenue Growth Soars — But Is $190 Billion in Capex Too Much?": {
@@ -159,6 +159,10 @@
     "seen": "2026-09-10",
     "ko": "9월 말 엔비디아 주가 예측은 다음과 같습니다."
   },
+  "History Says This Will Happen to Nvidia's Stock in 2027 (Hint: You're Going to Want to Buy Now)": {
+    "seen": "2026-09-18",
+    "ko": "역사에 따르면 2027년 Nvidia의 주식에 이런 일이 일어날 것이라고 합니다(힌트: 지금 구매하고 싶을 것입니다)"
+  },
   "Household funds and chip buybacks help KOSPI hold 7000 amid shocks": {
     "seen": "2026-09-12",
     "ko": "가계 자금과 칩 환매로 코스피가 충격 속에서 7000을 유지하는 데 도움이 됨"
@@ -190,6 +194,10 @@
   "Is a Sandisk Stock Split Coming?": {
     "seen": "2026-09-18",
     "ko": "Sandisk 주식분할이 예정되어 있나요?"
+  },
+  "Is Micron Technology (MU) Stock Outpacing Its Computer and Technology Peers This Year?": {
+    "seen": "2026-09-18",
+    "ko": "올해 Micron Technology(MU) 주식이 컴퓨터 및 기술 업계의 주식을 능가하고 있습니까?"
   },
   "Is Microsoft (MSFT) Fully Valued As AI Investment Keeps Building?": {
     "seen": "2026-09-11",
@@ -238,6 +246,10 @@
   "KOSPI Volatility Ranks No. 1 Globally Amid Semiconductor Concentration": {
     "seen": "2026-09-15",
     "ko": "코스피 변동성, 반도체 집중 속에 글로벌 1위"
+  },
+  "Market Rebounds, But What Comes Next? SpaceX, AMD Flash Buy Signals": {
+    "seen": "2026-09-18",
+    "ko": "시장 반등, 그 다음은 무엇일까? SpaceX, AMD 플래시 구매 신호"
   },
   "Markets News, Sep. 14, 2026: Chip Stocks Drop, Software Jumps as Indexes Close Lower; Oil Prices Rise, 10-Year Yield Hits 5%": {
     "seen": "2026-09-15",
@@ -384,7 +396,7 @@
     "ko": "MU 대 SanDisk(SNDK): Micron의 9월 30일 실적보다 더 많은 상승 여력을 제공하는 AI 메모리 주식은 무엇입니까?"
   },
   "Nasdaq 100 trading guide: How to trade the Nasdaq 100 index": {
-    "seen": "2026-09-17",
+    "seen": "2026-09-18",
     "ko": "나스닥 100 거래 가이드: 나스닥 100 지수 거래 방법"
   },
   "NASDAQ composite and NASDAQ 100 indices are telling a slightly different story technically": {
@@ -466,6 +478,10 @@
   "Oil and yields spike as foreigners dump South Korea stocks": {
     "seen": "2026-09-11",
     "ko": "외국인들이 한국 주식을 투매하면서 유가와 수익률이 급등합니다."
+  },
+  "Palantir (NASDAQ: PLTR) insider sells 16,000 shares under preset plan": {
+    "seen": "2026-09-18",
+    "ko": "Palantir(NASDAQ: PLTR) 내부자는 미리 설정된 계획에 따라 16,000주를 매도합니다."
   },
   "Palantir (PLTR) Stock Could Be 9% Undervalued After Fresh Army Contract News": {
     "seen": "2026-09-15",
@@ -695,6 +711,10 @@
     "seen": "2026-09-13",
     "ko": "SNDK 주식: Citigroup은 SanDisk를 강력한 Micron 수익의 최대 수혜자로 보고 있습니다."
   },
+  "Something Is Happening With Alphabet Stock That Wall Street Isn’t Talking About": {
+    "seen": "2026-09-18",
+    "ko": "월스트리트가 말하지 않는 알파벳 주식에 무슨 일이 일어나고 있는지"
+  },
   "STI or S&P 500: Where Should You Invest Your Next Dollar?": {
     "seen": "2026-09-16",
     "ko": "STI 또는 S&P 500: 다음 달러는 어디에 투자해야 할까요?"
@@ -768,7 +788,7 @@
     "ko": "오늘의 주식: AI 에너지 플레이 Bloom Energy가 매수 지점에 가까워지고 S&P 500 진입"
   },
   "Stocks Bull Yardeni Cuts S&P 500 View to 7,900 on Downturn Risks": {
-    "seen": "2026-09-17",
+    "seen": "2026-09-18",
     "ko": "주식 Bull Yardeni, 경기 침체 위험으로 S&P 500 전망을 7,900으로 인하"
   },
   "Stocks slide to begin week as 10-year yield briefly touches 5%, oil rises: Live updates": {
@@ -806,6 +826,10 @@
   "The Stock Market Is Triggering a Warning That Warren Buffett Calls \"Playing With Fire.\" Here's What History Says Comes Next.": {
     "seen": "2026-09-10",
     "ko": "주식시장은 워렌 버핏이 \"불장난\"이라고 부르는 경고를 촉발하고 있습니다. 역사가 말하는 내용은 다음과 같습니다."
+  },
+  "The Strategist Who Wanted 8,400 on the S&P 500 Just Cut His Number, and It Is Not Because Earnings Got Worse": {
+    "seen": "2026-09-18",
+    "ko": "S&P 500에서 8,400을 원했던 전략가는 자신의 수치를 줄였고, 이는 수익이 악화되었기 때문이 아닙니다."
   },
   "The Week Ahead: Fed Rate Hike Decision Puts Stock Market Support Levels in Focus Now!": {
     "seen": "2026-09-13",
@@ -940,7 +964,7 @@
     "ko": "Nvidia 주식이 5조 달러 할인처럼 보이는 이유"
   },
   "Why Sandisk Stock Crashed Today": {
-    "seen": "2026-09-17",
+    "seen": "2026-09-18",
     "ko": "오늘 Sandisk 주식이 폭락한 이유"
   },
   "Why Stifel Just Revamped Its Price Target for Microsoft Stock": {
