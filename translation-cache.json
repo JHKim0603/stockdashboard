@@ -96,7 +96,7 @@
     "ko": "알파벳 주식은 보합세를 유지합니다 - GOOGL 단기 풋 및 풋 신용 스프레드 플레이에 이상적입니다."
   },
   "Alphabet Stock Surges as Google Search Makes a Major Comeback": {
-    "seen": "2026-09-23",
+    "seen": "2026-09-24",
     "ko": "Google 검색의 대대적인 복귀로 알파벳 주가 급등"
   },
   "Alphabet Stock: Is GOOGL Underperforming the Technology Sector?": {
@@ -432,7 +432,7 @@
     "ko": "Nvidia보다 빠르게 성장하는 양자 컴퓨팅 주식을 만나보세요"
   },
   "Meta, Tech Stocks Lift S&P 500 to Best Day Since August": {
-    "seen": "2026-09-22",
+    "seen": "2026-09-24",
     "ko": "메타, 기술주, S&P 500 지수를 8월 이후 최고의 날로 상승"
   },
   "Michael Burry Doubles Down On Palantir Bear Case: ‘A Lot Of’ Money Still To Be Made Shorting PLTR": {
@@ -676,7 +676,7 @@
     "ko": "나스닥 지수: 금리 경고에도 불구하고 기술주가 미국 지수 상승을 주도"
   },
   "Nasdaq rises to new record; S&P 500 closes flat as oil slides for a fifth day": {
-    "seen": "2026-09-23",
+    "seen": "2026-09-24",
     "ko": "나스닥이 신기록을 세웠습니다. S&P 500은 유가 하락으로 5일째 보합세로 마감했습니다."
   },
   "Nasdaq surges 2% towards a new all-time trading high": {
@@ -686,6 +686,10 @@
   "Nasdaq, Dow, S&P 500 Futures Rise After 4-Day Market Slide As CPI Looms Large: ORCL, ADBE, MU, TSLA, RKLB, IBRX, HOOD, GME In Focus": {
     "seen": "2026-09-11",
     "ko": "Nasdaq, Dow, S&P 500 선물은 CPI가 커지면서 4일간의 시장 하락 후 상승: ORCL, ADBE, MU, TSLA, RKLB, IBRX, HOOD, GME 집중"
+  },
+  "Nasdaq, S&P 500 Futures Slide As Treasury Yields, Trump-Xi Summit Keep Traders On Edge: META, GOOGL, SPCX, VKTX, SNAP, MCD, BB Stocks In Focus": {
+    "seen": "2026-09-24",
+    "ko": "Nasdaq, S&P 500 선물 하락, 국채 수익률 상승, Trump-Xi 정상회담으로 거래자들의 불안 유지: META, GOOGL, SPCX, VKTX, SNAP, MCD, BB 주식에 집중"
   },
   "Nike Shares Holding Steady After S&P 100 Drop": {
     "seen": "2026-09-23",
@@ -1048,7 +1052,7 @@
     "ko": "SanDisk 주가 예측: 조정이 끝났나요? 하루 만에 6% 이상 상승한 SNDK 주식은 다시 $2,000에 도전할 준비가 되어 있습니다"
   },
   "Sandisk stock sinks as revenue forecast falls short of expectations": {
-    "seen": "2026-09-22",
+    "seen": "2026-09-24",
     "ko": "수익 예측이 기대에 못 미치면서 샌디스크 주가 하락"
   },
   "Sandisk: The Market Is Still Underestimating Its New Earnings Power (NASDAQ:SNDK)": {
@@ -1196,7 +1200,7 @@
     "ko": "오늘 주식 시장: AI 안전에 대한 우려 속에 연준 회의를 앞두고 다우, S&P 500, 나스닥 선물이 후퇴"
   },
   "Stock market today: Nasdaq surges 2% to record high, Dow and S&P 500 gain as chip stocks rally, oil falls": {
-    "seen": "2026-09-23",
+    "seen": "2026-09-24",
     "ko": "오늘 주식 시장: 나스닥은 2% 급등하여 사상 최고치를 기록했고, 다우와 S&P 500은 칩 주가 상승, 유가 하락으로 상승했습니다."
   },
   "Stock Market Today: Stock Market News And Analysis": {
@@ -1466,6 +1470,10 @@
   "Why Nvidia Stock Looks Like a $5 Trillion Bargain": {
     "seen": "2026-09-19",
     "ko": "Nvidia 주식이 5조 달러 할인처럼 보이는 이유"
+  },
+  "Why Palantir Stock Popped Today": {
+    "seen": "2026-09-24",
+    "ko": "오늘 Palantir 주식이 폭등한 이유"
   },
   "Why Sandisk Stock Crashed Today": {
     "seen": "2026-09-18",
