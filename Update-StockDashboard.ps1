@@ -482,7 +482,10 @@ function Get-ConsensusSnapshot {
 function Get-StockSnapshot {
     param($cfg)
 
-    $uri = "https://query1.finance.yahoo.com/v8/finance/chart/$($cfg.Symbol)?interval=1d&range=1y"
+    # 2y, not 1y: the chart's longest view is one year, but a 180-day average needs 180 sessions
+    # before its first point. With exactly a year fetched, the 1년 chart drew the 180일선 over
+    # only its last three months. The page slices the display back to a year.
+    $uri = "https://query1.finance.yahoo.com/v8/finance/chart/$($cfg.Symbol)?interval=1d&range=2y"
     $resp = Invoke-RestMethod -Uri $uri -Headers $headers
     $result = $resp.chart.result[0]
     $meta = $result.meta
@@ -527,9 +530,12 @@ function Get-StockSnapshot {
     $fullDates  = @($pairs.Date)
 
     # Yahoo's meta.fiftyTwoWeekHigh/Low occasionally comes back as 0 for some tickers;
-    # fall back to the min/max of the fetched 1y series so we never divide by zero.
-    $rangeHigh = if ($meta.fiftyTwoWeekHigh -and $meta.fiftyTwoWeekHigh -gt 0) { $meta.fiftyTwoWeekHigh } else { ($fullSeries | Measure-Object -Maximum).Maximum }
-    $rangeLow  = if ($meta.fiftyTwoWeekLow  -and $meta.fiftyTwoWeekLow  -gt 0) { $meta.fiftyTwoWeekLow }  else { ($fullSeries | Measure-Object -Minimum).Minimum }
+    # fall back to the min/max of the last year so we never divide by zero. The series itself
+    # is two years long now, so it has to be cut to 52 weeks first.
+    $yearAgo = ([datetime]$fullDates[-1]).AddYears(-1).ToString("yyyy-MM-dd")
+    $lastYear = @($pairs | Where-Object { $_.Date -gt $yearAgo } | ForEach-Object { $_.Close })
+    $rangeHigh = if ($meta.fiftyTwoWeekHigh -and $meta.fiftyTwoWeekHigh -gt 0) { $meta.fiftyTwoWeekHigh } else { ($lastYear | Measure-Object -Maximum).Maximum }
+    $rangeLow  = if ($meta.fiftyTwoWeekLow  -and $meta.fiftyTwoWeekLow  -gt 0) { $meta.fiftyTwoWeekLow }  else { ($lastYear | Measure-Object -Minimum).Minimum }
 
     # trailing-20-session stats for the auto-summary sentence (independent of the chart's own zoom range)
     $recent = $pairs | Select-Object -Last 20

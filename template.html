@@ -967,8 +967,23 @@
     { key: "1M", label: "1개월", days: 22 },
     { key: "3M", label: "3개월", days: 64 },
     { key: "6M", label: "6개월", days: 127 },
-    { key: "1Y", label: "1년",   days: Infinity }
+    // By date rather than by session count: the series carries two years so the 180-day
+    // average has history behind its first plotted point, and coins trade every day, so a
+    // fixed 252 would show them about eight months.
+    { key: "1Y", label: "1년",   years: 1 }
   ];
+
+  // How many trailing points a range shows. Sessions for the short ranges, calendar time for 1Y.
+  function rangeCount(range, dates) {
+    const n = dates.length;
+    if (!range.years) return Math.min(range.days, n);
+    const cut = new Date(dates[n - 1]);
+    cut.setFullYear(cut.getFullYear() - range.years);
+    const cutIso = cut.toISOString().slice(0, 10);
+    let i = n;
+    while (i > 0 && dates[i - 1] > cutIso) i--;
+    return n - i;
+  }
   const DEFAULT_RANGE = "1M";
   const MA_SHORT = 20;
   const MA_MID = 60;
@@ -1450,9 +1465,8 @@
   // currency symbol) — kept as its own function rather than generalizing buildSparkline further,
   // matching how buildValuationChart already stands apart from it for the same reason.
   function buildFxChart(fx, rangeKey) {
-    const days = RANGES.find(r => r.key === rangeKey).days;
     const n0 = fx.series.length;
-    const count = days === Infinity ? n0 : Math.min(days, n0);
+    const count = rangeCount(RANGES.find(r => r.key === rangeKey), fx.dates);
     const data = fx.series.slice(n0 - count);
     const dates = fx.dates.slice(n0 - count);
 
@@ -2029,9 +2043,8 @@
   }
 
   function sliceForRange(stock, rangeKey) {
-    const days = RANGES.find(r => r.key === rangeKey).days;
     const n = stock.series.length;
-    const count = days === Infinity ? n : Math.min(days, n);
+    const count = rangeCount(RANGES.find(r => r.key === rangeKey), stock.dates);
     const ma20 = computeMA(stock.series, MA_SHORT);
     const ma60 = computeMA(stock.series, MA_MID);
     const ma180 = computeMA(stock.series, MA_LONG);
