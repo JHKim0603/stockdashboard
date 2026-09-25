@@ -14,12 +14,33 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
 - `template.html` — the dashboard UI: per-card 1M/3M/6M/1Y range toggle + 20/60/180일 이동평균선
   with a plain-language trend comment (cross event, 정배열/역배열), sparkline with hover tooltip,
   a "최근 이슈" news list (real article titles/links, not AI-written summaries), 실적/목표주가
-  popups.
+  popups. See "What's on the page" below.
+- `translation-cache.json` — English headline → Korean translations, committed back by the
+  workflow so each run doesn't re-translate (and hit 429s) from an empty cache.
 - `run.bat` — double-click launcher (bypasses PowerShell execution-policy prompts).
 - `dashboard.html` — generated output, opened automatically after each run. Not tracked in git.
 - `email-summary.html` / `email-subject.txt` — generated daily email body/subject (price + top
   2 headlines per ticker, golden/dead cross tags). Written every run for local preview; actually
   *sending* it only happens in the GitHub Actions workflow. Not tracked in git.
+
+## What's on the page
+
+- **한눈에 보기 (overview table)** above the cards: 종목 · 현재가 · 등락률 · 추세. Two columns on a
+  wide screen (read top-to-bottom, left column first), one on narrow; on a phone the trend and
+  ticker columns are hidden. Clicking the 등락률 header cycles 상승 큰 순 → 하락 큰 순 → original
+  order; clicking a row scrolls to that card. Added because 13 cards took four screens to answer
+  "what moved today".
+- **Per card:** price and change, 1M/3M/6M/1Y chart with 20/60/180일 moving averages, 52주 범위,
+  거래량 with `평균의 N배` (vs the prior 20 trading days' average, highlighted at 2× and over),
+  target price, next earnings (US listings), alert-level flag, and the 최근 이슈 news list.
+- **News tags:** `[호재]` / `[악재]` come from headline keywords only (not the article body).
+  English headlines are machine-translated; the link always goes to the original.
+- **Stale warning:** the 조회 시각 pill turns red with `N시간 전 데이터` once the data is over
+  26 hours old. KST Sunday/Monday runs are skipped on purpose, so from Sunday until the Tuesday
+  slots finish (14:00 KST) up to 80 hours counts as normal. Before this the pill was always green,
+  so a stopped workflow looked like today's page.
+- Long prices (₩1,862,000, BTC in won) drop one font size so the change pill stays on the same
+  line; otherwise that card's chart sat lower than its neighbour's.
 
 ## Usage
 
@@ -75,6 +96,23 @@ data with a PowerShell script instead of client-side JS in the first place.
 - Requires only Windows PowerShell 5.1 — no Python/Node/npm.
 - `.ps1` files must stay saved as **UTF-8 with BOM**, or Windows PowerShell 5.1 misreads the
   Korean text and the ₩ sign and fails to parse the script.
+- **Two years of prices are fetched** (`range=2y`) although the longest view is 1Y. Moving
+  averages are computed on the whole series and only the view is cut, so with one year of data
+  the 180일선 started at the 180th trading day and covered just the last three months of the 1Y
+  chart. The 1Y button cuts by date, not by count (252) — coins trade every day and would show
+  only eight months. The 52주 range fallback uses the last year only.
+- **English 호재/악재 keywords match whole words** (plus inflections: gains, dropped, losses,
+  fallen). Substring matching turned `again`/`against` into gain, `commission` into miss and
+  `heartbeat` into beat on every English article. Korean keywords stay substring matches because
+  of particles (조사).
+- **FX bar dates use the exchange's gmtoffset**, like stock bars. FX bars are stamped at London
+  midnight (UTC 23:00), so `.ToLocalTime()` on the UTC runner dated them a day ahead.
+- News fetches retry on 503/429 and parse `pubDate` with InvariantCulture; only items that fail
+  to parse are dropped.
+- JSON injected into the page `<script>` has `</` escaped as `<\/`. pwsh (the runner) doesn't
+  escape `<`, so one headline containing `</script>` could blank the whole page. Headlines and
+  links in the email are HTML-encoded for the same reason.
+- Header text says `매일 아침 갱신(종가 기준)`, which is what it actually is — not real-time.
 
 ## Email summary (GitHub Actions only)
 
@@ -91,3 +129,19 @@ The daily workflow (`.github/workflows/update-dashboard.yml`) emails `email-summ
 Local runs (`run.bat`) still generate `email-summary.html` for preview but never send it — only
 the Actions workflow has the secrets, and CI-only sending is intentional so testing locally
 doesn't spam the inbox.
+
+### Once a day, four slots
+
+The schedule has four morning slots (KST 08:11 / 09:37 / 11:19 / 13:43, Tue–Sat) because GitHub
+drops or delays scheduled runs under load — this repo's runs were drifting 2–5 hours. The first
+slot that gets through sends; the rest only refresh the page.
+
+`.last-digest` (committed back with the translation cache) holds the KST date of the last mail
+that actually left SMTP, and the gate compares it to today. It is written **only after a
+confirmed send**: the mail step is `continue-on-error`, so a failed send still leaves a
+successful run, and judging by run history would silence every later slot that day.
+
+Manual runs (**Actions → Update Stock Dashboard → Run workflow**) have two inputs:
+
+- `send_email` (default on) — turn off to rebuild the page without mailing
+- `force_email` — send even if today's mail already went out
