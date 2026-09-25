@@ -198,12 +198,24 @@ $sentimentKeywords = @{
     )
 }
 
+# 영문 키워드는 단어 단위로만 센다. 부분일치로 두면 again·against 가 gain(호재)으로,
+# mission·commission 이 miss(악재)로, heartbeat 가 beat 로 잡힌다 — 번역이 붙어도 원문 제목을
+# 같이 판별하므로 영문 기사 전부가 이 오탐을 탄다. 활용형(gains, dropped, losses, fallen)은
+# 원래 부분일치가 잡던 것이라 접미사로 살려 둔다. 한글은 조사가 붙으므로 부분일치 그대로다.
+function Test-SentimentKeyword {
+    param($title, $keyword)
+    if ($keyword -match '^[\x00-\x7F]+$') {
+        return $title -match ('\b' + [regex]::Escape($keyword) + '(?:s|es|d|ed|en|ing|ped|ping)?\b')
+    }
+    $title -like "*$keyword*"
+}
+
 function Get-NewsSentiment {
     # 제목에 등장한 호재/악재 키워드 수를 세어 더 많은 쪽으로 분류. 동점이거나 하나도 없으면 중립.
     param($title)
     if (-not $title) { return "neutral" }
-    $goodHits = @($sentimentKeywords.good | Where-Object { $title -like "*$_*" }).Count
-    $badHits  = @($sentimentKeywords.bad  | Where-Object { $title -like "*$_*" }).Count
+    $goodHits = @($sentimentKeywords.good | Where-Object { Test-SentimentKeyword $title $_ }).Count
+    $badHits  = @($sentimentKeywords.bad  | Where-Object { Test-SentimentKeyword $title $_ }).Count
     if ($goodHits -gt $badHits) { return "good" }
     if ($badHits -gt $goodHits) { return "bad" }
     return "neutral"
