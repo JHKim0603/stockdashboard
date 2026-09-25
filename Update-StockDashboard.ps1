@@ -49,6 +49,11 @@ function Resolve-TickerConfig {
         elseif ($financeMode -eq "overseas") { "$symbol.O" }
         else { $null }
 
+    # Optional price alerts, in the ticker's own currency: { "Symbol": "005930.KS", "AlertBelow": 280000 }.
+    # This file is public, like the rest of the repo - only put levels here you are fine publishing.
+    $alertBelow = if ($null -ne $raw.AlertBelow) { [double]$raw.AlertBelow } else { $null }
+    $alertAbove = if ($null -ne $raw.AlertAbove) { [double]$raw.AlertAbove } else { $null }
+
     [PSCustomObject]@{
         Symbol      = $symbol
         DisplayName = $raw.DisplayName
@@ -59,6 +64,8 @@ function Resolve-TickerConfig {
         IsCrypto    = $isCrypto
         FinanceMode = $financeMode
         FinanceCode = $financeCode
+        AlertBelow  = $alertBelow
+        AlertAbove  = $alertAbove
     }
 }
 
@@ -506,6 +513,38 @@ function Get-ConsensusSnapshot {
     }
 }
 
+# Next earnings date for US listings, from Nasdaq's public analyst endpoint (Zacks data). Yahoo's
+# calendar endpoints now answer 401 without a session crumb, so they are not an option for a
+# scheduled script. The response distinguishes a date the company has announced ("is expected")
+# from one Zacks projects off past reporting dates ("is estimated ... derived from an algorithm"),
+# and the page keeps that difference visible - an estimate can move by weeks.
+#
+# Korean listings have no free equivalent: 잠정실적 dates are not published ahead of the filing,
+# so those cards keep showing the next quarter only.
+function Get-EarningsDate {
+    param($symbol)
+    try {
+        $nasdaqHeaders = @{
+            "User-Agent"      = $headers["User-Agent"]
+            "Accept"          = "application/json, text/plain, */*"
+            "Accept-Language" = "en-US,en;q=0.9"
+        }
+        $resp = Invoke-RestMethod -Uri "https://api.nasdaq.com/api/analyst/$([uri]::EscapeDataString($symbol))/earnings-date" -Headers $nasdaqHeaders -TimeoutSec 15
+        $text = [string]$resp.data.reportText
+        $m = [regex]::Match($text, 'on\s+(\d{2})/(\d{2})/(\d{4})')
+        if (-not $m.Success) { return $null }
+        $timing = if ($text -match 'after market close') { "장 마감 후" } elseif ($text -match 'before market open') { "장 시작 전" } else { $null }
+        [PSCustomObject]@{
+            date      = "$($m.Groups[3].Value)-$($m.Groups[1].Value)-$($m.Groups[2].Value)"
+            confirmed = ($text -match 'is expected')
+            timing    = $timing
+        }
+    } catch {
+        Write-Warning "Earnings date fetch failed for '$symbol': $($_.Exception.Message)"
+        $null
+    }
+}
+
 function Get-StockSnapshot {
     param($cfg)
 
@@ -619,6 +658,7 @@ function Get-StockSnapshot {
     $finance = Get-FinanceSnapshot -mode $cfg.FinanceMode -code $cfg.FinanceCode
     $consensus = Get-ConsensusSnapshot -mode $cfg.FinanceMode -code $cfg.FinanceCode
     $pageUrl = Get-StockPageUrl -cfg $cfg
+    $earnings = if ($cfg.FinanceMode -eq "overseas") { Get-EarningsDate -symbol $cfg.Symbol } else { $null }
 
     [PSCustomObject]@{
         name      = $name
@@ -640,6 +680,9 @@ function Get-StockSnapshot {
         news      = $news
         finance   = $finance
         consensus = $consensus
+        earnings  = $earnings
+        alertBelow = $cfg.AlertBelow
+        alertAbove = $cfg.AlertAbove
     }
 }
 
@@ -1014,6 +1057,41 @@ $rowsHtml = foreach ($s in $stocks) {
     if ($last -ge ($s.rangeHigh * 0.999)) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 52주 신고가"; priority = 100 }) }
     elseif ($last -le ($s.rangeLow * 1.001)) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 52주 신저가"; priority = 100 }) }
 
+    # Watchlist alert levels. The subject only carries the day the level is crossed - a price that
+    # stays under its level would otherwise sit in every subject until it recovers, and a constant
+    # warning is one nobody reads. The row below says where it stands every day.
+    $alertNotes = @()
+    if ($null -ne $s.alertBelow) {
+        $lv = if ($s.currency -eq "₩") { "{0:N0}" -f $s.alertBelow } else { "{0:N2}" -f $s.alertBelow }
+        if ($last -le $s.alertBelow) {
+            $alertNotes += "알림가 $($s.currency)$lv 아래"
+            if ($prev -gt $s.alertBelow) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $($s.currency)$lv 이탈"; priority = 110 }) }
+        }
+    }
+    if ($null -ne $s.alertAbove) {
+        $lv = if ($s.currency -eq "₩") { "{0:N0}" -f $s.alertAbove } else { "{0:N2}" -f $s.alertAbove }
+        if ($last -ge $s.alertAbove) {
+            $alertNotes += "알림가 $($s.currency)$lv 위"
+            if ($prev -lt $s.alertAbove) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $($s.currency)$lv 돌파"; priority = 110 }) }
+        }
+    }
+
+    # Earnings within two weeks go on the row; within three days, in the subject too - a report
+    # moves the price more than anything else this mail tracks, and it is scheduled.
+    $earnHtml = ""
+    if ($s.earnings -and $s.earnings.date) {
+        $eDate = [datetime]::ParseExact($s.earnings.date, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+        $dLeft = ($eDate - $nowKst.Date).Days
+        if ($dLeft -ge 0 -and $dLeft -le 14) {
+            $kind = if ($s.earnings.confirmed) { "확정" } else { "추정" }
+            $when = "$($eDate.Month)/$($eDate.Day)" + $(if ($s.earnings.timing) { " $($s.earnings.timing)" } else { "" })
+            $dText = if ($dLeft -eq 0) { "D-day" } else { "D-$dLeft" }
+            $earnHtml = "<div style='font-size:11.5px;font-weight:600;color:#7a4a00;margin-top:3px;'>실적 발표 $when ($kind, 현지) · $dText</div>"
+            if ($dLeft -le 3) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 실적 $dText"; priority = 75 }) }
+        }
+    }
+    $alertHtml = if ($alertNotes.Count) { "<div style='font-size:11.5px;font-weight:700;color:#b3221f;margin-top:3px;'>⚑ $($alertNotes -join ' · ')</div>" } else { "" }
+
     $trend = Get-MaTrendComment -series $s.series
     $trendHtml = ""
     if ($trend) {
@@ -1050,6 +1128,8 @@ $rowsHtml = foreach ($s in $stocks) {
     <div style="font-weight:600;font-size:13px;color:#0b0b0b;">$($s.name)</div>
     <div style="font-size:11px;color:#898781;">$($s.ticker)</div>
     $trendHtml
+    $alertHtml
+    $earnHtml
     $newsHtml
   </td>
   <td width="112" style="padding:10px 12px;border-bottom:1px solid #e1e0d9;text-align:right;white-space:nowrap;vertical-align:top;width:112px;max-width:112px;">

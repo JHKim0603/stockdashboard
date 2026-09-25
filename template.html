@@ -401,6 +401,11 @@
   }
   .cross-badge.golden { color: var(--good); background: var(--good-wash); }
   .cross-badge.dead    { color: var(--bad);  background: var(--bad-wash); }
+  /* The user's own watchlist level - outlined rather than filled so it does not read as another
+     market signal next to the cross badge. */
+  .cross-badge.alert   { color: var(--bad); border: 1px solid var(--bad); padding: 3px 8px; }
+  .meta-row .val.earn.soon { color: var(--accent); font-weight: 600; }
+  .ov-flag { color: var(--bad); margin-left: 4px; font-weight: 700; }
 
   .chart-block { display: flex; flex-direction: column; gap: 6px; }
 
@@ -1164,6 +1169,39 @@
     return parseInt(m, 10) + "/" + parseInt(d, 10);
   }
 
+  // watchlist.json AlertBelow / AlertAbove, when the latest close is past one of them.
+  function alertStateOf(stock, last) {
+    const fmt = v => stock.currency + fmtNum(v, stock.currency);
+    if (stock.alertBelow !== null && stock.alertBelow !== undefined && last <= stock.alertBelow) {
+      return { label: "⚑ 알림가 이탈", title: "watchlist.json 의 AlertBelow " + fmt(stock.alertBelow) + " 아래입니다." };
+    }
+    if (stock.alertAbove !== null && stock.alertAbove !== undefined && last >= stock.alertAbove) {
+      return { label: "⚑ 알림가 돌파", title: "watchlist.json 의 AlertAbove " + fmt(stock.alertAbove) + " 위입니다." };
+    }
+    return null;
+  }
+
+  // Next earnings date (US listings; Nasdaq/Zacks). The date is US local, and "추정" means Zacks
+  // projected it from past reporting dates before the company announced one - it can move.
+  function earningsItem(stock) {
+    const e = stock.earnings;
+    if (!e || !e.date) return null;
+    const d = new Date(e.date + "T00:00:00Z");
+    const today = new Date(Date.now() + 9 * 3600000);
+    today.setUTCHours(0, 0, 0, 0);
+    const dLeft = Math.round((d - today) / 86400000);
+    if (isNaN(dLeft) || dLeft < 0) return null;
+    const item = document.createElement("div");
+    item.append("실적발표");
+    const v = document.createElement("span");
+    v.className = "val earn" + (dLeft <= 7 ? " soon" : "");
+    v.textContent = (d.getUTCMonth() + 1) + "/" + d.getUTCDate() + "(" + "일월화수목금토"[d.getUTCDay()] + ")" +
+      (e.timing ? " " + e.timing : "") + " · " + (e.confirmed ? "확정" : "추정") + " · " + (dLeft === 0 ? "D-day" : "D-" + dLeft);
+    item.title = "미국 현지 날짜입니다. '추정'은 회사가 날짜를 발표하기 전 Zacks가 과거 발표 패턴으로 잡은 날짜라 바뀔 수 있습니다. 출처: Nasdaq (Zacks)";
+    item.appendChild(v);
+    return item;
+  }
+
   function buildCard(stock) {
     const s = stock.series;
     const last = s[s.length - 1];
@@ -1212,6 +1250,15 @@
       priceRow.appendChild(crossEl);
     }
 
+    const alertState = alertStateOf(stock, last);
+    if (alertState) {
+      const al = document.createElement("div");
+      al.className = "cross-badge alert";
+      al.textContent = alertState.label;
+      al.title = alertState.title;
+      priceRow.appendChild(al);
+    }
+
     card.appendChild(priceRow);
 
     card.appendChild(buildChartBlock(stock));
@@ -1237,6 +1284,8 @@
       meta.querySelectorAll(".val")[0].appendChild(vr);
     }
     meta.querySelectorAll(".val")[1].textContent = stock.currency + fmtNum(stock.rangeLow, stock.currency) + " – " + stock.currency + fmtNum(stock.rangeHigh, stock.currency);
+    const earn = earningsItem(stock);
+    if (earn) meta.appendChild(earn);
 
     if (stock.consensus && stock.consensus.targetPrice) {
       const upside = ((stock.consensus.targetPrice - last) / last) * 100;
@@ -2376,7 +2425,16 @@
       const sym = document.createElement("span");
       sym.className = "ov-sym";
       sym.textContent = r.st.symbol;
-      name.append(nm, sym);
+      name.append(nm);
+      const al = alertStateOf(r.st, r.last);
+      if (al) {
+        const flag = document.createElement("span");
+        flag.className = "ov-flag";
+        flag.textContent = "⚑";
+        flag.title = al.title;
+        name.append(flag);
+      }
+      name.append(sym);
       const trendCls = "col-trend ov-trend" + (r.trend && r.trend.tone ? " " + r.trend.tone : "");
       row.append(
         name,
