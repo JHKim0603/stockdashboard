@@ -156,6 +156,8 @@
     background: var(--good);
     flex: none;
   }
+  .updated-pill.stale { color: var(--bad); border-color: var(--bad); font-weight: 600; }
+  .updated-pill.stale .dot { background: var(--bad); }
   .topbar-right {
     display: flex;
     align-items: center;
@@ -2315,9 +2317,27 @@
   });
 
   const d = new Date(fetchedAt);
-  document.getElementById("updated-text").textContent =
+  let updatedText =
     d.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" }) +
     " " + d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) + " 조회";
+
+  // The pill's dot was green whatever the date, so a workflow that had quietly stopped left a
+  // page that looked as live as this morning's. work-dashboard already turns red past a day.
+  // The allowance is wider here because the schedule skips KST Sun/Mon on purpose: from Sunday
+  // until Tuesday's slots have run (last one 13:43 KST), Saturday's page is the current one.
+  if (!isNaN(d)) {
+    const hours = (Date.now() - d.getTime()) / 3600000;
+    const kst = new Date(Date.now() + 9 * 3600000);
+    const dow = kst.getUTCDay(), hour = kst.getUTCHours();
+    const inWeekendGap = dow === 0 || dow === 1 || (dow === 2 && hour < 14);
+    if (hours > (inWeekendGap ? 80 : 26)) {
+      updatedText += " · " + (hours < 48 ? Math.floor(hours) + "시간" : Math.floor(hours / 24) + "일") + " 전 데이터";
+      const pill = document.getElementById("updated-text").parentElement;
+      pill.classList.add("stale");
+      pill.title = "예정된 갱신이 이뤄지지 않았습니다. 시세가 오늘 것이 아닙니다 — GitHub Actions 실행 기록을 확인하세요.";
+    }
+  }
+  document.getElementById("updated-text").textContent = updatedText;
 })();
 </script>
 </body>

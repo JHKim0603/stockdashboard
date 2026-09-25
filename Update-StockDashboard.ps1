@@ -226,8 +226,25 @@ function Get-NewsHeadlines {
 
     $loc = $newsLocales[$lang]
     $uri = "https://news.google.com/rss/search?q=" + [uri]::EscapeDataString($query) + "&hl=$($loc.hl)&gl=$($loc.gl)&ceid=$($loc.ceid)"
+    # Google sheds load on the runner's shared IP with 503/429 in bursts. work-dashboard lost
+    # every query to it twice on 2026-09-10 and got a retry; this copy of the fetch never did, so
+    # one bounce emptied a ticker's news for the day. Retry only throttling - other errors will
+    # not improve by asking again.
+    $raw = $null
+    for ($try = 1; $try -le 3; $try++) {
+        try {
+            $raw = Invoke-WebRequest -Uri $uri -Headers $headers -UseBasicParsing -TimeoutSec 25
+            break
+        } catch {
+            $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
+            if (($status -ne 503 -and $status -ne 429) -or $try -eq 3) {
+                Write-Warning "News fetch failed for '$query' (HTTP $status): $($_.Exception.Message)"
+                return @()
+            }
+            Start-Sleep -Seconds ($try * 4)
+        }
+    }
     try {
-        $raw = Invoke-WebRequest -Uri $uri -Headers $headers -UseBasicParsing
         [xml]$rss = $raw.Content
         $items = $rss.rss.channel.item | Select-Object -First $max
 
@@ -242,10 +259,20 @@ function Get-NewsHeadlines {
                     $title = $matches[1].Trim(); $source = $matches[2].Trim()
                 } else { break }
             }
+            # RFC-822 with English day/month names; parsed under the machine's culture it can fail
+            # on a Korean Windows, and a throw here loses the whole feed rather than one item.
+            # Same fix work-dashboard carries. Skip the one item instead.
+            $pubDate = $null
+            try {
+                $pubDate = [System.DateTimeOffset]::Parse($it.pubDate, [System.Globalization.CultureInfo]::InvariantCulture)
+            } catch {
+                Write-Warning "  (pubDate 파싱 실패, 기사 생략: '$($it.pubDate)')"
+                continue
+            }
             [PSCustomObject]@{
                 title   = $title
                 source  = $source
-                pubDate = [System.DateTimeOffset]::Parse($it.pubDate)
+                pubDate = $pubDate
                 link    = $it.link
             }
         })
@@ -698,10 +725,14 @@ try {
 
     $fxCloses = $fxResult.indicators.quote[0].close
     $fxTimestamps = $fxResult.timestamp
+    # Exchange-local date, same as the stock bars in Get-StockSnapshot. .ToLocalTime() made the
+    # date depend on the machine: FX bars stamp around midnight London, which is the previous
+    # day in UTC (the runner) and the same day in KST (a local run).
+    $fxOffset = [TimeSpan]::FromSeconds([int]$fxResult.meta.gmtoffset)
     $fxPairs = for ($i = 0; $i -lt $fxCloses.Count; $i++) {
         if ($null -ne $fxCloses[$i]) {
             [PSCustomObject]@{
-                Date  = [DateTimeOffset]::FromUnixTimeSeconds($fxTimestamps[$i]).ToLocalTime().ToString("yyyy-MM-dd")
+                Date  = [DateTimeOffset]::FromUnixTimeSeconds($fxTimestamps[$i]).ToOffset($fxOffset).ToString("yyyy-MM-dd")
                 Close = [math]::Round([double]$fxCloses[$i], 2)
             }
         }
@@ -896,15 +927,20 @@ if ($stocks.Count -lt $tickers.Count) {
 # $null replacement to "" — which would emit `const fearGreed = ;` into the page, a hard
 # SyntaxError that stops the whole script block and renders a completely blank dashboard.
 # Any optional value that can legitimately be missing must go through this.
+#
+# The JSON lands inside a <script> block, where the HTML parser ends the block at the first
+# "</script>" no matter that it sits in a JS string. Windows PowerShell escapes < on its own; pwsh
+# on the runner does not, so one headline carrying that text would blank the page. "<\/" is the
+# same string to JSON and never closes a tag.
 function ConvertTo-JsonOrNull {
     param($InputObject, $Depth = 4)
     if ($null -eq $InputObject) { return "null" }
     $json = ConvertTo-Json -InputObject $InputObject -Depth $Depth
     if ($null -eq $json -or $json -eq "") { return "null" }
-    return $json
+    return $json.Replace("</", "<\/")
 }
 
-$stocksJson = ConvertTo-Json -InputObject @($stocks) -Depth 8
+$stocksJson = ConvertTo-JsonOrNull -InputObject @($stocks) -Depth 8
 $usdKrwJson = ConvertTo-JsonOrNull -InputObject $usdKrw
 $usdKrwSeriesJson = ConvertTo-JsonOrNull -InputObject $usdKrwSeries -Depth 4
 $fearGreedJson = ConvertTo-JsonOrNull -InputObject $fearGreed
@@ -974,7 +1010,11 @@ $rowsHtml = foreach ($s in $stocks) {
                 "bad"  { "<span style='color:#e34948;font-weight:700;'>[악재]</span> " }
                 default { "" }
             }
-            "<div style='font-size:12px;color:#52514e;margin-top:3px;'>· $tag<a href='$($n.link)' style='color:#2a78d6;text-decoration:none;'>$($n.title)</a></div>"
+            # Headlines come from arbitrary outlets: an & or < in one is markup here, and a quote
+            # in a link would end the href early.
+            $nTitle = [System.Net.WebUtility]::HtmlEncode([string]$n.title)
+            $nLink = [System.Net.WebUtility]::HtmlEncode([string]$n.link)
+            "<div style='font-size:12px;color:#52514e;margin-top:3px;'>· $tag<a href='$nLink' style='color:#2a78d6;text-decoration:none;'>$nTitle</a></div>"
         }
         $newsHtml = $newsLines -join ""
     }
