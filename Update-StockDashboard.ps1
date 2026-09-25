@@ -556,6 +556,24 @@ function Get-StockSnapshot {
     $fullSeries = @($pairs.Close)
     $fullDates  = @($pairs.Date)
 
+    # Today's volume against the stock's own 20-session average, from the volume array this same
+    # response already carries. The average excludes the latest session by date, since the
+    # latest may be the meta point appended above rather than a bar in the array.
+    $volumeRatio = $null
+    $volumes = $result.indicators.quote[0].volume
+    if ($meta.regularMarketVolume -and $volumes) {
+        $latestDate = $fullDates[-1]
+        $priorVols = @(for ($i = 0; $i -lt $timestamps.Count; $i++) {
+            $v = $volumes[$i]
+            if ($null -eq $v -or $v -le 0) { continue }
+            if ((ConvertTo-ExchangeDate $timestamps[$i]) -lt $latestDate) { [double]$v }
+        }) | Select-Object -Last 20
+        if (@($priorVols).Count -ge 10) {
+            $avgVol = ($priorVols | Measure-Object -Average).Average
+            if ($avgVol -gt 0) { $volumeRatio = [math]::Round([double]$meta.regularMarketVolume / $avgVol, 2) }
+        }
+    }
+
     # Yahoo's meta.fiftyTwoWeekHigh/Low occasionally comes back as 0 for some tickers;
     # fall back to the min/max of the last year so we never divide by zero. The series itself
     # is two years long now, so it has to be cut to 52 weeks first.
@@ -612,6 +630,7 @@ function Get-StockSnapshot {
         series    = $fullSeries
         dates     = $fullDates
         volume    = $meta.regularMarketVolume
+        volumeRatio = $volumeRatio
         # 거래소 자체 이름. 시세 지연 점검에서 같은 장끼리만 비교하려면 이게 필요하다 —
         # MarketLabel 로는 KOSPI 지수와 나스닥 지수가 똑같이 "지수" 라 한 그룹이 돼버린다.
         exchangeTz = $meta.exchangeTimezoneName

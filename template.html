@@ -272,6 +272,61 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    scroll-margin-top: 16px;
+  }
+  .card.flash { box-shadow: 0 0 0 2px var(--accent); transition: box-shadow .2s; }
+
+  /* 한눈에 보기: what moved today, before thirteen cards of detail. */
+  .overview {
+    max-width: 1480px;
+    margin: 0 auto 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 12px 6px;
+  }
+  /* Two columns on a wide screen, filled top-to-bottom so a sorted list still reads down the left
+     column first: thirteen rows in one column pushed every card below the fold. */
+  .ov-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--ov-rows), auto);
+    column-gap: 40px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ov-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 118px 80px 170px;
+    gap: 12px;
+    align-items: baseline;
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--gridline);
+  }
+  .ov-row .num { text-align: right; white-space: nowrap; }
+  .ov-head { font-size: 11px; font-weight: 600; color: var(--ink-muted); border-bottom-color: var(--border); }
+  .ov-head button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  .ov-head button:hover { color: var(--ink-primary); }
+  .ov-head button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ov-item { cursor: pointer; border-radius: 6px; }
+  .ov-item:hover { background: var(--gridline); }
+  .ov-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .ov-namecell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ov-name { font-weight: 600; color: var(--ink-primary); }
+  .ov-sym { font-size: 11px; color: var(--ink-muted); margin-left: 6px; }
+  .ov-item .up { color: var(--good); font-weight: 600; }
+  .ov-item .down { color: var(--bad); font-weight: 600; }
+  .ov-trend { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ov-trend.up { color: var(--good); }
+  .ov-trend.down { color: var(--bad); }
+  @media (max-width: 1100px) {
+    .ov-grid { grid-auto-flow: row; grid-template-columns: 1fr; grid-template-rows: none; }
+    .ov-head.second { display: none; }
+  }
+  @media (max-width: 560px) {
+    .ov-row { grid-template-columns: minmax(0, 1fr) auto 76px; }
+    .col-trend, .ov-sym { display: none; }
   }
 
   .card-head {
@@ -314,6 +369,8 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
   }
+  .price.long { font-size: 25px; }
+  .price.xlong { font-size: 21px; }
   .price .ccy {
     font-size: 14px;
     font-weight: 500;
@@ -461,9 +518,13 @@
     color: var(--ink-secondary);
   }
 
+  /* Items wrap whole rather than breaking inside: "₩82,400 – ₩374,500" split across two lines
+     read as two separate figures. */
+  .meta-row > * { white-space: nowrap; }
   .meta-row {
     display: flex;
-    gap: 18px;
+    flex-wrap: wrap;
+    gap: 8px 18px;
     padding-top: 12px;
     border-top: 1px solid var(--gridline);
     font-size: 12px;
@@ -474,6 +535,8 @@
     font-variant-numeric: tabular-nums;
     margin-left: 4px;
   }
+  .meta-row .vol-ratio { margin-left: 5px; color: var(--ink-muted); }
+  .meta-row .vol-ratio.hot { color: var(--accent); font-weight: 600; }
   .meta-row .val.up   { color: var(--good); }
   .meta-row .val.down { color: var(--bad); }
   .meta-btn {
@@ -871,7 +934,7 @@
   <div class="topbar">
     <div>
       <h1>JH 투자 DASHBOARD</h1>
-      <div class="sub">관심 종목 <span id="stock-count"></span>건 · Yahoo Finance 실시간(지연) 시세 · Google 뉴스 최근 이슈</div>
+      <div class="sub">관심 종목 <span id="stock-count"></span>건 · 매일 아침 갱신(Yahoo Finance 종가 기준) · Google 뉴스 최근 이슈</div>
     </div>
     <div class="topbar-right">
       <button type="button" class="fx-pill" id="fx-pill" hidden></button>
@@ -882,6 +945,7 @@
     </div>
   </div>
 
+  <div class="overview" id="overview" hidden></div>
   <div class="grid" id="card-grid"></div>
 
   <!-- Was eight items, several of them explaining a specific card. Those moved into the modal
@@ -1126,6 +1190,11 @@
     const priceEl = document.createElement("div");
     priceEl.className = "price";
     priceEl.innerHTML = '<span class="ccy">' + stock.currency + '</span>' + fmtNum(last, stock.currency);
+    // A seven-figure price (₩1,862,000, BTC in won) pushed the change pill onto its own line,
+    // which dropped that card's chart below its neighbours'. Step the size down instead.
+    const priceLen = fmtNum(last, stock.currency).length;
+    if (priceLen >= 11) priceEl.classList.add("xlong");
+    else if (priceLen >= 9) priceEl.classList.add("long");
     const deltaEl = document.createElement("div");
     deltaEl.className = "delta-pill " + (up ? "up" : "down");
     deltaEl.textContent = (up ? "▲ " : "▼ ") + (up ? "+" : "") + fmtNum(diff, stock.currency) + " (" + (up ? "+" : "") + pct.toFixed(2) + "%)";
@@ -1158,6 +1227,15 @@
       '<div>거래량<span class="val"></span></div>' +
       '<div>52주 범위<span class="val"></span></div>';
     meta.querySelectorAll(".val")[0].textContent = fmtCompact(stock.volume);
+    // Volume alone says nothing - 20.9M is heavy for one name and thin for another. Against the
+    // stock's own 20-session average it does: 2x and up is flagged as unusual.
+    if (stock.volumeRatio) {
+      const vr = document.createElement("span");
+      vr.className = "vol-ratio" + (stock.volumeRatio >= 2 ? " hot" : "");
+      vr.textContent = "평균의 " + stock.volumeRatio.toFixed(1) + "배";
+      vr.title = "최근 20거래일 평균 거래량 대비";
+      meta.querySelectorAll(".val")[0].appendChild(vr);
+    }
     meta.querySelectorAll(".val")[1].textContent = stock.currency + fmtNum(stock.rangeLow, stock.currency) + " – " + stock.currency + fmtNum(stock.rangeHigh, stock.currency);
 
     if (stock.consensus && stock.consensus.targetPrice) {
@@ -2233,8 +2311,111 @@
   }
 
   const grid = document.getElementById("card-grid");
-  stocks.forEach(s => grid.appendChild(buildCard(s)));
+  stocks.forEach((s, i) => {
+    const card = buildCard(s);
+    card.id = "stock-" + i;
+    grid.appendChild(card);
+  });
   document.getElementById("stock-count").textContent = stocks.length;
+
+  // 한눈에 보기. Thirteen full cards run four screens deep, so "what moved today" meant scrolling
+  // the whole page - the mail already answers it in one table, the page did not. Each row jumps to
+  // its card. 등락률 sorts (first click biggest gain first, second click biggest loss first);
+  // a third click returns to the watchlist's own order.
+  (function buildOverview() {
+    const host = document.getElementById("overview");
+    if (!stocks.length) return;
+    const rows = stocks.map((st, i) => {
+      const s = st.series;
+      const last = s[s.length - 1], prev = s[s.length - 2];
+      return { i, st, last, pct: prev ? ((last - prev) / prev) * 100 : 0, trend: describeMaTrend(s) };
+    });
+
+    const grid = document.createElement("div");
+    grid.className = "ov-grid";
+    // Header + half the rows per column; the second column repeats the header.
+    const perCol = Math.ceil(rows.length / 2);
+    grid.style.setProperty("--ov-rows", perCol + 1);
+    host.appendChild(grid);
+
+    let sortDir = 0;  // 0 = watchlist order, -1 = biggest gain first, 1 = biggest loss first
+    const sortButtons = [];
+
+    function cell(cls, text) {
+      const d = document.createElement("div");
+      if (cls) d.className = cls;
+      if (text !== undefined) d.textContent = text;
+      return d;
+    }
+
+    function headRow(second) {
+      const h = cell("ov-row ov-head" + (second ? " second" : ""));
+      const b = document.createElement("button");
+      b.type = "button";
+      b.addEventListener("click", () => {
+        sortDir = sortDir === 0 ? -1 : sortDir === -1 ? 1 : 0;
+        render();
+        // render() rebuilds the header, so hand focus to the new button or a keyboard user loses it.
+        sortButtons[second ? 1 : 0].focus();
+      });
+      sortButtons.push(b);
+      const pctHead = cell("num");
+      pctHead.appendChild(b);
+      h.append(cell("", "종목"), cell("num", "현재가"), pctHead, cell("col-trend", "추세"));
+      if (second) h.setAttribute("aria-hidden", "true");
+      return h;
+    }
+
+    function itemRow(r) {
+      const row = cell("ov-row ov-item");
+      const up = r.pct >= 0;
+      const name = cell("ov-namecell");
+      const nm = document.createElement("span");
+      nm.className = "ov-name";
+      nm.textContent = r.st.name;
+      const sym = document.createElement("span");
+      sym.className = "ov-sym";
+      sym.textContent = r.st.symbol;
+      name.append(nm, sym);
+      const trendCls = "col-trend ov-trend" + (r.trend && r.trend.tone ? " " + r.trend.tone : "");
+      row.append(
+        name,
+        cell("num", r.st.currency + fmtNum(r.last, r.st.currency)),
+        cell("num " + (up ? "up" : "down"), (up ? "▲ +" : "▼ ") + r.pct.toFixed(2) + "%"),
+        cell(trendCls, r.trend ? r.trend.text : "–")
+      );
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
+      row.setAttribute("aria-label", r.st.name + " 카드로 이동");
+      const go = () => {
+        const card = document.getElementById("stock-" + r.i);
+        if (!card) return;
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+        card.classList.add("flash");
+        setTimeout(() => card.classList.remove("flash"), 1200);
+      };
+      row.addEventListener("click", go);
+      row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+      return row;
+    }
+
+    function render() {
+      const ordered = rows.slice();
+      if (sortDir) ordered.sort((a, b) => (a.pct - b.pct) * sortDir);
+      grid.textContent = "";
+      sortButtons.length = 0;
+      grid.appendChild(headRow(false));
+      ordered.slice(0, perCol).forEach(r => grid.appendChild(itemRow(r)));
+      grid.appendChild(headRow(true));
+      ordered.slice(perCol).forEach(r => grid.appendChild(itemRow(r)));
+      sortButtons.forEach(b => {
+        b.textContent = "등락률" + (sortDir === -1 ? " ▼" : sortDir === 1 ? " ▲" : "");
+        b.title = "누를 때마다 상승 큰 순 → 하락 큰 순 → 원래 순서";
+      });
+    }
+    render();
+    host.hidden = false;
+  })();
 
   const financeModal = document.getElementById("finance-modal");
   document.getElementById("finance-modal-close").addEventListener("click", closeFinanceModal);
