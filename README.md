@@ -127,6 +127,9 @@ data with a PowerShell script instead of client-side JS in the first place.
   sequential path fetches it with its retries — the layer can only make a run slower, never
   emptier. The page itself was left alone: 83 KB compressed and about 80 ms to render on this
   laptop.
+- Every web request without its own `-TimeoutSec` now gets **30 s** by default
+  (`$PSDefaultParameterValues`). Eight calls here had none, i.e. no limit at all; in
+  work-dashboard one such call held a CI run for 296 s.
 
 ## Email summary (GitHub Actions only)
 

@@ -7,6 +7,10 @@
 
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
+# 제한 시간을 따로 적지 않은 요청의 기본값. 없으면 무기한이라, 응답 없는 서버 하나가 실행 전체를
+# 몇 분씩 붙잡는다(work-dashboard 에서 SSE 한 건이 296초). -TimeoutSec 을 직접 적은 호출은 그 값이 우선한다.
+$PSDefaultParameterValues['Invoke-RestMethod:TimeoutSec'] = 30
+$PSDefaultParameterValues['Invoke-WebRequest:TimeoutSec'] = 30
 
 # Tickers live in watchlist.json, not here — only "Symbol" is required, e.g. { "Symbol": "AAPL" }.
 # Everything else (DisplayName, MarketLabel, NewsQuery, NewsLang, FinanceMode/Code) is optional and
