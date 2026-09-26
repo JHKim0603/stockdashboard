@@ -17,6 +17,8 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   popups. See "What's on the page" below.
 - `translation-cache.json` — English headline → Korean translations, committed back by the
   workflow so each run doesn't re-translate (and hit 429s) from an empty cache.
+- `earnings-cache.json` — next earnings dates as fetched by the day's (KST) first run; later runs
+  that day reuse them instead of asking Nasdaq again. Committed back by the workflow.
 - `run.bat` — double-click launcher (bypasses PowerShell execution-policy prompts).
 - `dashboard.html` — generated output, opened automatically after each run. Not tracked in git.
 - `email-summary.html` / `email-subject.txt` — generated daily email body/subject (price + top
@@ -87,6 +89,11 @@ US listings get their next report date from Nasdaq's public analyst endpoint (Za
 listings have no free source for 잠정실적 dates, so they keep showing the next quarter only.
 Yahoo's calendar endpoints were tried first and answer 401 without a session crumb.
 
+The date is fetched **once a day** (the first run, KST) and cached in `earnings-cache.json` —
+the endpoint takes 1–3 s per ticker, which was a quarter of a run, and a date moves every few
+days at most. If the day's fetch fails, a cached date that has not passed yet is shown instead
+of a blank.
+
 Browser-side "add a ticker from the dashboard" isn't possible — Yahoo Finance and Naver's APIs
 both block direct cross-origin requests from a browser (CORS), which is why this project fetches
 data with a PowerShell script instead of client-side JS in the first place.
@@ -113,6 +120,13 @@ data with a PowerShell script instead of client-side JS in the first place.
   escape `<`, so one headline containing `</script>` could blank the whole page. Headlines and
   links in the email are HTML-encoded for the same reason.
 - Header text says `매일 아침 갱신(종가 기준)`, which is what it actually is — not real-time.
+- **Run time (2026-09): 41 s → about 16 s** (measured locally, request by request). Charts and
+  news for every ticker are fetched **three at a time up front** (`Invoke-Prefetch`) instead of
+  one by one with a 400 ms pause each, and earnings dates are cached per day (above). Whatever
+  the concurrent pass fails to get (429/503 included) is simply not cached, so the original
+  sequential path fetches it with its retries — the layer can only make a run slower, never
+  emptier. The page itself was left alone: 83 KB compressed and about 80 ms to render on this
+  laptop.
 
 ## Email summary (GitHub Actions only)
 

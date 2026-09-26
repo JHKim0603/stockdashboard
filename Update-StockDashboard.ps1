@@ -228,20 +228,79 @@ function Get-NewsSentiment {
     return "neutral"
 }
 
+# --- 동시 선조회 ------------------------------------------------------------------------
+# 종목마다 차트·뉴스를 하나씩 받고 400ms 씩 쉬던 것을, 주소를 미리 알 수 있는 것(차트, 뉴스)은
+# 몇 건씩 동시에 받아 두는 것으로 바꿨다. 아래 함수들은 받아 둔 것이 있으면 그것을 쓰고, 동시
+# 조회에서 실패한 주소(429/503 포함)는 받아 두지 않으므로 원래의 순차 경로가 재시도와 함께
+# 처리한다 - 이 층이 망가져도 느려질 뿐 결과가 비지는 않는다. work-dashboard 와 같은 구현이다.
+Add-Type -AssemblyName System.Net.Http
+$script:prefetched = @{}
+
+function Invoke-Prefetch {
+    param([string[]]$urls, [int]$concurrency = 3, [int]$timeoutSec = 25, [int]$pauseMs = 300)
+    $urls = @($urls | Where-Object { $_ } | Select-Object -Unique)
+    if ($urls.Count -eq 0) { return }
+    $handler = New-Object System.Net.Http.HttpClientHandler
+    $handler.AutomaticDecompression = [System.Net.DecompressionMethods]::GZip -bor [System.Net.DecompressionMethods]::Deflate
+    $client = New-Object System.Net.Http.HttpClient($handler)
+    $client.Timeout = [TimeSpan]::FromSeconds($timeoutSec)
+    [void]$client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", $headers["User-Agent"])
+    $got = 0
+    try {
+        for ($i = 0; $i -lt $urls.Count; $i += $concurrency) {
+            $batch = @($urls[$i..([Math]::Min($i + $concurrency, $urls.Count) - 1)])
+            $tasks = @(foreach ($u in $batch) { $client.GetAsync($u) })
+            # 하나라도 실패하면 WaitAll 이 던진다. 개별 상태를 아래에서 보므로 여기서는 삼킨다.
+            try { [System.Threading.Tasks.Task]::WaitAll([System.Threading.Tasks.Task[]]$tasks) } catch { }
+            for ($j = 0; $j -lt $batch.Count; $j++) {
+                $t = $tasks[$j]
+                if ($t.Status -ne [System.Threading.Tasks.TaskStatus]::RanToCompletion) { continue }
+                if (-not $t.Result.IsSuccessStatusCode) { continue }
+                $script:prefetched[$batch[$j]] = $t.Result.Content.ReadAsStringAsync().Result
+                $got++
+            }
+            if ($i + $concurrency -lt $urls.Count) { Start-Sleep -Milliseconds $pauseMs }
+        }
+    } finally {
+        $client.Dispose()
+    }
+    Write-Host "  동시 조회 $got/$($urls.Count)건 (나머지는 순차 조회로 재시도)"
+}
+
+function Get-Prefetched {
+    param([string]$url)
+    if (-not $script:prefetched.ContainsKey($url)) { return $null }
+    $content = $script:prefetched[$url]
+    $script:prefetched.Remove($url)
+    $content
+}
+
+function Get-NewsUri {
+    param($query, $lang)
+    $loc = $newsLocales[$lang]
+    "https://news.google.com/rss/search?q=" + [uri]::EscapeDataString($query) + "&hl=$($loc.hl)&gl=$($loc.gl)&ceid=$($loc.ceid)"
+}
+
+function Get-ChartUri {
+    # 2y, not 1y: the chart's longest view is one year, but a 180-day average needs 180 sessions
+    # before its first point. With exactly a year fetched, the 1년 chart drew the 180일선 over
+    # only its last three months. The page slices the display back to a year.
+    param($symbol)
+    "https://query1.finance.yahoo.com/v8/finance/chart/$($symbol)?interval=1d&range=2y"
+}
+
 function Get-NewsHeadlines {
     param($query, $lang, $max = 4)
 
-    $loc = $newsLocales[$lang]
-    $uri = "https://news.google.com/rss/search?q=" + [uri]::EscapeDataString($query) + "&hl=$($loc.hl)&gl=$($loc.gl)&ceid=$($loc.ceid)"
+    $uri = Get-NewsUri -query $query -lang $lang
     # Google sheds load on the runner's shared IP with 503/429 in bursts. work-dashboard lost
     # every query to it twice on 2026-09-10 and got a retry; this copy of the fetch never did, so
     # one bounce emptied a ticker's news for the day. Retry only throttling - other errors will
     # not improve by asking again.
-    $raw = $null
-    for ($try = 1; $try -le 3; $try++) {
+    $content = Get-Prefetched $uri
+    for ($try = 1; $try -le 3 -and -not $content; $try++) {
         try {
-            $raw = Invoke-WebRequest -Uri $uri -Headers $headers -UseBasicParsing -TimeoutSec 25
-            break
+            $content = (Invoke-WebRequest -Uri $uri -Headers $headers -UseBasicParsing -TimeoutSec 25).Content
         } catch {
             $status = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
             if (($status -ne 503 -and $status -ne 429) -or $try -eq 3) {
@@ -252,7 +311,7 @@ function Get-NewsHeadlines {
         }
     }
     try {
-        [xml]$rss = $raw.Content
+        [xml]$rss = $content
         $items = $rss.rss.channel.item | Select-Object -First $max
 
         # Titles are cleaned up first, so this query's headlines can be translated as one batch
@@ -522,37 +581,78 @@ function Get-ConsensusSnapshot {
 # Korean listings have no free equivalent: 잠정실적 dates are not published ahead of the filing,
 # so those cards keep showing the next quarter only.
 function Get-EarningsDate {
+    # 실패하면 던진다 - 아래 캐시가 '발표일 없음'과 '조회 실패'를 구분해야 해서다.
     param($symbol)
+    $nasdaqHeaders = @{
+        "User-Agent"      = $headers["User-Agent"]
+        "Accept"          = "application/json, text/plain, */*"
+        "Accept-Language" = "en-US,en;q=0.9"
+    }
+    $resp = Invoke-RestMethod -Uri "https://api.nasdaq.com/api/analyst/$([uri]::EscapeDataString($symbol))/earnings-date" -Headers $nasdaqHeaders -TimeoutSec 15
+    $text = [string]$resp.data.reportText
+    $m = [regex]::Match($text, 'on\s+(\d{2})/(\d{2})/(\d{4})')
+    if (-not $m.Success) { return $null }
+    $timing = if ($text -match 'after market close') { "장 마감 후" } elseif ($text -match 'before market open') { "장 시작 전" } else { $null }
+    [PSCustomObject]@{
+        date      = "$($m.Groups[3].Value)-$($m.Groups[1].Value)-$($m.Groups[2].Value)"
+        confirmed = ($text -match 'is expected')
+        timing    = $timing
+    }
+}
+
+# 실적 발표일은 하루 한 번만 묻는다. 종목당 1~3초인 이 엔드포인트가 실행 시간의 4분의 1 이었는데,
+# 발표일은 며칠에 한 번 바뀔 뿐이고 실행은 아침마다 네 번이다. 그날(KST) 첫 실행이 받아
+# earnings-cache.json 에 두고(워크플로가 커밋) 나머지 실행은 그것을 쓴다. 조회가 실패한 날에는
+# 아직 지나지 않은 예전 발표일을 그대로 보여 준다 - 빈칸보다 하루 묵은 날짜가 낫다.
+$earningsCachePath = Join-Path $root "earnings-cache.json"
+$todayKstStr = (Get-Date).ToUniversalTime().AddHours(9).ToString("yyyy-MM-dd")
+$script:earningsCache = @{}
+if (Test-Path $earningsCachePath) {
     try {
-        $nasdaqHeaders = @{
-            "User-Agent"      = $headers["User-Agent"]
-            "Accept"          = "application/json, text/plain, */*"
-            "Accept-Language" = "en-US,en;q=0.9"
-        }
-        $resp = Invoke-RestMethod -Uri "https://api.nasdaq.com/api/analyst/$([uri]::EscapeDataString($symbol))/earnings-date" -Headers $nasdaqHeaders -TimeoutSec 15
-        $text = [string]$resp.data.reportText
-        $m = [regex]::Match($text, 'on\s+(\d{2})/(\d{2})/(\d{4})')
-        if (-not $m.Success) { return $null }
-        $timing = if ($text -match 'after market close') { "장 마감 후" } elseif ($text -match 'before market open') { "장 시작 전" } else { $null }
-        [PSCustomObject]@{
-            date      = "$($m.Groups[3].Value)-$($m.Groups[1].Value)-$($m.Groups[2].Value)"
-            confirmed = ($text -match 'is expected')
-            timing    = $timing
-        }
+        $rawEc = Get-Content -Path $earningsCachePath -Raw -Encoding UTF8 | ConvertFrom-Json
+        foreach ($p in $rawEc.PSObject.Properties) { $script:earningsCache[$p.Name] = $p.Value }
+    } catch {
+        Write-Warning "earnings-cache.json 을 읽지 못해 발표일을 새로 받습니다: $($_.Exception.Message)"
+    }
+}
+$script:earningsCacheOriginal = if (Test-Path $earningsCachePath) { [System.IO.File]::ReadAllText($earningsCachePath) } else { "" }
+
+function Get-EarningsDateCached {
+    param($symbol)
+    $hit = $script:earningsCache[$symbol]
+    if ($hit -and $hit.fetched -eq $todayKstStr) { return $hit.data }
+    try {
+        $data = Get-EarningsDate -symbol $symbol
+        $script:earningsCache[$symbol] = [PSCustomObject]@{ fetched = $todayKstStr; data = $data }
+        return $data
     } catch {
         Write-Warning "Earnings date fetch failed for '$symbol': $($_.Exception.Message)"
-        $null
+        if ($hit -and $hit.data -and [string]$hit.data.date -ge $todayKstStr) { return $hit.data }
+        return $null
+    }
+}
+
+function Save-EarningsCache {
+    # 관심종목에서 빠진 종목은 버리고, 내용이 같으면 쓰지 않는다(같은 날 뒤 실행이 커밋을 만들지 않게).
+    param($symbols)
+    $ordered = [ordered]@{}
+    foreach ($s in ($symbols | Sort-Object -Unique)) {
+        if ($script:earningsCache.ContainsKey($s)) { $ordered[$s] = $script:earningsCache[$s] }
+    }
+    $json = ConvertTo-Json -InputObject $ordered -Depth 4
+    if ($json -ne $script:earningsCacheOriginal) {
+        [System.IO.File]::WriteAllText($earningsCachePath, $json, (New-Object System.Text.UTF8Encoding $false))
     }
 }
 
 function Get-StockSnapshot {
     param($cfg)
 
-    # 2y, not 1y: the chart's longest view is one year, but a 180-day average needs 180 sessions
-    # before its first point. With exactly a year fetched, the 1년 chart drew the 180일선 over
-    # only its last three months. The page slices the display back to a year.
-    $uri = "https://query1.finance.yahoo.com/v8/finance/chart/$($cfg.Symbol)?interval=1d&range=2y"
-    $resp = Invoke-RestMethod -Uri $uri -Headers $headers
+    $uri = Get-ChartUri $cfg.Symbol
+    $prefetchedChart = Get-Prefetched $uri
+    # 호출한 루프가 Yahoo 사이 쉬는 시간을 건너뛸 수 있게, 네트워크를 탔는지 남겨 둔다.
+    $script:chartFromPrefetch = [bool]$prefetchedChart
+    $resp = if ($prefetchedChart) { $prefetchedChart | ConvertFrom-Json } else { Invoke-RestMethod -Uri $uri -Headers $headers }
     $result = $resp.chart.result[0]
     $meta = $result.meta
     $closes = $result.indicators.quote[0].close
@@ -658,7 +758,7 @@ function Get-StockSnapshot {
     $finance = Get-FinanceSnapshot -mode $cfg.FinanceMode -code $cfg.FinanceCode
     $consensus = Get-ConsensusSnapshot -mode $cfg.FinanceMode -code $cfg.FinanceCode
     $pageUrl = Get-StockPageUrl -cfg $cfg
-    $earnings = if ($cfg.FinanceMode -eq "overseas") { Get-EarningsDate -symbol $cfg.Symbol } else { $null }
+    $earnings = if ($cfg.FinanceMode -eq "overseas") { Get-EarningsDateCached -symbol $cfg.Symbol } else { $null }
 
     [PSCustomObject]@{
         name      = $name
@@ -894,8 +994,18 @@ try {
 }
 
 Write-Host "Fetching live quotes and headlines..."
+# 차트와 뉴스는 주소를 미리 알 수 있으니 먼저 동시에 받아 둔다. 뉴스 검색어를 Yahoo 응답의 회사명
+# 으로 정하는 종목(NewsQuery 도 DisplayName 도 없는 경우)만 루프 안에서 따로 받는다.
+Invoke-Prefetch -urls @(
+    foreach ($t in $tickers) { Get-ChartUri $t.Symbol }
+    foreach ($t in $tickers) {
+        $q = if ($t.NewsQuery) { $t.NewsQuery } else { $t.DisplayName }
+        if ($q) { Get-NewsUri -query $q -lang $t.NewsLang }
+    }
+)
 $stocks = foreach ($t in $tickers) {
     Write-Host "  - $($t.Symbol)"
+    $script:chartFromPrefetch = $false
     try {
         Get-StockSnapshot $t
     } catch {
@@ -903,8 +1013,12 @@ $stocks = foreach ($t in $tickers) {
         # down the whole run — skip it and keep going, so the rest of the dashboard/email still ships.
         Write-Warning "Skipping $($t.Symbol) - snapshot fetch failed: $($_.Exception.Message)"
     }
-    Start-Sleep -Milliseconds 400  # be gentle with Yahoo's unofficial endpoint across 7 tickers
+    # be gentle with Yahoo's unofficial endpoint across the tickers. 차트를 미리 받아 둔 종목은
+    # 이 루프에서 Yahoo 를 타지 않으므로, 남은 네이버·Nasdaq 요청 사이만 짧게 띄운다.
+    if ($script:chartFromPrefetch) { Start-Sleep -Milliseconds 150 } else { Start-Sleep -Milliseconds 400 }
 }
+
+Save-EarningsCache -symbols @($tickers | Where-Object { $_.FinanceMode -eq "overseas" } | ForEach-Object { $_.Symbol })
 
 # Skipping a flaky ticker is fine; ending up with *nothing* is not. Without this the run would
 # cheerfully publish an empty dashboard and mail out an empty table, all with a green checkmark.
