@@ -120,7 +120,8 @@ data with a PowerShell script instead of client-side JS in the first place.
   escape `<`, so one headline containing `</script>` could blank the whole page. Headlines and
   links in the email are HTML-encoded for the same reason.
 - Header text says `매일 아침 갱신(종가 기준)`, which is what it actually is — not real-time.
-- **Run time (2026-09): 41 s → about 16 s** (measured locally, request by request). Charts and
+- **Run time (2026-09): 41 s → about 16 s locally; the Actions `Generate dashboard.html` step
+  48 s → 25 s** (the day's later runs, measured 2026-09-26; request by request). Charts and
   news for every ticker are fetched **three at a time up front** (`Invoke-Prefetch`) instead of
   one by one with a 400 ms pause each, and earnings dates are cached per day (above). Whatever
   the concurrent pass fails to get (429/503 included) is simply not cached, so the original
