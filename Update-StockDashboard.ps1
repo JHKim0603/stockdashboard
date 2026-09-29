@@ -1311,6 +1311,16 @@ if ($fearGreed) {
 </div>
 "@
     }
+} else {
+    # CNN 이 끝내 응답하지 않은 날. 전에는 이 블록과 제목의 "공포 NN · 매수 고려"가 둘 다 말없이
+    # 사라져서, 지수를 보고 매수 시점을 잡는 사람에게는 신호가 빠진 날과 평범한 날이 구분되지
+    # 않았다. 빠졌다는 사실 자체를 보여준다.
+    $fgBlockHtml = @"
+<div style="margin:0 0 16px;padding:12px 15px;background:#fdf6e7;border:1px solid #f0dcb4;border-left:4px solid #a15c00;border-radius:6px;">
+  <div style="font-size:13px;font-weight:bold;color:#a15c00;">⚠ 오늘 공포·탐욕지수를 가져오지 못했습니다</div>
+  <div style="font-size:11.5px;color:#52514e;margin-top:4px;">CNN 이 응답하지 않았습니다. 다음 실행에서 자동 재시도합니다. 급하면 <a href="https://edition.cnn.com/markets/fear-and-greed" style="color:#2a78d6;">CNN Fear &amp; Greed</a> 에서 직접 확인하세요.</div>
+</div>
+"@
 }
 
 # Email subject lines are plain text by spec — a hyperlink can't live there. The equivalent is a
@@ -1358,8 +1368,11 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 $fgSubject = if ($fearGreed) {
     $a = Get-FearGreedAction -rating $fearGreed.rating
     if ($a) { " · $($fearGreed.ratingKo) $($fearGreed.score) · $($a.text)" } else { "" }
-} else { "" }
+} else { " · 공포지수 수집실패" }
+# 특이사항이 공포·탐욕지수보다 앞에 온다. 지수는 매일 있는 상시 정보지만 특이사항은 있는 날만
+# 붙는 예외 정보라 먼저 읽혀야 하고, 무엇보다 받은편지함 목록(특히 모바일은 40자 안팎에서 잘림)
+# 에서 뒤에 두면 정작 알려야 할 내용이 통째로 잘려 나간다. 없는 날은 예전과 똑같은 제목이 된다.
 $topHighlights = @($highlights | Sort-Object priority -Descending | Select-Object -First 3 -ExpandProperty text)
 $highlightSubject = if ($topHighlights.Count -gt 0) { " · ⚠ " + ($topHighlights -join ", ") } else { "" }
-[System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 주식 투자 Dashboard - $emailDateStr$fgSubject$highlightSubject", $utf8NoBom)
+[System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 주식 투자 Dashboard - $emailDateStr$highlightSubject$fgSubject", $utf8NoBom)
 Write-Host "Email summary written: email-summary.html"
