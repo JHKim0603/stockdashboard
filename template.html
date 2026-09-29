@@ -1078,58 +1078,9 @@
   // Looks for an actual golden/dead cross event (MA_SHORT crossing MA_MID) within the last
   // `lookback` trading days — not just "which is on top right now", which would flag every
   // day of an existing trend instead of the moment it started.
-  function detectCross(maA, maB, lookback = 5) {
-    const diffs = [];
-    for (let i = maA.length - 1; i >= 0 && diffs.length < lookback + 1; i--) {
-      if (maA[i] === null || maB[i] === null) break;
-      diffs.unshift(maA[i] - maB[i]);
-    }
-    for (let i = 1; i < diffs.length; i++) {
-      if (diffs[i - 1] <= 0 && diffs[i] > 0) return "golden";
-      if (diffs[i - 1] >= 0 && diffs[i] < 0) return "dead";
-    }
-    return null;
-  }
-
-  // A short prose read on where the three MAs currently stand: a recent 20/60 cross takes
-  // priority (it's a discrete event worth calling out), otherwise falls back to describing
-  // the current stacking order (정배열/역배열/혼조) using whichever of the three lines have
-  // enough history yet.
-  function describeMaTrend(series) {
-    const ma20 = computeMA(series, MA_SHORT);
-    const ma60 = computeMA(series, MA_MID);
-    const ma180 = computeMA(series, MA_LONG);
-    const i = series.length - 1;
-    const last = series[i];
-    const a = ma20[i], b = ma60[i], c = ma180[i];
-
-    const cross = detectCross(ma20, ma60);
-    if (cross === "golden") {
-      return { text: "골든크로스임, 상승전환임", tone: "up" };
-    }
-    if (cross === "dead") {
-      return { text: "데드크로스임, 하락전환임", tone: "down" };
-    }
-
-    if (a === null || b === null) return null;  // not enough history yet for even the 20/60 pair
-
-    if (c !== null) {
-      if (last > a && a > b && b > c) {
-        return { text: "정배열임, 상승추세임", tone: "up" };
-      }
-      if (last < a && a < b && b < c) {
-        return { text: "역배열임, 하락추세임", tone: "down" };
-      }
-    }
-
-    if (a > b) {
-      return { text: "정배열은 아님, 단기 상승세", tone: "up" };
-    }
-    if (a < b) {
-      return { text: "역배열은 아님, 단기 하락세", tone: "down" };
-    }
-    return { text: "뚜렷한 추세 없음", tone: null };
-  }
+  // Golden/dead cross and the 20/60/180 trend comment are computed once, in the PowerShell
+  // script, and arrive on each stock as `cross` and `maTrend`. They used to be re-derived here
+  // line for line, so a change on one side would have had the page and the mail disagree.
 
   // MA arrays can start with nulls (not enough preceding history yet, e.g. the
   // first ~59 days of a 1Y view for a 60-day average) — skip those by starting
@@ -1239,7 +1190,7 @@
     priceRow.appendChild(priceEl);
     priceRow.appendChild(deltaEl);
 
-    const cross = detectCross(computeMA(s, MA_SHORT), computeMA(s, MA_MID));
+    const cross = stock.cross;
     if (cross) {
       const crossEl = document.createElement("div");
       crossEl.className = "cross-badge " + cross;
@@ -2158,7 +2109,7 @@
     header.appendChild(toggle);
     block.appendChild(header);
 
-    const trend = describeMaTrend(stock.series);
+    const trend = stock.maTrend;
     if (trend) {
       const trendEl = document.createElement("div");
       trendEl.className = "ma-trend" + (trend.tone ? " " + trend.tone : "");
@@ -2377,7 +2328,7 @@
     const rows = stocks.map((st, i) => {
       const s = st.series;
       const last = s[s.length - 1], prev = s[s.length - 2];
-      return { i, st, last, pct: prev ? ((last - prev) / prev) * 100 : 0, trend: describeMaTrend(s) };
+      return { i, st, last, pct: prev ? ((last - prev) / prev) * 100 : 0, trend: st.maTrend };
     });
 
     const grid = document.createElement("div");

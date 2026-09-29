@@ -280,9 +280,12 @@ function Get-Prefetched {
 }
 
 function Get-NewsUri {
-    param($query, $lang)
+    # $withinDays 는 두 호출부(Invoke-Prefetch 용 URI 목록, Get-NewsHeadlines)가 같은 기본값을
+    # 써야 한다 - URI 가 곧 선수집 캐시의 키라, 한쪽만 바꾸면 캐시가 매번 빗나가 전부 다시 받는다.
+    param($query, $lang, $withinDays = 21)
     $loc = $newsLocales[$lang]
-    "https://news.google.com/rss/search?q=" + [uri]::EscapeDataString($query) + "&hl=$($loc.hl)&gl=$($loc.gl)&ceid=$($loc.ceid)"
+    $scoped = if ($withinDays -gt 0) { "$query when:${withinDays}d" } else { $query }
+    "https://news.google.com/rss/search?q=" + [uri]::EscapeDataString($scoped) + "&hl=$($loc.hl)&gl=$($loc.gl)&ceid=$($loc.ceid)"
 }
 
 function Get-ChartUri {
@@ -294,9 +297,13 @@ function Get-ChartUri {
 }
 
 function Get-NewsHeadlines {
-    param($query, $lang, $max = 4)
+    # Google News RSS 는 관련도순이고 기간을 묻지 않으면 기간을 따지지 않는다. 그래서 앞에서
+    # N건을 자르면 "역대 가장 잘 맞는 기사"가 나온다 - work-dashboard 에서 322일, 1,569일 전
+    # 기사가 "최근 이슈"로 올라온 원인이 이것이었다. 이 저장소는 인기 종목뿐이라 아직 드러나지
+    # 않았을 뿐 같은 구조였다. 기간을 걸어 묻고, 받은 뒤 날짜로 거르고 최신순으로 자른다.
+    param($query, $lang, $max = 4, $withinDays = 21)
 
-    $uri = Get-NewsUri -query $query -lang $lang
+    $uri = Get-NewsUri -query $query -lang $lang -withinDays $withinDays
     # Google sheds load on the runner's shared IP with 503/429 in bursts. work-dashboard lost
     # every query to it twice on 2026-09-10 and got a retry; this copy of the fetch never did, so
     # one bounce emptied a ticker's news for the day. Retry only throttling - other errors will
@@ -316,7 +323,8 @@ function Get-NewsHeadlines {
     }
     try {
         [xml]$rss = $content
-        $items = $rss.rss.channel.item | Select-Object -First $max
+        $items = @($rss.rss.channel.item)
+        $cutoff = (Get-Date).ToUniversalTime().AddDays(-$withinDays)
 
         # Titles are cleaned up first, so this query's headlines can be translated as one batch
         # below rather than one request each.
@@ -339,6 +347,8 @@ function Get-NewsHeadlines {
                 Write-Warning "  (pubDate 파싱 실패, 기사 생략: '$($it.pubDate)')"
                 continue
             }
+            # 날짜를 확인할 수 없거나 기간 밖이면 버린다 - 이 목록의 존재 이유가 최신성이다.
+            if ($pubDate.UtcDateTime -lt $cutoff) { continue }
             [PSCustomObject]@{
                 title   = $title
                 source  = $source
@@ -346,6 +356,8 @@ function Get-NewsHeadlines {
                 link    = $it.link
             }
         })
+        $parsed = @($parsed | Sort-Object { $_.pubDate.UtcDateTime } -Descending | Select-Object -First $max)
+        if ($parsed.Count -eq 0) { Write-Host "    (최근 ${withinDays}일 내 '$query' 기사 없음)" }
 
         # 여기서는 번역하지 않는다. 종목마다 요청을 내면 20회가 되고, 그 20회가 러너 IP 에서
         # 전부 429 로 막히고 있었다. 전 종목 수집이 끝난 뒤 Resolve-NewsTranslations 가
@@ -780,6 +792,11 @@ function Get-StockSnapshot {
         exchangeTz = $meta.exchangeTimezoneName
         rangeLow  = $rangeLow
         rangeHigh = $rangeHigh
+        # 추세 판정은 여기서 한 번만 하고 페이지는 이 결과를 그대로 쓴다. 전에는 같은 판정이
+        # 이 스크립트(메일)와 template.html(페이지)에 한 줄씩 복제돼 있어서, 한쪽만 고치면
+        # 메일과 페이지가 같은 종목을 두고 다른 말을 하게 되는 구조였다.
+        cross     = Get-CrossSignal -series $fullSeries
+        maTrend   = Get-MaTrendComment -series $fullSeries
         summary   = $summary
         news      = $news
         finance   = $finance
@@ -808,8 +825,8 @@ function Get-MovingAverage {
 }
 
 function Get-CrossSignal {
-    # Mirrors the dashboard's own detectCross() in template.html — same MA windows, same
-    # 5-day lookback for an actual sign-flip event, not just "which MA is on top now".
+    # The only implementation of this check - the page reads the result (cross) from the stock's
+    # JSON instead of re-deriving it. 5-day lookback for an actual sign-flip event, not just "which MA is on top now".
     param($series, $lookback = 5)
     $ma20 = Get-MovingAverage -series $series -window 20
     $ma60 = Get-MovingAverage -series $series -window 60
@@ -826,7 +843,7 @@ function Get-CrossSignal {
 }
 
 function Get-MaTrendComment {
-    # Mirrors the dashboard's own describeMaTrend() in template.html — same priority order
+    # The only implementation - page and mail both show this result (maTrend). Priority order
     # (recent cross first, then 20/60/180 stacking), same terse "-임" phrasing. Unlike the
     # cross badge alone, this always returns *something* once there's 20/60 days of history,
     # so every row gets a read, not just the rare days an actual cross happens.
@@ -1169,7 +1186,7 @@ $rowsHtml = foreach ($s in $stocks) {
         $dir = if ($up) { "급등" } else { "급락" }
         [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $dir $sign$($pct.ToString('N1'))%"; priority = [math]::Abs($pct) })
     }
-    $cross = Get-CrossSignal -series $s.series
+    $cross = $s.cross
     if ($cross -eq "golden") { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 골든크로스"; priority = 80 }) }
     elseif ($cross -eq "dead") { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 데드크로스"; priority = 80 }) }
     if ($last -ge ($s.rangeHigh * 0.999)) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 52주 신고가"; priority = 100 }) }
@@ -1210,7 +1227,7 @@ $rowsHtml = foreach ($s in $stocks) {
     }
     $alertHtml = if ($alertNotes.Count) { "<div style='font-size:11.5px;font-weight:700;color:#b3221f;margin-top:3px;'>⚑ $($alertNotes -join ' · ')</div>" } else { "" }
 
-    $trend = Get-MaTrendComment -series $s.series
+    $trend = $s.maTrend
     $trendHtml = ""
     if ($trend) {
         $trendColor = if ($trend.tone -eq "up") { "#0ca30c" } elseif ($trend.tone -eq "down") { "#e34948" } else { "#898781" }
@@ -1376,3 +1393,49 @@ $topHighlights = @($highlights | Sort-Object priority -Descending | Select-Objec
 $highlightSubject = if ($topHighlights.Count -gt 0) { " · ⚠ " + ($topHighlights -join ", ") } else { "" }
 [System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 주식 투자 Dashboard - $emailDateStr$highlightSubject$fgSubject", $utf8NoBom)
 Write-Host "Email summary written: email-summary.html"
+
+# --- Output checks -------------------------------------------------------------------------
+# Same idea as work-dashboard's: the checks that used to be made by eye after a run. Failing
+# here stops the workflow before the mail and Pages steps, so yesterday's good page stays up
+# rather than a half-built one going out with a green checkmark. A ticker with no news in the
+# 21-day window is normal and is not checked.
+$problems = New-Object System.Collections.Generic.List[string]
+
+$renderedHtml = Get-Content -Path $outPath -Raw -Encoding UTF8
+foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__")) {
+    if ($renderedHtml -like "*$token*") { $problems.Add("템플릿 치환 누락: $token") }
+}
+
+# One flaky ticker is tolerated above; losing more than half means the run itself went wrong.
+if ($stocks.Count -lt [Math]::Ceiling($tickers.Count / 2)) {
+    $problems.Add("종목 $($stocks.Count)/$($tickers.Count)개만 수집되었습니다 (절반 미만)")
+}
+foreach ($s in $stocks) {
+    if (@($s.series).Count -eq 0) { $problems.Add("$($s.symbol): 시계열이 비어 있습니다") }
+}
+
+$newsCut = $nowKst.Date.AddDays(-45)
+foreach ($s in $stocks) {
+    foreach ($n in @($s.news | Where-Object { $_ })) {
+        [DateTime]$nd = Get-Date
+        if ([DateTime]::TryParse($n.date, [ref]$nd) -and $nd -lt $newsCut) {
+            $problems.Add("$($s.symbol): 오래된 기사가 남아 있습니다 ($($n.date))")
+        }
+    }
+}
+
+foreach ($f in @("email-summary.html", "email-subject.txt")) {
+    $p = Join-Path $root $f
+    if (-not (Test-Path $p) -or (Get-Item $p).Length -eq 0) { $problems.Add("$f 가 비어 있거나 없습니다") }
+}
+
+if ($problems.Count -gt 0) {
+    Write-Host ""
+    Write-Host "생성물 점검 실패 - 배포를 중단합니다:" -ForegroundColor Red
+    foreach ($p in $problems) { Write-Host "  · $p" -ForegroundColor Red }
+    if ($env:CI) { Write-Host "::error::생성물 점검 실패 $($problems.Count)건" }
+    throw "생성물 점검 $($problems.Count)건 실패 - 이전 배포본을 유지합니다."
+}
+$newsCount = 0
+foreach ($s in $stocks) { $newsCount += @($s.news | Where-Object { $_ }).Count }
+Write-Host "생성물 점검 통과 (종목 $($stocks.Count)/$($tickers.Count)개 · 뉴스 ${newsCount}건)"
