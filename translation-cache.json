@@ -219,6 +219,10 @@
     "ko": "오늘 Palantir 주식을 구매하는 것이 정당화될 수 있습니까?",
     "seen": "2026-09-30"
   },
+  "Cboe extends S&P 500 index options license through 2051": {
+    "ko": "Cboe, S&P 500 지수 옵션 라이센스를 2051년까지 연장",
+    "seen": "2026-09-30"
+  },
   "Chip Stocks Recovered Today and the Major Indexes Fell Anyway": {
     "ko": "오늘 칩주 회복세, 주요 지수 모두 하락",
     "seen": "2026-09-18"
@@ -302,6 +306,10 @@
   "Elon Musk sends strong signal for SpaceX, Nvidia stocks": {
     "ko": "Elon Musk는 SpaceX, Nvidia 주식에 강력한 신호를 보냅니다.",
     "seen": "2026-09-17"
+  },
+  "Enterprise AI Advances Power Microsoft: Is There More Upside Ahead?": {
+    "ko": "엔터프라이즈 AI로 성능 향상 Microsoft: 앞으로 더 많은 상승 여력이 있을까요?",
+    "seen": "2026-09-30"
   },
   "Equities end slightly lower as bond yields hold near multi-decade highs": {
     "ko": "채권수익률이 수십년래 최고치에 근접함에 따라 주식은 소폭 하락 마감",
@@ -1087,6 +1095,10 @@
     "ko": "엔비디아의 가치는 5조 달러입니다. 그러나 이것이 주식의 다음 큰 촉매제가 될 수 있습니다.",
     "seen": "2026-09-12"
   },
+  "Nvidia NVDA Stock Struggles to Hold Above $130 as $150 Billion Share Buyback Fuels Expectations": {
+    "ko": "Nvidia NVDA 주식은 1,500억 달러 규모의 자사주 매입이 기대를 불러일으키면서 130달러 이상을 유지하기 위해 고군분투하고 있습니다.",
+    "seen": "2026-09-30"
+  },
   "Nvidia Returned a Record $26 Billion to Shareholders. Here's Why That Matters.": {
     "ko": "Nvidia는 주주들에게 기록적인 260억 달러를 반환했습니다. 이것이 중요한 이유는 다음과 같습니다.",
     "seen": "2026-09-16"
@@ -1166,6 +1178,10 @@
   "Nvidia’s Immense Dividend Hike Puts Dividend Growth Stocks in the Spotlight": {
     "ko": "Nvidia의 엄청난 배당금 인상으로 배당 성장주가 주목을 받습니다",
     "seen": "2026-09-26"
+  },
+  "Nvidia's next 'holy grail' is physical AI: Dan Ives": {
+    "ko": "엔비디아의 다음 '성배'는 물리적 AI입니다: Dan Ives",
+    "seen": "2026-09-30"
   },
   "Nvidia's Record Buyback Couldn't Keep the Nasdaq Out of the Red on Monday Morning": {
     "ko": "Nvidia의 기록적인 자사주 매입은 월요일 아침 나스닥의 적자를 막을 수 없었습니다.",
@@ -1491,6 +1507,10 @@
     "ko": "Sandisk(SNDK) CFO는 1,635단위의 주식을 부여받습니다.",
     "seen": "2026-09-22"
   },
+  "Sandisk (SNDK) Could Be 19% Undervalued After Its Memory Forum Update": {
+    "ko": "Sandisk(SNDK)는 메모리 포럼 업데이트 후 19% 저평가될 수 있습니다.",
+    "seen": "2026-09-30"
+  },
   "Sandisk (SNDK) Could Be 19% Undervalued As AI Storage Roadmap Draws Focus": {
     "ko": "AI 스토리지 로드맵이 초점을 맞추면서 Sandisk(SNDK)가 19% 저평가될 수 있음",
     "seen": "2026-09-29"
@@ -1769,7 +1789,7 @@
   },
   "Stock Market Today: Stock Market News And Analysis": {
     "ko": "오늘의 주식 시장: 주식 시장 뉴스 및 분석",
-    "seen": "2026-09-18"
+    "seen": "2026-09-30"
   },
   "Stock Market: Will S&P 500 Open Up or Down Today?": {
     "ko": "주식시장: 오늘 S&P 500이 상승할 것인가, 하락할 것인가?",
