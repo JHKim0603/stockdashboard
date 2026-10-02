@@ -23,6 +23,10 @@
     "seen": "2026-09-19",
     "ko": "투자자들이 Microsoft(MSFT)를 좋아하는 3가지 이유"
   },
+  "3 Reasons Investors Love Nvidia (NVDA)": {
+    "seen": "2026-10-02",
+    "ko": "투자자들이 Nvidia(NVDA)를 좋아하는 3가지 이유"
+  },
   "3 Reasons to Hold Microsoft Stock After a 31.2% Surge in 3 Months": {
     "seen": "2026-09-19",
     "ko": "3개월 만에 31.2% 급등한 Microsoft 주식을 보유해야 하는 3가지 이유"
@@ -403,6 +407,10 @@
     "seen": "2026-10-01",
     "ko": "Google, 코딩, 사이버 보안에 중점을 둔 Gemini 4 Argon 공개로 GOOGL 주식은 영업 시간 외 1% 추가"
   },
+  "GOOGL Stock Dips Premarket After Breakout Week: Analyst Says Google Developing Next-Gen AI Chip With MediaTek": {
+    "seen": "2026-10-02",
+    "ko": "GOOGL 주가는 브레이크아웃 주간 이후 시판 전 하락: 애널리스트는 Google이 MediaTek을 통해 차세대 AI 칩을 개발하고 있다고 말합니다."
+  },
   "GOOGL Stock Draws Bullish Targets As AI Bets Scale Up": {
     "seen": "2026-09-19",
     "ko": "AI 베팅이 확대됨에 따라 GOOGL 주식은 강세 목표를 그립니다."
@@ -638,6 +646,10 @@
   "Is Microsoft Stock Overvalued At 28x Earnings?": {
     "seen": "2026-09-13",
     "ko": "Microsoft 주식은 28배의 수익으로 과대평가되어 있습니까?"
+  },
+  "Is Microsoft Stock Paying You Enough For The Swings?": {
+    "seen": "2026-10-02",
+    "ko": "Microsoft 주식은 귀하에게 스윙에 대한 충분한 비용을 지불하고 있습니까?"
   },
   "Is Most-Watched Stock Alphabet Inc. (GOOG) Worth Betting on Now?": {
     "seen": "2026-09-23",
@@ -1122,6 +1134,10 @@
   "MSFT Stock Lands On Wells Fargo’s Q4 ‘Tactical Ideas List’ – Analyst Sees A 41% Upside Potential": {
     "seen": "2026-10-02",
     "ko": "MSFT 주식은 Wells Fargo의 4분기 '전술적 아이디어 목록'에 상륙합니다. 분석가는 41%의 상승 잠재력을 보고 있습니다."
+  },
+  "MSFT Stock Posts Best Quarter Since 1998 As Azure Growth Revives AI Optimism": {
+    "seen": "2026-10-02",
+    "ko": "MSFT 주식은 Azure 성장이 AI 낙관론을 부활시키면서 1998년 이후 최고의 분기를 기록했습니다."
   },
   "MU Stock Is ‘Absolutely in a Bubble,’ But Bulls Can Still Make Money, Says Analyst: ‘Best Cycle Anyone’ H": {
     "seen": "2026-09-29",
@@ -2111,6 +2127,10 @@
     "seen": "2026-10-02",
     "ko": "2026년 10월 1일 주식시장 뉴스"
   },
+  "Stock Market News for Oct 2, 2026": {
+    "seen": "2026-10-02",
+    "ko": "2026년 10월 2일 주식시장 뉴스"
+  },
   "Stock Market News for Sep 30, 2026": {
     "seen": "2026-09-30",
     "ko": "2026년 9월 30일 주식 시장 뉴스"
@@ -2319,6 +2339,10 @@
     "seen": "2026-09-18",
     "ko": "트레이더는 S&P 500에 수백만 달러를 베팅했지만 몇 초 만에 청산되었습니다."
   },
+  "Twilio to join S&P 500 as S&P Dow Jones reshuffles indices": {
+    "seen": "2026-10-02",
+    "ko": "S&P 다우존스 지수 개편으로 Twilio, S&P 500에 합류"
+  },
   "Twilio To Join S&P 500 Index": {
     "seen": "2026-10-02",
     "ko": "Twilio, S&P 500 지수에 합류"
@@ -2330,6 +2354,10 @@
   "US Stock Market Today: S&P 500 Futures Edge Higher On Sticky Inflation And China Hopes": {
     "seen": "2026-10-01",
     "ko": "오늘 미국 주식 시장: S&P 500 선물은 인플레이션 상승과 중국 희망으로 상승"
+  },
+  "US Stock Market Today: S&P 500 Futures Steady As Traders Weigh Global Factory Strength": {
+    "seen": "2026-10-02",
+    "ko": "오늘 미국 주식 시장: 트레이더들이 글로벌 공장의 강점을 평가함에 따라 S&P 500 선물은 안정세를 유지하고 있습니다."
   },
   "US Stocks Diverge as Nasdaq Hits Record High, Dow Drops Nearly 200 Points; Memory Stocks Lead Gains, Micron Rises 5%": {
     "seen": "2026-09-23",
@@ -2399,9 +2427,17 @@
     "seen": "2026-09-12",
     "ko": "투자자에게 나타나는 희귀한 시장 패턴"
   },
+  "What Could Go Wrong With Palantir Stock?": {
+    "seen": "2026-10-02",
+    "ko": "Palantir 주식에 어떤 문제가 발생할 수 있나요?"
+  },
   "What Could Push NVDA Stock Higher From Here?": {
     "seen": "2026-09-29",
     "ko": "무엇이 NVDA 주가를 여기에서 더 높이 올릴 수 있을까요?"
+  },
+  "What Could Send NVIDIA Stock Higher?": {
+    "seen": "2026-10-02",
+    "ko": "NVIDIA 주식을 더 높게 보낼 수 있는 방법은 무엇입니까?"
   },
   "What Did Microsoft Tell You Before Its Stock Ran?": {
     "seen": "2026-09-19",
