@@ -319,6 +319,10 @@
     "ko": "Cboe, S&P 500 지수 옵션 라이센스를 2051년까지 연장",
     "seen": "2026-09-30"
   },
+  "CBOE Volatility Index (^VIX) Charts, Data & News": {
+    "ko": "CBOE 변동성 지수(^VIX) 차트, 데이터 및 뉴스",
+    "seen": "2026-10-07"
+  },
   "Chip Stocks Recovered Today and the Major Indexes Fell Anyway": {
     "ko": "오늘 칩주 회복세, 주요 지수 모두 하락",
     "seen": "2026-09-18"
@@ -382,6 +386,10 @@
   "Dow falls, S&P 500 and Nasdaq end nearly flat as bond yields rise": {
     "ko": "채권수익률이 상승함에 따라 다우지수는 하락하고 S&P 500과 나스닥은 거의 보합세로 마감합니다.",
     "seen": "2026-09-25"
+  },
+  "Dow Jones Futures Fall After S&P 500 Hits High; Astera, GE Vernova, Arista Lead Buys, But These Stocks Slammed": {
+    "ko": "S&P 500이 최고치를 기록한 후 다우존스 선물 하락; Astera, GE Vernova, Arista Lead가 매수했지만 이 주식은 폭락했습니다.",
+    "seen": "2026-10-07"
   },
   "Dow Jones Futures: After S&P 500, Nasdaq Rebound, What's Next? Moderna, AMD, SpaceX Flash Buy Signals.": {
     "ko": "다우존스 선물: S&P 500, 나스닥 반등 이후 다음은 무엇일까? Moderna, AMD, SpaceX Flash 구매 신호.",
@@ -1331,6 +1339,10 @@
     "ko": "2026년 현재까지 Microsoft 주식은 보합세를 보이고 있습니다. 올해를 마무리하는 랠리가 다가오고 있습니까?",
     "seen": "2026-09-12"
   },
+  "Microsoft Stock Is on Track to Trail the S&P 500 for a 3rd Straight Year. History Says What Happened After Its Last 2 Streaks.": {
+    "ko": "Microsoft 주식은 3년 연속 S&P 500을 추적할 예정입니다. 역사는 마지막 2연승 이후 무슨 일이 일어났는지 말해줍니다.",
+    "seen": "2026-10-07"
+  },
   "Microsoft Stock Moves as Tech Giant Unveils Strict AI Code of Conduct": {
     "ko": "기술 대기업이 엄격한 AI 행동 강령을 발표함에 따라 Microsoft 주식이 움직입니다.",
     "seen": "2026-09-16"
@@ -1485,7 +1497,7 @@
   },
   "Nasdaq Composite Index (.IXIC)": {
     "ko": "나스닥 종합지수(.IXIC)",
-    "seen": "2026-10-03"
+    "seen": "2026-10-07"
   },
   "Nasdaq composite index finds support buyers against the 100/200 hour MAs": {
     "ko": "나스닥 종합 지수는 100/200시간 이동평균선에 대한 지지 구매자를 찾습니다.",
@@ -1651,6 +1663,10 @@
     "ko": "NVIDIA(NVDA) 주가는 AI 낙관론 속에서 사상 최고치를 기록했습니다.",
     "seen": "2026-10-03"
   },
+  "NVIDIA (NVDA) vs. Apple (AAPL): Which Stock Wins the Valuation Race?": {
+    "ko": "NVIDIA(NVDA) 대 Apple(AAPL): 어느 주식이 평가 경쟁에서 승리할까요?",
+    "seen": "2026-10-07"
+  },
   "Nvidia $150B Buyback: Is NVDA Stock Cheap Enough?": {
     "ko": "Nvidia 1,500억 달러 자사주 매입: NVDA 주식은 충분히 저렴합니까?",
     "seen": "2026-09-30"
@@ -1803,6 +1819,10 @@
     "ko": "Nvidia 주가 예측: 사상 최대 규모의 자사주 매입이 시작되면서 주가가 300달러에 도전할 것으로 예상됩니다.",
     "seen": "2026-10-02"
   },
+  "Nvidia Stock Price Target Splits Crypto Punters: Here's Where They See the Chip Giant Going in October": {
+    "ko": "Nvidia 주가 목표는 암호화폐 투자자를 분할합니다: 10월에 칩 거대 기업이 가는 곳은 다음과 같습니다.",
+    "seen": "2026-10-07"
+  },
   "Nvidia stock rises to new highs as market cap closes in on $6 trillion": {
     "ko": "엔비디아 주가는 시가총액이 6조 달러에 가까워지면서 최고치로 상승했습니다.",
     "seen": "2026-10-07"
@@ -1878,6 +1898,10 @@
   "Only a Handful of S&P 500 Stocks Can Match 10-Year Treasuries at 5%. Here's My Top Pick to Buy Now.": {
     "ko": "S&P 500 주식 중 소수만이 10년 만기 국채 금리를 5%로 맞출 수 있습니다. 지금 구매할 최고의 상품은 다음과 같습니다.",
     "seen": "2026-09-26"
+  },
+  "Palantir (NASDAQ: PLTR) Bulls Brush Off AI Lab Competition Despite Stretched Valuation": {
+    "ko": "Palantir(NASDAQ: PLTR) 상승세, 높은 평가에도 불구하고 AI 연구소 경쟁에서 승리",
+    "seen": "2026-10-07"
   },
   "Palantir (NASDAQ: PLTR) insider sells 16,000 shares under preset plan": {
     "ko": "Palantir(NASDAQ: PLTR) 내부자는 미리 설정된 계획에 따라 16,000주를 매도합니다.",
@@ -3254,6 +3278,10 @@
   "With Azure as a Catalyst, Microsoft Is Positioned for Sustained Growth": {
     "ko": "Azure를 촉매제로 활용하는 Microsoft는 지속적인 성장을 위한 입지를 확보했습니다.",
     "seen": "2026-10-03"
+  },
+  "World in Brief: The S&P 500 hits a new high; France’s day of protests": {
+    "ko": "요약: S&P 500이 최고치를 경신했습니다. 프랑스 시위의 날",
+    "seen": "2026-10-07"
   },
   "World Markets": {
     "ko": "세계 시장",
