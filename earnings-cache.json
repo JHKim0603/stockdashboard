@@ -1,6 +1,6 @@
 {
   "GOOGL": {
-    "fetched": "2026-10-09",
+    "fetched": "2026-10-10",
     "data": {
       "date": "2026-10-28",
       "confirmed": true,
@@ -8,19 +8,19 @@
     }
   },
   "MSFT": {
-    "fetched": "2026-10-09",
+    "fetched": "2026-10-10",
     "data": {
-      "date": "2026-11-04",
-      "confirmed": false,
-      "timing": null
+      "date": "2026-10-28",
+      "confirmed": true,
+      "timing": "장 마감 후"
     }
   },
   "MU": {
-    "fetched": "2026-10-09",
+    "fetched": "2026-10-10",
     "data": null
   },
   "NVDA": {
-    "fetched": "2026-10-09",
+    "fetched": "2026-10-10",
     "data": {
       "date": "2026-11-18",
       "confirmed": false,
@@ -28,7 +28,7 @@
     }
   },
   "PLTR": {
-    "fetched": "2026-10-09",
+    "fetched": "2026-10-10",
     "data": {
       "date": "2026-11-02",
       "confirmed": false,
@@ -36,7 +36,7 @@
     }
   },
   "SNDK": {
-    "fetched": "2026-10-09",
+    "fetched": "2026-10-10",
     "data": {
       "date": "2026-10-29",
       "confirmed": true,
