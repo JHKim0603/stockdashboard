@@ -1,4 +1,8 @@
 {
+  "[포토] 코스피, 5.5% 급락 '6천피'": {
+    "ko": "[포토] 코스피, 5.5% 급락 '6천피'",
+    "seen": "2026-10-13"
+  },
   "$1,000 invested in GOOGL stock when Google bought YouTube is now worth": {
     "ko": "Google이 YouTube를 인수했을 때 GOOGL 주식에 투자한 1,000달러는 이제 가치가 있습니다.",
     "seen": "2026-10-10"
@@ -323,6 +327,10 @@
     "ko": "분석가들은 기술 기업에 대한 통찰력을 제공합니다: Marvell(MRVL) 및 Microsoft(MSFT)",
     "seen": "2026-09-30"
   },
+  "Analysts’ Opinions Are Mixed on These Technology Stocks: Palantir Technologies (PLTR), Zscaler (ZS) and Snowflake (SNOW)": {
+    "ko": "Palantir Technologies(PLTR), Zscaler(ZS) 및 Snowflake(SNOW)와 같은 기술 주식에 대한 분석가들의 의견이 엇갈립니다.",
+    "seen": "2026-10-13"
+  },
   "Are You Overpaying For Microsoft Stock Versus Its Rivals?": {
     "ko": "경쟁사에 비해 Microsoft 주식에 대해 너무 많은 비용을 지불하고 있습니까?",
     "seen": "2026-10-10"
@@ -547,6 +555,10 @@
     "ko": "사설: 국민연금, 181조원 손실, 성급한 주식정책 경고",
     "seen": "2026-10-13"
   },
+  "Elon Musk just nailed it on why chip stocks like Micron and Sandisk are being drilled on surprising news out of China": {
+    "ko": "Elon Musk는 Micron 및 Sandisk와 같은 칩 주식이 중국에서 나온 놀라운 소식에 대해 왜 시추되고 있는지에 대해 알아냈습니다.",
+    "seen": "2026-10-13"
+  },
   "Elon Musk sends strong signal for SpaceX, Nvidia stocks": {
     "ko": "Elon Musk는 SpaceX, Nvidia 주식에 강력한 신호를 보냅니다.",
     "seen": "2026-09-17"
@@ -566,6 +578,10 @@
   "ETF tracking Nasdaq-100 outperforms": {
     "ko": "나스닥-100을 추적하는 ETF가 더 나은 성과를 냈습니다.",
     "seen": "2026-09-19"
+  },
+  "ETFs Are Buying Palantir (PLTR) on Friday": {
+    "ko": "ETF는 금요일에 Palantir (PLTR)를 구매하고 있습니다",
+    "seen": "2026-10-13"
   },
   "ETFs Are Net Sellers of Palantir (PLTR) on Sept. 25": {
     "ko": "ETF는 9월 25일 Palantir(PLTR)의 순매도자입니다",
@@ -922,6 +938,10 @@
   "I'm Buying More Nvidia Stock Right Now. Here's Why.": {
     "ko": "저는 지금 더 많은 Nvidia 주식을 사고 있습니다. 이유는 다음과 같습니다.",
     "seen": "2026-09-26"
+  },
+  "If I Could Invest $1,000 in Just 1 Dividend Stock for the Next 5 Years, I'd Pick This Clear Standout Over the Vanguard S&P 500 ETF (VOO)": {
+    "ko": "향후 5년 동안 단 1개의 배당주에 1,000달러를 투자할 수 있다면 Vanguard S&P 500 ETF(VOO)보다 확실히 눈에 띄는 이 주식을 선택하겠습니다.",
+    "seen": "2026-10-13"
   },
   "If The S&P 500 Doesn’t Hit 10,000, This ETF Is Going To Zero": {
     "ko": "S&P 500이 10,000에 도달하지 못하면 이 ETF는 0이 됩니다.",
@@ -1403,6 +1423,10 @@
     "ko": "Micron Technology(MU)는 메모리 가격 경고가 커지면서 Michael Burry를 단기로 끌어들였습니다.",
     "seen": "2026-09-24"
   },
+  "Micron Technology (MU) Faces Rising DRAM Competition Risk": {
+    "ko": "Micron Technology(MU), DRAM 경쟁 위험 증가에 직면",
+    "seen": "2026-10-13"
+  },
   "Micron Technology (MU) Stock Faces New AI Demand Questions After Industry Slowdown Call": {
     "ko": "마이크론 테크놀로지(MU) 주식은 업계 둔화 요청 이후 새로운 AI 수요 질문에 직면",
     "seen": "2026-09-18"
@@ -1434,6 +1458,10 @@
   "Micron Technology Reports Q4 Earnings: Revenue Up 379%, EPS Up 1,003%": {
     "ko": "Micron Technology, 4분기 실적 보고: 수익 379% 증가, EPS 1,003% 증가",
     "seen": "2026-10-01"
+  },
+  "Micron Technology Shares Fall 2.5% as Chinese Competition and Taiwan Strike Risk Weigh on Outlook": {
+    "ko": "마이크론 테크놀로지 주가는 중국 경쟁과 대만 파업 위험이 전망에 부담을 주면서 2.5% 하락",
+    "seen": "2026-10-13"
   },
   "Micron Technology Shares Fall 5.2% as Semiconductor Stocks Decline": {
     "ko": "반도체 주가 하락으로 마이크론 테크놀로지 주가 5.2% 하락",
@@ -1738,6 +1766,10 @@
   "Microsoft: Copilot Finally Has A Plan (NASDAQ:MSFT)": {
     "ko": "Microsoft: Copilot이 마침내 계획을 세웠습니다(NASDAQ:MSFT)",
     "seen": "2026-10-01"
+  },
+  "Microsoft: Finally, Found Its AI Angle": {
+    "ko": "Microsoft: 마침내 AI 각도를 찾았습니다.",
+    "seen": "2026-10-13"
   },
   "Microsoft: Risk and Reward Skewed To The Downside (NASDAQ:MSFT)": {
     "ko": "Microsoft: 위험과 보상이 하락세로 치우쳐 있음(NASDAQ:MSFT)",
@@ -2853,7 +2885,7 @@
   },
   "S&P 500 Reaches New Record High": {
     "ko": "S&P 500, 사상 최고치 경신",
-    "seen": "2026-10-09"
+    "seen": "2026-10-13"
   },
   "S&P 500 rises, Nasdaq hits record high as tech stocks gain": {
     "ko": "S&P 500 상승, 기술주 상승으로 나스닥 사상 최고치 경신",
@@ -3026,6 +3058,10 @@
   "Sandisk Jumped 22% the Day After Micron's Last Report. Micron Reports Again Wednesday.": {
     "ko": "Sandisk는 Micron의 마지막 보고서 다음날 22% 상승했습니다. 마이크론은 수요일에 다시 보고합니다.",
     "seen": "2026-09-29"
+  },
+  "SanDisk Shares Fall 2.8% as Chinese Memory Chip Advances Raise Competition Concerns": {
+    "ko": "중국 메모리 칩 발전으로 경쟁 우려 커져 샌디스크 주가 2.8% 하락",
+    "seen": "2026-10-13"
   },
   "SanDisk Shares Fall 5.5% as AI Demand Concerns Weigh on Memory Stocks": {
     "ko": "AI 수요 우려가 메모리 주식에 부담을 주면서 샌디스크 주가 5.5% 하락",
@@ -3366,6 +3402,10 @@
   "Stock Market Today: Dow ends 630 points lower, S&P 500 and Nasdaq also fall, as 10-year yield tops 5% after Fed rate move": {
     "ko": "오늘의 주식 시장: 연준의 금리 인상 이후 10년물 수익률이 5%를 넘어서면서 다우지수는 630포인트 하락했고 S&P 500과 나스닥도 하락했습니다.",
     "seen": "2026-09-17"
+  },
+  "Stock Market Today: Dow Jones, S&P 500 Futures Gain While Nasdaq 100 Falls as Scott Bessent Says Iran's Economy Is 'Collapsing' — SXTC, AMAT, CMG in Focus": {
+    "ko": "오늘의 주식 시장: Scott Bessent가 이란 경제가 '붕괴'하고 있다고 말하면서 Dow Jones, S&P 500 선물 상승, Nasdaq 100 하락 - SXTC, AMAT, CMG 집중",
+    "seen": "2026-10-13"
   },
   "Stock Market Today: Dow, S&P 500 and Nasdaq close down on AI fears and rising oil, but off lows as 10-year yield drops after hitting 5%": {
     "ko": "오늘의 주식 시장: Dow, S&P 500 및 Nasdaq은 AI 우려와 유가 상승으로 마감했지만 10년 수익률이 5%에 도달한 후 하락하면서 최저치에서 벗어났습니다.",
@@ -3903,6 +3943,10 @@
     "ko": "오늘 NVDA, TSM, WBD 주식이 52주 최고치를 기록한 이유는 무엇입니까?",
     "seen": "2026-10-06"
   },
+  "Why Did PLTR, DT, DDOG Stocks Surge To 52-Week Highs Today?": {
+    "ko": "오늘 PLTR, DT, DDOG 주식이 52주 최고가로 급등한 이유는 무엇입니까?",
+    "seen": "2026-10-13"
+  },
   "Why Did SanDisk Stock Jump?": {
     "ko": "SanDisk 주가가 급등한 이유는 무엇입니까?",
     "seen": "2026-10-02"
@@ -3954,6 +3998,10 @@
   "Why is Palantir Technologies stock jumping up 2% today?": {
     "ko": "오늘 Palantir Technologies 주가가 2% 상승한 이유는 무엇입니까?",
     "seen": "2026-10-08"
+  },
+  "Why Is Sandisk Stock Falling Tuesday?": {
+    "ko": "화요일에 Sandisk 주식이 하락하는 이유는 무엇입니까?",
+    "seen": "2026-10-13"
   },
   "Why It’s Time to Load Up on Microsoft Stock": {
     "ko": "지금이 Microsoft Stock에 투자해야 할 때인 이유",
