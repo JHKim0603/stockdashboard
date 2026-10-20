@@ -43,6 +43,10 @@
     "seen": "2026-10-08",
     "ko": "$S&P 500 지수(.SPX.US)$ 수직 스프레드"
   },
+  "$SanDisk (SNDK.US)$": {
+    "seen": "2026-10-20",
+    "ko": "$샌디스크(SNDK.US)$"
+  },
   "$SanDisk (SNDK.US)$ the etf x2 and underlying stock have the same percentage": {
     "seen": "2026-09-30",
     "ko": "$SanDisk (SNDK.US)$ ETF x2와 기초 주식의 비율은 같습니다"
@@ -307,6 +311,10 @@
     "seen": "2026-10-01",
     "ko": "Google, Gemini 4 Argon 출시로 Alphabet 주가 급등"
   },
+  "Alphabet Stock Rises: What's Going On?": {
+    "seen": "2026-10-20",
+    "ko": "알파벳 주가 상승: 무슨 일이 일어나고 있나요?"
+  },
   "Alphabet stock slips on report of internal doubts over Gemini 4": {
     "seen": "2026-10-01",
     "ko": "Gemini 4에 대한 내부 의심 보고로 알파벳 주가 하락"
@@ -526,6 +534,10 @@
   "Chip concentration and foreign selling drive KOSPI to crisis-level plunge in Korea": {
     "seen": "2026-10-20",
     "ko": "칩 집중화와 외국인 매도에 코스피 위기 급락"
+  },
+  "Chip Stocks Just Had Their Longest Losing Streak Since 2008. Should You Buy Nvidia Stock Now?": {
+    "seen": "2026-10-20",
+    "ko": "Chip Stocks Just Had Their Longest Losing Streak Since 2008. Should You Buy Nvidia Stock Now?"
   },
   "Chip Stocks Recovered Today and the Major Indexes Fell Anyway": {
     "seen": "2026-09-18",
@@ -1579,6 +1591,10 @@
     "seen": "2026-10-09",
     "ko": "마이크론(MU)은 넷리스트 거래, 강력한 수익 및 배당 확인 후 5.6% 하락했습니다."
   },
+  "Micron (MU) Looks Cheap at 5 Times Forward Earnings. Can Its Profit Boom Last?": {
+    "seen": "2026-10-20",
+    "ko": "Micron (MU) Looks Cheap at 5 Times Forward Earnings. 이익 호황이 지속될 수 있는가?"
+  },
   "Micron (MU) Stock Jumps As Record AI Memory Profits Reset Expectations": {
     "seen": "2026-10-02",
     "ko": "기록적인 AI 메모리 이익이 기대치를 재설정함에 따라 마이크론(MU) 주가가 급등했습니다."
@@ -1966,6 +1982,10 @@
   "Microsoft (MSFT) Stock Looks Reasonable Despite Its 75% Five Year Run": {
     "seen": "2026-09-25",
     "ko": "Microsoft(MSFT) 주식은 5년 연속 75% 상승에도 불구하고 합리적으로 보입니다."
+  },
+  "Microsoft (MSFT) Stock Rebounds as Azure Growth and AI Monetizat": {
+    "seen": "2026-10-20",
+    "ko": "Azure 성장 및 AI 수익화로 Microsoft(MSFT) 주가 반등"
   },
   "Microsoft (MSFT) Stock: Ambitious Plan to Expand Data Center Capacity to 38GW by 2032": {
     "seen": "2026-09-12",
@@ -2378,6 +2398,10 @@
   "Nasdaq futures and options": {
     "seen": "2026-09-15",
     "ko": "나스닥 선물 및 옵션"
+  },
+  "Nasdaq Gains 1.11% on Semiconductor Rebound, AI Debt Worries Persist": {
+    "seen": "2026-10-20",
+    "ko": "나스닥, 반도체 반등으로 1.11% 상승, AI 부채 우려 지속"
   },
   "Nasdaq gains 2% for the week driven by mid-week tech rally": {
     "seen": "2026-09-26",
@@ -3259,6 +3283,10 @@
     "seen": "2026-09-30",
     "ko": "Palantir: 엘리트 성장 가치 평가에서 매수(NASDAQ:PLTR)"
   },
+  "Palantir: Higher Fair Value, But Not Enough, So I Switched From Bullish To Neutral": {
+    "seen": "2026-10-20",
+    "ko": "Palantir: Higher Fair Value, But Not Enough, So I Switched From Bullish To Neutral"
+  },
   "Palantir: Keep Buying More As Consensus Still Underestimates It (NASDAQ:PLTR)": {
     "seen": "2026-10-14",
     "ko": "Palantir: 합의가 여전히 과소평가됨에 따라 계속 더 많이 구매하세요(NASDAQ:PLTR)"
@@ -3646,6 +3674,10 @@
   "S&P/TSX Composite index (^GSPTSE) Charts, Data & News": {
     "seen": "2026-09-29",
     "ko": "S&P/TSX 종합 지수(^GSPTSE) 차트, 데이터 및 뉴스"
+  },
+  "S&P/TSX composite index down more than 300 points, U.S. markets mixed": {
+    "seen": "2026-10-20",
+    "ko": "S&P/TSX composite index down more than 300 points, U.S. markets mixed"
   },
   "S&P500 and Nasdaq Index: AI Names Lift Indices as Most Sectors Weaken": {
     "seen": "2026-09-26",
