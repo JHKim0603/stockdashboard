@@ -215,6 +215,10 @@
     "ko": "AI 버블이 있든 없든, 워렌 버핏은 이 뱅가드 인덱스 펀드를 살 것이다",
     "seen": "2026-10-13"
   },
+  "AI Capex Stock Selloff: S&P 500 and Nasdaq Lose Again": {
+    "ko": "AI Capex 주식 매도: S&P 500과 Nasdaq이 다시 하락",
+    "seen": "2026-10-27"
+  },
   "AI chip stocks wobble even as investors get clarity on a key OpenAI issue": {
     "ko": "투자자들이 주요 OpenAI 문제에 대해 명확하게 알면서도 AI 칩 주식은 흔들리고 있습니다.",
     "seen": "2026-10-10"
@@ -1039,6 +1043,10 @@
     "ko": "선물: 이러한 큰 수익으로 인해 시장 추세가 더 높아졌습니다.",
     "seen": "2026-10-10"
   },
+  "Global stock markets rise as US and European indices gain": {
+    "ko": "미국과 유럽 지수 상승으로 글로벌 증시 상승",
+    "seen": "2026-10-27"
+  },
   "Goldman Sachs is still betting on a nice year-end rally for the S&P 500": {
     "ko": "Goldman Sachs는 여전히 S&P 500의 연말 랠리를 기대하고 있습니다.",
     "seen": "2026-10-20"
@@ -1755,6 +1763,10 @@
     "ko": "JPMorgan, S&P 500의 놀라운 변화 발견",
     "seen": "2026-10-10"
   },
+  "Just 10 Stocks Make Up Nearly 40% of the S&P 500. Here's an ETF That Can Help You Diversify.": {
+    "ko": "단 10개의 주식이 S&P 500의 거의 40%를 차지합니다. 다각화에 도움이 될 수 있는 ETF는 다음과 같습니다.",
+    "seen": "2026-10-27"
+  },
   "KB Securities flags KOSPI W-bottom, forecasts Nov–Dec rebound in South Korea": {
     "ko": "KB증권, 코스피 최저점 표시, 11~12월 한국 경기 반등 예상",
     "seen": "2026-10-24"
@@ -1814,6 +1826,10 @@
   "Kospi Falls for 6th Straight Session, Barely Holding 6,000 Level After 0.4% Drop": {
     "ko": "코스피 6회 연속 하락, 0.4% 하락 후 간신히 6,000대 유지",
     "seen": "2026-10-16"
+  },
+  "KOSPI Jumps 4.5% as Seoul Halts Program Buying Before SK Hynix Earnings": {
+    "ko": "SK하이닉스 실적 전 서울, 프로그램 매수 중단으로 코스피 4.5% 급등",
+    "seen": "2026-10-27"
   },
   "KOSPI jumps over 4% as buy sidecar halts program trades in South Korea": {
     "ko": "코스피는 매수 사이드카로 인해 한국에서 프로그램 거래가 중단되면서 4% 이상 급등했습니다.",
@@ -2263,6 +2279,10 @@
     "ko": "Micron Technology(NASDAQ:MU), 8개 주요 테스트에서 높은 성장과 기본 개선 제공",
     "seen": "2026-10-06"
   },
+  "Micron Technology (NASDAQ:MU) Links Memory Expansion to Domestic Materials Investment": {
+    "ko": "Micron Technology (NASDAQ:MU), 메모리 확장과 국내 소재 투자 연결",
+    "seen": "2026-10-27"
+  },
   "Micron Technology adds to recent weakness, slips another 4% (MU:NASDAQ)": {
     "ko": "마이크론 테크놀로지(Micron Technology)가 최근 약세를 더해 4% 추가 하락했습니다. (MU:NASDAQ)",
     "seen": "2026-10-14"
@@ -2306,6 +2326,10 @@
   "Micron Technology Stock Is Gaining Friday: What's Going On?": {
     "ko": "마이크론 테크놀로지 주식이 금요일에 상승하고 있습니다: 무슨 일이 일어나고 있나요?",
     "seen": "2026-10-09"
+  },
+  "Micron Technology Stock Price Forecast: CEO Reaffirms Tight Supply for Next Two Years, How Will HBM4 Mass Production and CXMT Controversy Impact Stock Price Expectations?": {
+    "ko": "Micron Technology 주가 예측: CEO는 향후 2년간 공급 부족을 재확인했습니다. HBM4 대량 생산 및 CXMT 논란이 주가 기대에 어떤 영향을 미칠까요?",
+    "seen": "2026-10-27"
   },
   "Micron Technology Stock Slides 16% Over 5 Straight Down Days": {
     "ko": "마이크론 테크놀로지 주가 5일 연속 16% 하락",
@@ -2670,6 +2694,10 @@
   "Microsoft Stock Moves Higher Monday: What's Happening?": {
     "ko": "월요일 Microsoft 주식 상승: 무슨 일이 일어나고 있나요?",
     "seen": "2026-10-13"
+  },
+  "Microsoft Stock News (Oct 27, 2026): MSFT Rises 1.5% to $532.60": {
+    "ko": "Microsoft 주식 뉴스(2026년 10월 27일): MSFT는 1.5% 상승하여 $532.60를 기록했습니다.",
+    "seen": "2026-10-27"
   },
   "Microsoft Stock Price Forecast: 60,000 Employees Offered Voluntary Severance, Pushing MSFT Market Cap Back to World's Third Largest, Shares Expected to Reach $600": {
     "ko": "Microsoft 주가 예측: 60,000명의 직원이 자발적 퇴직을 제안하여 MSFT 시가총액을 세계 3위로 다시 끌어올리고 주가는 600달러에 도달할 것으로 예상됩니다.",
@@ -3451,6 +3479,10 @@
     "ko": "Nvidia NVDA 주식은 1,500억 달러 규모의 자사주 매입이 기대를 불러일으키면서 130달러 이상을 유지하기 위해 고군분투하고 있습니다.",
     "seen": "2026-09-30"
   },
+  "Nvidia Picks Up $3B Stock In Meta's Equity Offering, Will Help Improve Muse AI Platform": {
+    "ko": "Nvidia는 Meta의 주식 공모에서 30억 달러 규모의 주식을 매입하여 Muse AI 플랫폼 개선에 도움이 될 것입니다",
+    "seen": "2026-10-27"
+  },
   "Nvidia Reportedly Just Landed $35 Billion In Chip Orders From Chinese Companies. Here's Why That Could Be Great News for the Stock": {
     "ko": "Nvidia는 중국 기업으로부터 350억 달러의 칩 주문을 받은 것으로 알려졌습니다. 이것이 주식에 좋은 소식이 될 수 있는 이유는 다음과 같습니다.",
     "seen": "2026-10-21"
@@ -4059,6 +4091,10 @@
     "ko": "Palantir: 사업은 호황을 누리고 있지만 주식에는 문제가 있습니다(NASDAQ:PLTR)",
     "seen": "2026-10-23"
   },
+  "Palantir: The Next Earnings Beat Needs To Be Different (NASDAQ:PLTR)": {
+    "ko": "Palantir: 다음 수익 개선은 달라야 합니다(NASDAQ:PLTR)",
+    "seen": "2026-10-27"
+  },
   "Palantir: TITAN System Delivery And My DOW Mistake (NASDAQ:PLTR)": {
     "ko": "Palantir: TITAN 시스템 제공과 나의 DOW 실수(NASDAQ:PLTR)",
     "seen": "2026-10-20"
@@ -4511,6 +4547,10 @@
     "ko": "S&P 500의 최근 보합세 마감은 그 밑에 잔혹한 분열을 숨기고 있습니다.",
     "seen": "2026-09-25"
   },
+  "S&P Dow Jones Indices and Kalshi partner to develop prediction markets": {
+    "ko": "S&P Dow Jones Indices와 Kalshi가 협력하여 예측 시장 개발",
+    "seen": "2026-10-27"
+  },
   "S&P/TSX Composite index (^GSPTSE) Charts, Data & News": {
     "ko": "S&P/TSX 종합 지수(^GSPTSE) 차트, 데이터 및 뉴스",
     "seen": "2026-09-29"
@@ -4762,6 +4802,10 @@
   "SanDisk Stock Looks Cheap, But Can It Keep Earning This Much?": {
     "ko": "SanDisk 주식은 저렴해 보이지만 계속해서 이렇게 많은 수익을 올릴 수 있을까요?",
     "seen": "2026-09-18"
+  },
+  "Sandisk Stock News (Oct 27, 2026): SNDK Rises 1.4% to $1,255.58": {
+    "ko": "Sandisk 주식 뉴스(2026년 10월 27일): SNDK는 1.4% 상승하여 $1,255.58를 기록했습니다.",
+    "seen": "2026-10-27"
   },
   "SanDisk Stock Price Forecast: SNDK Plunges 15% in Five Days, Risks Further Drop Toward $1,000 Mark": {
     "ko": "SanDisk 주가 예측: SNDK가 5일 만에 15% 급락하여 1,000달러 선까지 추가 하락 위험",
@@ -5166,6 +5210,10 @@
   "Stock Market Today: Dow Jones, S&P 500 Futures Gain While Nasdaq 100 Falls as Scott Bessent Says Iran's Economy Is 'Collapsing' — SXTC, AMAT, CMG in Focus": {
     "ko": "오늘의 주식 시장: Scott Bessent가 이란 경제가 '붕괴'하고 있다고 말하면서 Dow Jones, S&P 500 선물 상승, Nasdaq 100 하락 - SXTC, AMAT, CMG 집중",
     "seen": "2026-10-13"
+  },
+  "Stock Market Today: Dow Jones, S&P 500 Futures Trade Mixed as Fed Begins Its Two-Day Meet — NVS, HSBC, WE": {
+    "ko": "오늘의 주식 시장: 연준이 2일 회의를 시작하면서 다우존스, S&P 500 선물 거래가 혼조세를 보이고 있습니다 — NVS, HSBC, WE",
+    "seen": "2026-10-27"
   },
   "Stock Market Today: Dow, S&P 500 and Nasdaq close down on AI fears and rising oil, but off lows as 10-year yield drops after hitting 5%": {
     "ko": "오늘의 주식 시장: Dow, S&P 500 및 Nasdaq은 AI 우려와 유가 상승으로 마감했지만 10년 수익률이 5%에 도달한 후 하락하면서 최저치에서 벗어났습니다.",
