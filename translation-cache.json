@@ -23,6 +23,10 @@
     "ko": "10년 전 Micron Technology에 투자한 100달러는 오늘날 이만큼의 가치가 있을 것입니다",
     "seen": "2026-10-27"
   },
+  "$GOOG and $GOOGL Stock Market Alert: Alphabet Sued for": {
+    "ko": "$GOOG 및 $GOOGL 주식 시장 경고: 알파벳 고소",
+    "seen": "2026-10-28"
+  },
   "$Nasdaq Composite Index (.IXIC.US)$": {
     "ko": "$나스닥 종합지수(.IXIC.US)$",
     "seen": "2026-10-14"
@@ -238,6 +242,10 @@
   "AI interfaces pose long-term risk for software cos; BofA sees Microsoft well positioned (MSFT:NASDAQ)": {
     "ko": "AI 인터페이스는 소프트웨어 회사에 장기적인 위험을 초래합니다. BofA는 Microsoft가 좋은 위치에 있다고 보고 있습니다(MSFT:NASDAQ).",
     "seen": "2026-10-13"
+  },
+  "AI memory, chip stocks gain after SK Hynix posts record profit (MU:NASDAQ)": {
+    "ko": "SK하이닉스가 기록적인 이익을 낸 후 AI 메모리, 칩 주가 상승 (MU:NASDAQ)",
+    "seen": "2026-10-28"
   },
   "AI optimism lifts Korea stocks as KOSPI rises despite Middle East tensions": {
     "ko": "중동 긴장에도 불구하고 KOSPI가 상승하면서 AI 낙관론이 한국 주식을 상승시킵니다.",
@@ -1103,6 +1111,10 @@
     "ko": "선물: 이러한 큰 수익으로 인해 시장 추세가 더 높아졌습니다.",
     "seen": "2026-10-10"
   },
+  "Global shares are mixed after US stock rally, and oil prices gain more than 1%": {
+    "ko": "미국 증시 반등 이후 글로벌 증시는 엇갈리고 유가는 1% 이상 상승",
+    "seen": "2026-10-28"
+  },
   "Global stock markets rise as US and European indices gain": {
     "ko": "미국과 유럽 지수 상승으로 글로벌 증시 상승",
     "seen": "2026-10-27"
@@ -1775,6 +1787,10 @@
     "ko": "Palantir의 현금 흐름이 주식 희석화보다 앞서 있습니까?",
     "seen": "2026-10-03"
   },
+  "Is Sandisk (SNDK) Cheap Following AI Infrastructure Optimism And SK Hynix Results?": {
+    "ko": "AI 인프라 낙관론과 SK하이닉스 결과에 따라 Sandisk(SNDK)가 저렴합니까?",
+    "seen": "2026-10-28"
+  },
   "Is Sandisk (SNDK) Stock At Risk As New NAND Competition Targets AI Memory?": {
     "ko": "새로운 NAND 경쟁이 AI 메모리를 겨냥함에 따라 Sandisk(SNDK) 주식이 위험에 처해 있습니까?",
     "seen": "2026-09-22"
@@ -2263,6 +2279,10 @@
     "ko": "Micron 주식 예측: MU 풀백은 메모리 주기 위험이 증가함에 따라 $1,000 테스트",
     "seen": "2026-10-06"
   },
+  "Micron Stock Forecast: Record Earnings Put $977 Resistance in Focus": {
+    "ko": "마이크론 주식 예측: 기록적인 수익으로 977달러의 저항이 주목받음",
+    "seen": "2026-10-28"
+  },
   "Micron Stock Gets a Big Wall Street Boost Ahead of Earnings": {
     "ko": "마이크론 주식은 수익보다 앞서 월스트리트에서 큰 상승세를 얻습니다.",
     "seen": "2026-09-26"
@@ -2370,6 +2390,10 @@
   "Micron Technology (MU) Stock Rises 2.5% on Bullish Outlook from Bank of America": {
     "ko": "마이크론 테크놀로지(MU) 주식은 Bank of America의 강세 전망에 2.5% 상승",
     "seen": "2026-10-27"
+  },
+  "Micron Technology (NASDAQ:MU) Clears Eight Growth Tests as Fundamentals Improve": {
+    "ko": "Micron Technology(NASDAQ:MU), 펀더멘털이 개선되면서 8가지 성장 테스트 통과",
+    "seen": "2026-10-28"
   },
   "Micron Technology (NASDAQ:MU) Delivers High Growth and Improving Fundamentals Across Eight Key Tests": {
     "ko": "Micron Technology(NASDAQ:MU), 8개 주요 테스트에서 높은 성장과 기본 개선 제공",
@@ -2966,6 +2990,10 @@
   "Most S&P 500 Stocks Sank In September — But Retail Traders Didn't Flee": {
     "ko": "9월 S&P 500 주식 대부분이 폭락했지만 소매 거래자들은 도망치지 않았습니다.",
     "seen": "2026-10-01"
+  },
+  "MSFT Dips Premarket Ahead Of Q1 Report: Analysts Expect Azure Acceleration As Management Faces Questions On Massive Employee Buyout": {
+    "ko": "MSFT가 1분기 보고서를 앞두고 시판 전 하락: 분석가들은 경영진이 대규모 직원 인수에 대한 질문에 직면함에 따라 Azure 가속화를 기대",
+    "seen": "2026-10-28"
   },
   "MSFT Rises 41% in 6 Months on Solid AI Demand: Should You Hold Now?": {
     "ko": "MSFT는 견고한 AI 수요로 6개월 만에 41% 상승: 지금 보유해야 할까요?",
@@ -3823,6 +3851,10 @@
     "ko": "Nvidia: 재고는 거짓말을 하지 않으며 다운그레이드를 말합니다(NASDAQ:NVDA)",
     "seen": "2026-10-06"
   },
+  "Nvidia: Risk Building, Earnings Revisions Can Turn Negative (NASDAQ:NVDA)": {
+    "ko": "Nvidia: 위험 구축, 수익 수정이 마이너스로 바뀔 수 있음(NASDAQ:NVDA)",
+    "seen": "2026-10-28"
+  },
   "Nvidia: The $235 Billion Bullish Signal Investors Are Missing (NASDAQ:NVDA)": {
     "ko": "Nvidia: 2,350억 달러의 강세 신호 투자자가 실종되었습니다(NASDAQ:NVDA)",
     "seen": "2026-10-15"
@@ -4286,6 +4318,10 @@
   "Palantir: The Next Earnings Beat Needs To Be Different (NASDAQ:PLTR)": {
     "ko": "Palantir: 다음 수익 개선은 달라야 합니다(NASDAQ:PLTR)",
     "seen": "2026-10-27"
+  },
+  "Palantir: The Trust Layer For Agentic AI Heading Into Q3 Earnings (NASDAQ:PLTR)": {
+    "ko": "Palantir: Agentic AI의 3분기 수익 창출을 위한 신뢰 계층(NASDAQ:PLTR)",
+    "seen": "2026-10-28"
   },
   "Palantir: TITAN System Delivery And My DOW Mistake (NASDAQ:PLTR)": {
     "ko": "Palantir: TITAN 시스템 제공과 나의 DOW 실수(NASDAQ:PLTR)",
@@ -5214,6 +5250,10 @@
   "SK Hynix Sinks 4% as Seoul Selloff Revives AI Spending Fears; SanDisk Drops 3%, Micron Eases": {
     "ko": "SK하이닉스, 서울 매각으로 AI 지출 공포 다시 살아나면서 4% 하락 SanDisk 하락 3%, Micron 완화",
     "seen": "2026-10-21"
+  },
+  "SK Hynix, Nvidia and Micron send one clear message to investors with their stocks off the highs": {
+    "ko": "SK 하이닉스, 엔비디아, 마이크론은 주가가 최고치에 도달하면서 투자자들에게 하나의 명확한 메시지를 보냅니다.",
+    "seen": "2026-10-28"
   },
   "SNDK Stock Falls Below $1,500 as China Memory Competition and Oracle Data-Center Delays Raise Demand Concerns": {
     "ko": "중국 메모리 경쟁과 Oracle 데이터 센터 지연으로 수요 우려가 높아지면서 SNDK 주가가 1,500달러 아래로 하락",
@@ -6347,6 +6387,10 @@
     "ko": "마이크론 테크놀로지 주식이 화요일에 상승하는 이유는 무엇입니까?",
     "seen": "2026-09-30"
   },
+  "Why Is Micron Technology Stock Surging Wednesday?": {
+    "ko": "마이크론 테크놀로지 주식이 수요일에 급등하는 이유는 무엇입니까?",
+    "seen": "2026-10-28"
+  },
   "Why is Microsoft stock climbing today?": {
     "ko": "오늘 마이크로소프트 주가가 오르는 이유는 무엇입니까?",
     "seen": "2026-10-13"
@@ -6558,6 +6602,10 @@
   "Your Complete Guide to the Russell 2000 Stock Market Index": {
     "ko": "Russell 2000 주식 시장 지수에 대한 완벽한 가이드",
     "seen": "2026-10-14"
+  },
+  "YouTube: Alphabet's crown jewel worth more than Disney and Netflix (GOOG:NASDAQ)": {
+    "ko": "YouTube: Disney와 Netflix보다 가치가 높은 알파벳의 보석(GOOG:NASDAQ)",
+    "seen": "2026-10-28"
   },
   "Zacks Investment Ideas feature highlights: Micron Technology": {
     "ko": "Zacks 투자 아이디어 주요 특징: Micron Technology",
