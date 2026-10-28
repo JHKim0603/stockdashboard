@@ -27,11 +27,27 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
 
 ## What's on the page
 
-- **한눈에 보기 (overview table)** above the cards: 종목 · 현재가 · 등락률 · 추세. Two columns on a
-  wide screen (read top-to-bottom, left column first), one on narrow; on a phone the trend and
-  ticker columns are hidden. Clicking the 등락률 header cycles 상승 큰 순 → 하락 큰 순 → original
-  order; clicking a row scrolls to that card. Added because 13 cards took four screens to answer
-  "what moved today".
+- **한눈 요약 (2026-10-28, work-dashboard 요약판을 옮겨 온 것)**: 카드 위 한 덩어리로 세 부분입니다.
+  - **분야별 등락 지도** (Finviz 지도 방식): `watchlist.json` 의 `Group`(국내 반도체, 미국 반도체, 빅테크·AI, 시장 지수,
+    코인; 없으면 시장으로 자동 분류)마다 한 줄, 종목마다 타일 하나. [오늘]·[1주]·[1개월]·[연초 대비]·[1년]으로 기간을 바꿔
+    봅니다. 타일 색은 그 종목의 평소 등락 폭(같은 기간 수익률의 표준편차) 대비 0.4배·1배·2배를 넘을 때마다 진해집니다.
+  - **지금 주목할 점**: 실적 발표 3일 이내, 52주 신고가·신저가와 고점 3% 이내, 20/60일선 교차, 거래량 평균의 2배 이상,
+    하루 등락이 5%와 평소 폭의 2배를 모두 넘을 때, 알림가 돌파·이탈, 시장 대비 1개월 ±15%p 이상을 문장으로 최대 6개
+    보여 줍니다(메일 맨 위에도 같은 목록). 줄을 누르면 해당 카드로 이동합니다.
+  - **기간별 표**: 종목(최근 흐름) · 현재가 · 오늘 · 1주 · 1개월 · 연초 대비 · 1년 · 시장 대비(1개월, 국내는 코스피,
+    미국은 나스닥과의 차이 %p) · 최근 6개월 추이선. 평소 폭보다 크면 칸을 옅게, 2배 이상이면 진하게 칠합니다. 머리글을
+    누를 때마다 큰 순 → 작은 순 → 분야별 순서로 정렬합니다. 820px 미만에서는 종목별 카드 모양으로 바뀝니다.
+- **다가오는 일정 (120일)**: 미국 종목 실적 발표일(Nasdaq/Zacks)과 `market-calendar.json` 의 시장 일정(FOMC, 미국 CPI,
+  한국은행 금통위, 미국·한국 증시 휴장일)을 날짜순 한 목록으로 보여 줍니다. **`market-calendar.json` 은 매년 초에 그해 일정을
+  더해야 합니다**(2027년 한국 증시 설 연휴는 한국거래소 발표 뒤 추가).
+- **카드 구역과 바로가기**: 카드를 분야별 구역으로 나누고, 위에 [한눈 요약]·[일정]·분야별 바로가기가 따라옵니다.
+- **차트 표시**: 카드 차트에 화면 기간 안의 20/60일선 교차 지점을 세로 점선(골든 빨강, 데드 파랑)으로, 알림가를 주황 가로선으로
+  그립니다(마우스를 올리면 날짜와 값).
+- **색**: 가격 방향은 국내 증권 앱처럼 **상승 빨강, 하락 파랑**입니다. `template.html` 맨 위 색 정의의 `--rise`/`--fall` 한곳에서
+  정하므로, 미국식으로 되돌리려면 그 값을 `var(--good)`/`var(--bad)` 로 바꾸면 됩니다. 메일도 같은 색입니다.
+- **글자와 문구**: 화면 글자는 12px 이상입니다. 화면·메일 문구는 사내 문서 문체(-습니다, 한 문장에 한 내용, 줄표·가운뎃점 나열
+  없음)로 씁니다. 이동평균 추세 표시는 "골든크로스, 상승 전환", "정배열, 상승 추세", "단기 하락"처럼 짧게 적습니다.
+- **화면 크기**: 1800px 이상에서는 페이지 최대 폭을 1,760px(2,300px 이상은 2,160px)로 넓힙니다.
 - **Per card:** price and change, 1M/3M/6M/1Y chart with 20/60/180일 moving averages, 52주 범위,
   거래량 with `평균의 N배` (vs the prior 20 trading days' average, highlighted at 2× and over),
   target price, next earnings (US listings), alert-level flag, and the 최근 이슈 news list.

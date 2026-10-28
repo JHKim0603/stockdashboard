@@ -55,6 +55,14 @@ function Resolve-TickerConfig {
 
     # Optional price alerts, in the ticker's own currency: { "Symbol": "005930.KS", "AlertBelow": 280000 }.
     # This file is public, like the rest of the repo - only put levels here you are fine publishing.
+    # 분야. 한눈 요약의 분야별 줄과 카드 구역을 나눈다. watchlist.json 에 "Group" 이 없으면 시장으로 정한다.
+    $group =
+        if ($raw.Group) { [string]$raw.Group }
+        elseif ($isIndex) { "시장 지수" }
+        elseif ($isCrypto) { "코인" }
+        elseif ($isDomestic) { "국내 주식" }
+        else { "미국 주식" }
+
     $alertBelow = if ($null -ne $raw.AlertBelow) { [double]$raw.AlertBelow } else { $null }
     $alertAbove = if ($null -ne $raw.AlertAbove) { [double]$raw.AlertAbove } else { $null }
 
@@ -70,6 +78,8 @@ function Resolve-TickerConfig {
         FinanceCode = $financeCode
         AlertBelow  = $alertBelow
         AlertAbove  = $alertAbove
+        Group       = $group
+        IsDomestic  = $isDomestic
     }
 }
 
@@ -753,11 +763,11 @@ function Get-StockSnapshot {
     $pctFromHigh = (($lastVal - $rangeHigh) / $rangeHigh) * 100
     $pctFromLow  = (($lastVal - $rangeLow)  / $rangeLow)  * 100
 
-    $periodSign = if ($periodPct -ge 0) { "+" } else { "" }
-    $lowSign    = if ($pctFromLow -ge 0) { "+" } else { "" }
-
-    $summary = "최근 {0}거래일 중 {1}일 상승 · {2}일 하락, 기간 시작 대비 {3}{4:N1}%. 52주 고점 대비 {5:N1}%, 저점 대비 {6}{7:N1}% 수준입니다." -f `
-        $rSeries.Count, $upDays, $downDays, $periodSign, $periodPct, $pctFromHigh, $lowSign, $pctFromLow
+    # 한 문장에 한 내용. 예전 문구는 가운뎃점과 쉼표로 네 가지를 한 줄에 이어 붙여 읽기 어려웠다.
+    $periodWord = if ($periodPct -ge 0) { "높습니다" } else { "낮습니다" }
+    $highPart = if ([math]::Abs($pctFromHigh) -lt 0.05) { "52주 고점과 같고" } else { "52주 고점보다 {0:N1}% 낮고" -f [math]::Abs($pctFromHigh) }
+    $summary = "최근 {0}거래일 중 {1}일 올랐고 {2}일 내렸습니다. {0}거래일 전보다 {3:N1}% {4}. {5}, 52주 저점보다 {6:N1}% 높습니다." -f `
+        $rSeries.Count, $upDays, $downDays, [math]::Abs($periodPct), $periodWord, $highPart, $pctFromLow
 
     $name = if ($cfg.DisplayName) { $cfg.DisplayName } else { $meta.longName }
     if ($cfg.IsIndex) {
@@ -804,6 +814,8 @@ function Get-StockSnapshot {
         earnings  = $earnings
         alertBelow = $cfg.AlertBelow
         alertAbove = $cfg.AlertAbove
+        group      = $cfg.Group
+        kind       = $(if ($cfg.IsIndex) { "index" } elseif ($cfg.IsCrypto) { "crypto" } elseif ($cfg.IsDomestic) { "kr" } else { "us" })
     }
 }
 
@@ -856,18 +868,18 @@ function Get-MaTrendComment {
     $a = $ma20[$i]; $b = $ma60[$i]; $c = $ma180[$i]
 
     $cross = Get-CrossSignal -series $series
-    if ($cross -eq "golden") { return @{ text = "골든크로스임, 상승전환임"; tone = "up" } }
-    if ($cross -eq "dead")   { return @{ text = "데드크로스임, 하락전환임"; tone = "down" } }
+    if ($cross -eq "golden") { return @{ text = "골든크로스, 상승 전환"; tone = "up" } }
+    if ($cross -eq "dead")   { return @{ text = "데드크로스, 하락 전환"; tone = "down" } }
 
     if ($null -eq $a -or $null -eq $b) { return $null }  # not enough history yet for even the 20/60 pair
 
     if ($null -ne $c) {
-        if ($last -gt $a -and $a -gt $b -and $b -gt $c) { return @{ text = "정배열임, 상승추세임"; tone = "up" } }
-        if ($last -lt $a -and $a -lt $b -and $b -lt $c) { return @{ text = "역배열임, 하락추세임"; tone = "down" } }
+        if ($last -gt $a -and $a -gt $b -and $b -gt $c) { return @{ text = "정배열, 상승 추세"; tone = "up" } }
+        if ($last -lt $a -and $a -lt $b -and $b -lt $c) { return @{ text = "역배열, 하락 추세"; tone = "down" } }
     }
 
-    if ($a -gt $b) { return @{ text = "정배열은 아님, 단기 상승세"; tone = "up" } }
-    if ($a -lt $b) { return @{ text = "역배열은 아님, 단기 하락세"; tone = "down" } }
+    if ($a -gt $b) { return @{ text = "단기 상승"; tone = "up" } }
+    if ($a -lt $b) { return @{ text = "단기 하락"; tone = "down" } }
     return @{ text = "뚜렷한 추세 없음"; tone = $null }
 }
 
@@ -1137,6 +1149,187 @@ function ConvertTo-JsonOrNull {
     return $json.Replace("</", "<\/")
 }
 
+# --- 기간별 등락·시장 대비·지금 주목할 점·다가오는 일정 ------------------------------------------
+# work-dashboard 요약판과 같은 방식: 오늘·1주·1개월·연초 대비·1년 변화를 내고, 평소 변동폭(같은 기간 수익률의
+# 표준편차)보다 크게 움직인 칸을 색칠할 수 있게 기준폭도 함께 넘긴다.
+function Get-PerfStats {
+    param($dates, $series)
+    $n = @($series).Count
+    if ($n -lt 3) { return $null }
+    $ci = [Globalization.CultureInfo]::InvariantCulture
+    $ds = @($dates | ForEach-Object { [DateTime]::ParseExact([string]$_, "yyyy-MM-dd", $ci) })
+    $vals = @($series | ForEach-Object { [double]$_ })
+    $li = $n - 1
+    $pctFrom = {
+        param([int]$j)
+        if ($j -lt 0 -or $vals[$j] -eq 0) { return $null }
+        [math]::Round(($vals[$li] / $vals[$j] - 1) * 100, 2)
+    }
+    $idxBefore = {
+        param([DateTime]$cut)
+        $k = $li
+        while ($k -ge 0 -and $ds[$k] -gt $cut) { $k-- }
+        $k
+    }
+    $stdOf = {
+        param([double]$h)
+        $rs = New-Object System.Collections.Generic.List[double]
+        $j = 0
+        for ($i = 1; $i -le $li; $i++) {
+            $cut = $ds[$i].AddDays(-$h)
+            while ($j + 1 -lt $i -and $ds[$j + 1] -le $cut) { $j++ }
+            if ($ds[$j] -le $cut -and $vals[$j] -ne 0) { $rs.Add(($vals[$i] / $vals[$j] - 1) * 100) }
+        }
+        if ($rs.Count -lt 20) { return $null }
+        $mean = ($rs | Measure-Object -Average).Average
+        [math]::Round([math]::Sqrt((($rs | ForEach-Object { ($_ - $mean) * ($_ - $mean) }) | Measure-Object -Sum).Sum / ($rs.Count - 1)), 2)
+    }
+    $sdD = & $stdOf 1
+    $sdW = & $stdOf 7
+    $sdM = & $stdOf 30
+    $daysYtd = [math]::Max(1, ($ds[$li] - [DateTime]::new($ds[$li].Year, 1, 1)).TotalDays)
+    [PSCustomObject]@{
+        d1  = & $pctFrom ($li - 1)
+        w1  = & $pctFrom (& $idxBefore $ds[$li].AddDays(-7))
+        m1  = & $pctFrom (& $idxBefore $ds[$li].AddDays(-30))
+        ytd = & $pctFrom (& $idxBefore ([DateTime]::new($ds[$li].Year - 1, 12, 31)))
+        y1  = & $pctFrom (& $idxBefore $ds[$li].AddDays(-365))
+        thr = [PSCustomObject]@{
+            d1  = $sdD; w1 = $sdW; m1 = $sdM
+            ytd = $(if ($sdM) { [math]::Round($sdM * [math]::Sqrt($daysYtd / 30), 2) } else { $null })
+            y1  = $(if ($sdM) { [math]::Round($sdM * [math]::Sqrt(365 / 30), 2) } else { $null })
+        }
+    }
+}
+foreach ($st in $stocks) {
+    $st | Add-Member -NotePropertyName perf -NotePropertyValue (Get-PerfStats $st.dates $st.series) -Force
+}
+# 시장 대비: 국내 종목은 코스피, 미국 종목은 나스닥과 최근 1개월 수익률 차이(%p).
+$benchOf = @{ kr = @{ sym = "^KS11"; name = "코스피" }; us = @{ sym = "^IXIC"; name = "나스닥" } }
+foreach ($st in $stocks) {
+    $rel = $null; $relBase = ""
+    $b = $benchOf[[string]$st.kind]
+    if ($b -and $st.perf -and $null -ne $st.perf.m1) {
+        $bs = @($stocks | Where-Object { $_.symbol -eq $b.sym })[0]
+        if ($bs -and $bs.perf -and $null -ne $bs.perf.m1) { $rel = [math]::Round($st.perf.m1 - $bs.perf.m1, 1); $relBase = $b.name }
+    }
+    $st | Add-Member -NotePropertyName relM1 -NotePropertyValue $rel -Force
+    $st | Add-Member -NotePropertyName relBase -NotePropertyValue $relBase -Force
+}
+
+# 받침 유무로 조사를 고른다. 영문·숫자로 끝나면 읽는 소리로 판단한다.
+function Get-Josa {
+    param([string]$word, [string]$withFinal, [string]$withoutFinal)
+    $w = ($word -replace '[\s\)\]]+$', '')
+    if (-not $w) { return $withoutFinal }
+    $ch = $w[$w.Length - 1]
+    $code = [int]$ch
+    if ($code -ge 0xAC00 -and $code -le 0xD7A3) {
+        if ((($code - 0xAC00) % 28) -ne 0) { return $withFinal } else { return $withoutFinal }
+    }
+    if ("LMNRlmnr0136783".Contains([string]$ch)) { return $withFinal }
+    $withoutFinal
+}
+function Format-Price {
+    param($v, $ccy)
+    if ($ccy -eq "₩") { "{0:N0}" -f [double]$v } else { "{0:N2}" -f [double]$v }
+}
+# 지금 주목할 점(페이지 맨 위, 메일 맨 위). 실적 발표 임박, 52주 신고가·신저가, 이동평균 교차, 거래량 급증,
+# 평소보다 큰 하루 등락, 알림가 돌파·이탈, 시장보다 크게 강하거나 약한 종목을 문장으로 모은다.
+$pageHighlights = New-Object System.Collections.ArrayList
+function Add-Highlight {
+    param([string]$tag, [string]$text, [double]$priority, [string]$symbol)
+    [void]$pageHighlights.Add([PSCustomObject]@{ tag = $tag; text = $text; priority = $priority; symbol = $symbol })
+}
+foreach ($st in $stocks) {
+    $nm = [string]$st.name
+    $topic = "$nm$(Get-Josa $nm '은' '는')"
+    $lastV = [double]$st.series[-1]
+    $prevV = [double]$st.series[-2]
+    if ($st.earnings -and $st.earnings.date) {
+        $eDate = [datetime]::ParseExact($st.earnings.date, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+        $dLeft = ($eDate - $nowKst.Date).Days
+        if ($dLeft -ge 0 -and $dLeft -le 3) {
+            $when = if ($dLeft -eq 0) { "오늘" } elseif ($dLeft -eq 1) { "내일" } else { "${dLeft}일 뒤" }
+            $timing = if ($st.earnings.timing) { " $($st.earnings.timing)" } else { "" }
+            Add-Highlight "실적" "$topic $when($($eDate.Month)/$($eDate.Day)$timing, 현지 기준) 실적을 발표합니다." (90 - $dLeft) $st.symbol
+        }
+    }
+    if ($st.rangeHigh -and $lastV -ge [double]$st.rangeHigh * 0.999) {
+        Add-Highlight "신고가" "$topic 52주 신고가를 기록했습니다." 95 $st.symbol
+    } elseif ($st.rangeLow -and $lastV -le [double]$st.rangeLow * 1.001) {
+        Add-Highlight "신저가" "$topic 52주 신저가를 기록했습니다." 95 $st.symbol
+    } elseif ($st.rangeHigh -and $lastV -ge [double]$st.rangeHigh * 0.97) {
+        $gapHi = ([double]$st.rangeHigh / $lastV - 1) * 100
+        Add-Highlight "신고가" "$topic 52주 고점까지 $($gapHi.ToString('0.0'))% 남았습니다." 55 $st.symbol
+    }
+    if ($st.cross -eq "golden") { Add-Highlight "추세" "$($nm)에서 골든크로스가 나왔습니다(20일선이 60일선 위로)." 80 $st.symbol }
+    elseif ($st.cross -eq "dead") { Add-Highlight "추세" "$($nm)에서 데드크로스가 나왔습니다(20일선이 60일선 아래로)." 80 $st.symbol }
+    if ($st.volumeRatio -and [double]$st.volumeRatio -ge 2) {
+        Add-Highlight "거래량" "$($nm) 거래량이 최근 20거래일 평균의 $(([double]$st.volumeRatio).ToString('0.0'))배입니다." 70 $st.symbol
+    }
+    if ($st.perf -and $null -ne $st.perf.d1) {
+        $d1 = [double]$st.perf.d1
+        $big = [math]::Max(5, $(if ($st.perf.thr.d1) { 2 * [double]$st.perf.thr.d1 } else { 5 }))
+        if ([math]::Abs($d1) -ge $big) {
+            $tagMv = if ($d1 -ge 0) { "급등" } else { "급락" }
+            $verbMv = if ($d1 -ge 0) { "올랐습니다" } else { "내렸습니다" }
+            Add-Highlight $tagMv "$topic 하루 사이 $([math]::Abs($d1).ToString('0.0'))% $verbMv." (85 + [math]::Abs($d1) / 10) $st.symbol
+        }
+    }
+    if ($null -ne $st.alertBelow -and $lastV -le [double]$st.alertBelow -and $prevV -gt [double]$st.alertBelow) {
+        Add-Highlight "알림가" "$topic 알림가 $($st.currency)$(Format-Price $st.alertBelow $st.currency) 아래로 내려갔습니다." 110 $st.symbol
+    }
+    if ($null -ne $st.alertAbove -and $lastV -ge [double]$st.alertAbove -and $prevV -lt [double]$st.alertAbove) {
+        Add-Highlight "알림가" "$topic 알림가 $($st.currency)$(Format-Price $st.alertAbove $st.currency) 위로 올라갔습니다." 110 $st.symbol
+    }
+    if ($null -ne $st.relM1 -and [math]::Abs([double]$st.relM1) -ge 15) {
+        $relWord = if ($st.relM1 -ge 0) { "강했습니다" } else { "약했습니다" }
+        Add-Highlight "시장 대비" "$topic 최근 1개월 $($st.relBase)보다 $([math]::Abs([double]$st.relM1).ToString('0.0'))%p $relWord." (40 + [math]::Abs([double]$st.relM1) / 10) $st.symbol
+    }
+}
+$pageHighlights = @($pageHighlights | Sort-Object priority -Descending | Select-Object -First 6)
+if ($pageHighlights.Count -eq 0) {
+    $pageHighlights = @([PSCustomObject]@{ tag = "전체"; text = "평소보다 크게 움직인 종목이나 가까운 실적 발표는 없습니다."; priority = 0; symbol = "" })
+}
+
+# 다가오는 일정(120일): market-calendar.json 의 시장 일정(FOMC, CPI, 금통위, 휴장일)에 미국 종목 실적 발표일을 더한다.
+$scheduleItems = New-Object System.Collections.ArrayList
+$calPath = Join-Path $root "market-calendar.json"
+$horizonEnd = $nowKst.Date.AddDays(120)
+if (Test-Path $calPath) {
+    try {
+        $cal = Get-Content -Path $calPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        foreach ($ev in @($cal.events)) {
+            if (-not $ev.date -or -not $ev.title) { continue }
+            $evStart = [datetime]::ParseExact([string]$ev.date, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+            $evEnd = if ($ev.end) { [datetime]::ParseExact([string]$ev.end, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture) } else { $evStart }
+            if ($evEnd -lt $nowKst.Date -or $evStart -gt $horizonEnd) { continue }
+            [void]$scheduleItems.Add([PSCustomObject]@{ date = [string]$ev.date; end = $evEnd.ToString("yyyy-MM-dd"); kind = [string]$ev.kind
+                market = [string]$ev.market; title = [string]$ev.title; note = [string]$ev.note })
+        }
+    } catch { Write-Warning "market-calendar.json 을 읽지 못했습니다: $($_.Exception.Message)" }
+}
+foreach ($st in $stocks) {
+    if (-not $st.earnings -or -not $st.earnings.date) { continue }
+    $eDate = [datetime]::ParseExact($st.earnings.date, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+    if ($eDate -lt $nowKst.Date -or $eDate -gt $horizonEnd) { continue }
+    $noteParts = @()
+    if ($st.earnings.timing) { $noteParts += $st.earnings.timing }
+    $noteParts += $(if ($st.earnings.confirmed) { "확정" } else { "추정(바뀔 수 있음)" })
+    $noteParts += "현지 날짜"
+    [void]$scheduleItems.Add([PSCustomObject]@{ date = [string]$st.earnings.date; end = [string]$st.earnings.date; kind = "실적"
+        market = "미국"; title = "$($st.name) 실적 발표"; note = ($noteParts -join ", "); symbol = $st.symbol })
+}
+$scheduleItems = @($scheduleItems | Sort-Object date)
+
+$highlightsJson = ConvertTo-Json -InputObject @($pageHighlights) -Depth 3 -Compress
+if (-not $highlightsJson -or $highlightsJson -eq "null") { $highlightsJson = "[]" }
+$scheduleJson = ConvertTo-Json -InputObject @($scheduleItems) -Depth 3 -Compress
+if (-not $scheduleJson -or $scheduleJson -eq "null") { $scheduleJson = "[]" }
+$highlightsJson = $highlightsJson.Replace("</", "<\/")
+$scheduleJson = $scheduleJson.Replace("</", "<\/")
+
 $stocksJson = ConvertTo-JsonOrNull -InputObject @($stocks) -Depth 8
 $usdKrwJson = ConvertTo-JsonOrNull -InputObject $usdKrw
 $usdKrwSeriesJson = ConvertTo-JsonOrNull -InputObject $usdKrwSeries -Depth 4
@@ -1144,7 +1337,7 @@ $fearGreedJson = ConvertTo-JsonOrNull -InputObject $fearGreed
 $fetchedAt = $nowKst.ToString("yyyy-MM-ddTHH:mm:ss") + "+09:00"  # $nowKst's DateTimeKind is still Utc after the manual +9h shift, so "zzz" would report +00:00 — append the known-fixed KST offset literally instead.
 
 $template = Get-Content -Path (Join-Path $root "template.html") -Raw -Encoding UTF8
-$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt)
+$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson)
 
 $outPath = Join-Path $root "dashboard.html"
 Set-Content -Path $outPath -Value $output -Encoding UTF8
@@ -1178,7 +1371,8 @@ $rowsHtml = foreach ($s in $stocks) {
     $pct = if ($prev -ne 0) { ($diff / $prev) * 100 } else { 0 }
     $up = $diff -ge 0
     $sign = if ($up) { "+" } else { "" }
-    $color = if ($up) { "#0ca30c" } else { "#e34948" }
+    # 국내 증권 앱과 같은 색: 상승 빨강, 하락 파랑
+    $color = if ($up) { "#c62828" } else { "#1f5fcc" }
     $arrow = if ($up) { "▲" } else { "▼" }
     $priceFmt = if ($s.currency -eq "₩") { "{0:N0}" -f $last } else { "{0:N2}" -f $last }
 
@@ -1221,16 +1415,16 @@ $rowsHtml = foreach ($s in $stocks) {
             $kind = if ($s.earnings.confirmed) { "확정" } else { "추정" }
             $when = "$($eDate.Month)/$($eDate.Day)" + $(if ($s.earnings.timing) { " $($s.earnings.timing)" } else { "" })
             $dText = if ($dLeft -eq 0) { "D-day" } else { "D-$dLeft" }
-            $earnHtml = "<div style='font-size:11.5px;font-weight:600;color:#7a4a00;margin-top:3px;'>실적 발표 $when ($kind, 현지) · $dText</div>"
+            $earnHtml = "<div style='font-size:11.5px;font-weight:600;color:#7a4a00;margin-top:3px;'>실적 발표 $when($kind, 현지 기준), $dText</div>"
             if ($dLeft -le 3) { [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) 실적 $dText"; priority = 75 }) }
         }
     }
-    $alertHtml = if ($alertNotes.Count) { "<div style='font-size:11.5px;font-weight:700;color:#b3221f;margin-top:3px;'>⚑ $($alertNotes -join ' · ')</div>" } else { "" }
+    $alertHtml = if ($alertNotes.Count) { "<div style='font-size:11.5px;font-weight:700;color:#8f5200;margin-top:3px;'>⚑ $($alertNotes -join ', ')</div>" } else { "" }
 
     $trend = $s.maTrend
     $trendHtml = ""
     if ($trend) {
-        $trendColor = if ($trend.tone -eq "up") { "#0ca30c" } elseif ($trend.tone -eq "down") { "#e34948" } else { "#898781" }
+        $trendColor = if ($trend.tone -eq "up") { "#c62828" } elseif ($trend.tone -eq "down") { "#1f5fcc" } else { "#898781" }
         $trendHtml = "<div style='font-size:11.5px;font-weight:600;color:$trendColor;margin-top:4px;'>$($trend.text)</div>"
     }
 
@@ -1238,8 +1432,8 @@ $rowsHtml = foreach ($s in $stocks) {
     if ($s.news -and $s.news.Count -gt 0) {
         $newsLines = foreach ($n in ($s.news | Select-Object -First 2)) {
             $tag = switch ($n.sentiment) {
-                "good" { "<span style='color:#0ca30c;font-weight:700;'>[호재]</span> " }
-                "bad"  { "<span style='color:#e34948;font-weight:700;'>[악재]</span> " }
+                "good" { "<span style='color:#c62828;font-weight:700;'>[호재]</span> " }
+                "bad"  { "<span style='color:#1f5fcc;font-weight:700;'>[악재]</span> " }
                 default { "" }
             }
             # Headlines come from arbitrary outlets: an & or < in one is markup here, and a quote
@@ -1254,6 +1448,7 @@ $rowsHtml = foreach ($s in $stocks) {
     $priceInner = @"
 <div style="font-weight:650;font-size:14px;color:#0b0b0b;">$($s.currency)$priceFmt</div>
     <div style="font-size:12px;font-weight:600;color:$color;">$arrow $([math]::Abs($pct).ToString("N2"))%</div>
+    $(if ($s.perf -and $null -ne $s.perf.m1) { "<div style='font-size:11px;color:#898781;margin-top:2px;'>1개월 $(if ($s.perf.m1 -gt 0) { '+' })$(([double]$s.perf.m1).ToString('0.0'))%</div>" })
 "@
     $priceHtml = if ($s.pageUrl) { "<a href='$($s.pageUrl)' style='text-decoration:none;display:block;'>$priceInner</a>" } else { $priceInner }
 
@@ -1322,8 +1517,8 @@ if ($fearGreed) {
   </div>
   $trendRow
   <div style="font-size:11px;color:#898781;margin-top:7px;line-height:1.5;">
-    "공포에 사고 탐욕에 팔라" 원칙을 CNN 밴드에 얹은 참고 문구입니다. 매매 신호가 아닙니다 —
-    극단적 공포는 바닥 직전에도, 하락이 더 이어지는 구간에도 나옵니다.
+    "공포에 사고 탐욕에 팔라"는 원칙을 CNN 구간에 붙인 참고 문구이며 매매 신호가 아닙니다.
+    극단적 공포는 바닥 직전에도 나오지만 하락이 더 이어지는 구간에도 나옵니다.
   </div>
 </div>
 "@
@@ -1334,8 +1529,8 @@ if ($fearGreed) {
     # 않았다. 빠졌다는 사실 자체를 보여준다.
     $fgBlockHtml = @"
 <div style="margin:0 0 16px;padding:12px 15px;background:#fdf6e7;border:1px solid #f0dcb4;border-left:4px solid #a15c00;border-radius:6px;">
-  <div style="font-size:13px;font-weight:bold;color:#a15c00;">⚠ 오늘 공포·탐욕지수를 가져오지 못했습니다</div>
-  <div style="font-size:11.5px;color:#52514e;margin-top:4px;">CNN 이 응답하지 않았습니다. 다음 실행에서 자동 재시도합니다. 급하면 <a href="https://edition.cnn.com/markets/fear-and-greed" style="color:#2a78d6;">CNN Fear &amp; Greed</a> 에서 직접 확인하세요.</div>
+  <div style="font-size:13px;font-weight:bold;color:#a15c00;">⚠ 오늘은 공포·탐욕지수를 받지 못했습니다</div>
+  <div style="font-size:11.5px;color:#52514e;margin-top:4px;">CNN 사이트가 응답하지 않았습니다. 다음 실행 때 자동으로 다시 조회합니다. 급한 경우 <a href="https://edition.cnn.com/markets/fear-and-greed" style="color:#2a78d6;">CNN Fear &amp; Greed</a>에서 직접 확인하시기 바랍니다.</div>
 </div>
 "@
 }
@@ -1364,13 +1559,14 @@ $emailHtml = @"
   <div style="margin-bottom:16px;">
     <a href="$dashboardUrl" style="display:inline-block;background:#2a78d6;color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 18px;border-radius:6px;">📊 대시보드 열기 →</a>
   </div>
+  $(if ($pageHighlights.Count) { "<div style='margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>지금 주목할 점</div><div style='font-size:12.5px;color:#0b0b0b;line-height:1.65;'>$((@($pageHighlights | ForEach-Object { "· <font color=#6e6c66>[$($_.tag)]</font> $([System.Net.WebUtility]::HtmlEncode([string]$_.text))" })) -join '<br>')</div></div>" })
   $fgBlockHtml
   <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e1e0d9;border-radius:8px;">
     $($rowsHtml -join "`n")
   </table>
   <div style="margin-top:16px;font-size:11px;color:#898781;line-height:1.6;">
-    시세 출처: Yahoo Finance. 뉴스 출처: Google 뉴스(영문 기사는 자동 번역). 투자 판단 참고용으로만 사용하세요 — 개인 용도 요약입니다.<br>
-    실적·목표주가·이동평균선·전체 차트 등 자세한 내용은 <a href="$dashboardUrl" style="color:#2a78d6;">대시보드</a>에서 확인하세요.
+    출처: 시세 Yahoo Finance, 뉴스 Google 뉴스(영문 기사는 자동 번역). 개인 투자 판단의 참고용 요약입니다.<br>
+    실적, 목표주가, 이동평균선, 전체 차트는 <a href="$dashboardUrl" style="color:#2a78d6;">대시보드</a>에서 확인하시기 바랍니다.
   </div>
 </div>
 </body></html>
@@ -1402,7 +1598,7 @@ Write-Host "Email summary written: email-summary.html"
 $problems = New-Object System.Collections.Generic.List[string]
 
 $renderedHtml = Get-Content -Path $outPath -Raw -Encoding UTF8
-foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__")) {
+foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__", "__HIGHLIGHTS_JSON__", "__SCHEDULE_JSON__")) {
     if ($renderedHtml -like "*$token*") { $problems.Add("템플릿 치환 누락: $token") }
 }
 
