@@ -353,7 +353,7 @@
   },
   "Alphabet Inc. (GOOG) Stock Price, News, Quote & History": {
     "ko": "Alphabet Inc.(GOOG) 주가, 뉴스, 시세 및 역사",
-    "seen": "2026-10-22"
+    "seen": "2026-10-28"
   },
   "Alphabet Inc. (GOOG) stock price, news, quote and history": {
     "ko": "Alphabet Inc.(GOOG) 주가, 뉴스, 시세 및 내역",
@@ -542,6 +542,10 @@
   "Alphabet's ROIC Is Strong, but Is GOOGL Stock a Buy Now?": {
     "ko": "Alphabet의 ROIC는 강력하지만 GOOGL 주식은 지금 구매할 수 있습니까?",
     "seen": "2026-09-10"
+  },
+  "Amaero (ASX:3DA) Joins A Major US Stock Index In Visibility Boost": {
+    "ko": "Amaero (ASX:3DA), 가시성 강화로 미국 주요 주가지수에 합류",
+    "seen": "2026-10-28"
   },
   "Amazon, Palantir and 12 more top tech stock picks from UBS analysts": {
     "ko": "UBS 애널리스트가 선정한 Amazon, Palantir 외 12개 최고 기술주 추천",
@@ -942,6 +946,10 @@
   "Dow, S&P 500, Nasdaq Futures Mixed Ahead Of Fed Rate Decision As AI Uncertainty Mounts: IOVA, PLAY, ELMT, RBLX Stocks In Focus": {
     "ko": "AI 불확실성이 증가함에 따라 다우, S&P 500, 나스닥 선물이 연준 금리 결정을 앞두고 혼합되었습니다: IOVA, PLAY, ELMT, RBLX 주식에 집중",
     "seen": "2026-09-15"
+  },
+  "Dow, S&P 500, Nasdaq Futures Mixed Ahead Of Key Tech Results, Fed Rate Decision: SKHY, HOOD, BA, ENPH In Focus": {
+    "ko": "다우, S&P 500, 나스닥 선물이 주요 기술 결과에 앞서 혼합, 연준 금리 결정: SKHY, HOOD, BA, ENPH 집중",
+    "seen": "2026-10-28"
   },
   "Durable Growth Reinforces Microsoft Corporation’s (MSFT) Investment Thesis": {
     "ko": "지속적인 성장으로 Microsoft Corporation(MSFT)의 투자 논제 강화",
@@ -1543,6 +1551,10 @@
     "ko": "Microsoft 주식에는 얼마나 많은 상승 여력이 남아 있습니까?",
     "seen": "2026-10-01"
   },
+  "How Nasdaq Composite Removal At CECO Environmental Stock Has Changed Its Investment Story": {
+    "ko": "CECO 환경 주식의 나스닥 복합재 제거로 인해 투자 스토리가 어떻게 바뀌었나요?",
+    "seen": "2026-10-28"
+  },
   "How Will Micron Technology Stock React To Its Upcoming Earnings?": {
     "ko": "Micron Technology 주식은 향후 수익에 어떻게 반응할까요?",
     "seen": "2026-09-29"
@@ -1822,6 +1834,10 @@
   "Jim Cramer Says Don’t Trade These 2 Stocks. Just Own Them": {
     "ko": "Jim Cramer는 이 두 주식을 거래하지 말라고 말합니다. 그냥 소유하세요",
     "seen": "2026-09-23"
+  },
+  "Jim Cramer Says Micron Shouldn't Follow 'Whatever' SK Hynix Does As MU Shares Jump After Hours: 'I'm Hoping The Linkage Ends One Day'": {
+    "ko": "Jim Cramer는 Micron이 MU 주가가 시간 이후 급등할 때 SK 하이닉스가 하는 '무엇이든' 따라선 안 된다고 말했습니다: '언젠가 연결이 끝나기를 바랍니다'",
+    "seen": "2026-10-28"
   },
   "Jim Cramer Tries To Predict NVIDIA Corporation (NASDAQ:NVDA) Share Price Movement Following Anthropic CEO’s Remarks": {
     "ko": "Jim Cramer는 Anthropic CEO의 발언에 따른 NVIDIA Corporation(NASDAQ:NVDA) 주가 변동 예측을 시도합니다.",
@@ -2679,6 +2695,10 @@
     "ko": "Microsoft 비용 절감: Azure의 20% 절감이 MSFT 주식에 미치는 영향",
     "seen": "2026-10-20"
   },
+  "Microsoft Earnings Preview: Polymarket Doubts a July-Size Surge": {
+    "ko": "Microsoft Earnings Preview: Polymarket은 7월 규모의 급증을 의심합니다.",
+    "seen": "2026-10-28"
+  },
   "Microsoft Earnings Report To Focus On AI Momentum, Capex": {
     "ko": "Microsoft 수익 보고서는 AI 모멘텀, Capex에 중점을 둡니다.",
     "seen": "2026-10-24"
@@ -3170,6 +3190,10 @@
   "Nasdaq Index: Chip Buyers Return as Oil Falls, but 5% Yields Cap Rally": {
     "ko": "나스닥 지수: 유가 하락으로 칩 구매자들이 돌아오지만 5% 수익률은 상한선 상승",
     "seen": "2026-09-30"
+  },
+  "Nasdaq Index: Chipmakers and Lower Oil Fuel a Second-Day Rally": {
+    "ko": "나스닥 지수: 칩 제조사와 저유가가 이틀째 랠리를 펼칩니다.",
+    "seen": "2026-10-28"
   },
   "Nasdaq Index: Micron Slides as 10-Year Yield Surge Snuffs Out Tech’s October Bid": {
     "ko": "나스닥 지수: 10년 만기 수익률 급등으로 Tech의 10월 입찰을 압도하면서 Micron 하락",
@@ -4579,6 +4603,10 @@
     "ko": "S&P 500 지수는 스톡홀름 증시 마감 이후 큰 변화를 보이지 않았습니다.",
     "seen": "2026-10-21"
   },
+  "S&P 500 index showed little change after Stockholm Stock Exchange close": {
+    "ko": "S&P 500 지수는 스톡홀름 증권거래소 폐쇄 이후 거의 변화를 보이지 않았습니다.",
+    "seen": "2026-10-28"
+  },
   "S&P 500 Index Slips Weekly as Health Care, Materials Weigh": {
     "ko": "S&P 500 지수는 헬스케어, 소재 평가에 따라 매주 하락합니다.",
     "seen": "2026-09-12"
@@ -5457,7 +5485,7 @@
   },
   "Stock Market: Will S&P 500 Open Up or Down Today?": {
     "ko": "주식시장: 오늘 S&P 500이 상승할 것인가, 하락할 것인가?",
-    "seen": "2026-10-23"
+    "seen": "2026-10-28"
   },
   "Stock Of The Day: AI Energy Play Bloom Energy Nears Buy Point, S&P 500 Entry": {
     "ko": "오늘의 주식: AI 에너지 플레이 Bloom Energy가 매수 지점에 가까워지고 S&P 500 진입",
