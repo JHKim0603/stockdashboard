@@ -398,11 +398,12 @@
     .ov-table tr.ov-cat, .ov-table tr.ov-cat td { display: block; }
     .ov-table tr.ov-item {
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 6px;
-      grid-template-areas: "name name val" "d1 w1 m1" "ytd y1 rel";
+      grid-template-areas: "name name val" "ma ma ma" "d1 w1 m1" "ytd y1 rel";
       padding: 10px 0; border-bottom: 1px solid var(--gridline);
     }
     .ov-table tr.ov-item td { border: none; padding: 0; white-space: normal; text-align: left; width: auto; }
     .ov-table td.c-name { grid-area: name; }
+    .ov-table td.c-ma { grid-area: ma; text-align: left; }
     .ov-table td.c-val { grid-area: val; text-align: right; }
     .ov-table td.c-spark { display: none; }
     .ov-table td.c-d1 { grid-area: d1; } .ov-table td.c-w1 { grid-area: w1; } .ov-table td.c-m1 { grid-area: m1; }
@@ -451,6 +452,17 @@
   .jump-nav a:hover { color: var(--accent); border-color: var(--accent); }
   .jump-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .chart-marks { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+  /* 이평선 도달 매수 기준 */
+  .cross-badge.ma { color: #fff; background: var(--accent); }
+  .ma-levels { font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
+  .ma-levels .lv { white-space: nowrap; margin-right: 10px; font-variant-numeric: tabular-nums; }
+  .ma-levels .lv.touch { color: var(--accent); font-weight: 700; }
+  .ma-levels .lv.near { color: var(--accent); }
+  .ov-ma { font-size: 12.5px; color: var(--ink-muted); }
+  .ov-ma.near { color: var(--accent); font-weight: 600; }
+  .ov-ma.touch { display: inline-block; color: #fff; background: var(--accent); font-weight: 700; padding: 1px 8px; border-radius: 10px; }
+  .hm-ma { font-size: 12px; font-weight: 700; color: var(--accent); }
+  .hl-tag.buy { color: #fff; background: var(--accent); padding: 0 6px; border-radius: 4px; }
 
   .card-head {
     display: flex;
@@ -1328,6 +1340,15 @@
         ? MA_SHORT + "일선이 " + MA_MID + "일선을 최근 위로 넘었습니다. 흔히 매수 신호로 봅니다."
         : MA_SHORT + "일선이 " + MA_MID + "일선 아래로 최근 내려갔습니다. 흔히 매도 신호로 봅니다.";
       priceRow.appendChild(crossEl);
+    }
+
+    const maHits = (stock.maLevels || []).filter(l => l && l.buySignal);
+    if (maHits.length) {
+      const mb = document.createElement("div");
+      mb.className = "cross-badge ma";
+      mb.textContent = "◎ " + maHits.map(l => l.window + "일선").join("·") + " 도달";
+      mb.title = "주가가 위에서 내려와 이평선에 닿았습니다. 이평선 도달 매수 기준에 해당합니다.";
+      priceRow.appendChild(mb);
     }
 
     const alertState = alertStateOf(stock, last);
@@ -2245,6 +2266,22 @@
       trendEl.textContent = trend.text;
       block.appendChild(trendEl);
     }
+    // 이평선과의 거리. 닿은 선은 굵게, 매수 대기(위 3% 안)는 파랑.
+    const lvs = (stock.maLevels || []).filter(Boolean);
+    if (lvs.length) {
+      const lvEl = document.createElement("div");
+      lvEl.className = "ma-levels";
+      lvEl.append("이평선과의 거리: ");
+      lvs.forEach(l => {
+        const sp = document.createElement("span");
+        sp.className = "lv" + (l.buySignal ? " touch" : l.state === "near" ? " near" : "");
+        sp.textContent = l.window + "일선 " + (l.gapPct > 0 ? "+" : l.gapPct < 0 ? "−" : "") + Math.abs(l.gapPct).toFixed(1) + "%" +
+          (l.buySignal ? (l.intraday ? "(장중 도달)" : "(도달)") : l.state === "touch" ? "(아래에서 닿음)" : "");
+        sp.title = l.window + "일선 " + stock.currency + fmtNum(l.value, stock.currency) + (l.slopeUp ? ", 오르는 중" : ", 내려가는 중");
+        lvEl.appendChild(sp);
+      });
+      block.appendChild(lvEl);
+    }
 
     block.appendChild(slot);
     render();
@@ -2514,6 +2551,17 @@
     setTimeout(() => card.classList.remove("flash"), 1200);
   };
   const idxOfSymbol = sym => stocks.findIndex(st => st.symbol === sym);
+  // 이평선 도달 매수 기준: 닿은 이평선(위에서 내려옴), 없으면 가장 가까운 '매수 대기', 없으면 가장 가까운 이평선
+  const maSummary = st => {
+    const lv = (st.maLevels || []).filter(Boolean);
+    if (!lv.length) return null;
+    const hit = lv.filter(l => l.buySignal);
+    if (hit.length) return { cls: "touch", text: "◎ " + hit.map(l => l.window + "일선").join("·") + " 도달", hit };
+    const near = lv.filter(l => l.state === "near").sort((a, b) => a.gapPct - b.gapPct)[0];
+    if (near) return { cls: "near", text: near.window + "일선까지 " + near.gapPct.toFixed(1) + "%" };
+    const closest = lv.slice().sort((a, b) => Math.abs(a.gapPct) - Math.abs(b.gapPct))[0];
+    return { cls: "", text: closest.window + "일선 " + (closest.gapPct > 0 ? "+" : "−") + Math.abs(closest.gapPct).toFixed(1) + "%" };
+  };
 
   // ---- 카드: 분야별 구역 ------------------------------------------------------------------
   const groupsHost = document.getElementById("card-groups");
@@ -2574,7 +2622,8 @@
         const tiles = members.map(x => {
           const v = perfOf(x.st, period);
           return '<button type="button" class="hm-tile ' + tileLv(v, thrOf(x.st, period)) + '" data-i="' + x.i + '" title="' + esc(x.st.name) + ' 카드로 이동">' +
-            '<span class="hm-name">' + esc(x.st.name) + '</span><span class="hm-pct ' + dirCls(v) + '">' + fmtPct(v) + '</span></button>';
+            '<span class="hm-name">' + esc(x.st.name) + '</span><span class="hm-pct ' + dirCls(v) + '">' + fmtPct(v) + '</span>' +
+            (function () { const ms = maSummary(x.st); return ms && ms.cls === "touch" ? '<span class="hm-ma">' + esc(ms.text) + '</span>' : ""; })() + '</button>';
         }).join("");
         return '<div class="hm-row"><div class="hm-label"><b>' + esc(g) + '</b><span class="hm-dir ' + dir + '">' + esc(dirTxt) + '</span></div>' +
           '<div class="hm-tiles">' + tiles + '</div></div>';
@@ -2599,13 +2648,17 @@
         (al ? '<span class="ov-flag" title="' + esc(al.title) + '">⚑</span>' : "") + chip +
         '<div class="ov-sub">' + esc(st.symbol) + '</div></td>' +
         '<td class="c-val">' + esc(st.currency) + fmtNum(last, st.currency) + '</td>' +
+        (function () {
+          const ms = maSummary(st);
+          return '<td class="c-ma" data-label="이평선">' + (ms ? '<span class="ov-ma ' + ms.cls + '">' + esc(ms.text) + '</span>' : "–") + '</td>';
+        })() +
         cell("d1", "오늘") + cell("w1", "1주") + cell("m1", "1개월") + cell("ytd", "연초 대비") + cell("y1", "1년") + rel +
         '<td class="c-spark">' + overviewSpark(st) + '</td></tr>';
     }
 
     function sortMark(k) { return sortKey === k ? (sortDir === -1 ? " ▼" : " ▲") : ""; }
     function tableHtml() {
-      const head = '<tr class="ov-hdr"><th>종목 (최근 흐름)</th><th>현재가</th>' +
+      const head = '<tr class="ov-hdr"><th>종목 (최근 흐름)</th><th>현재가</th><th>이평선</th>' +
         PERIODS.map(pd => '<th><button type="button" data-sort="' + pd.key + '" title="누를 때마다 큰 순, 작은 순, 분야별 순서">' + pd.label + sortMark(pd.key) + '</button></th>').join("") +
         '<th><button type="button" data-sort="rel" title="누를 때마다 큰 순, 작은 순, 분야별 순서">시장 대비<br>(1개월)' + sortMark("rel") + '</button></th>' +
         '<th class="c-spark">최근 6개월</th></tr>';
@@ -2619,7 +2672,7 @@
           return (v1 - v2) * sortDir;
         }).map(x => rowHtml(x.st, x.i)).join("");
       } else {
-        body = groupNames.map(g => '<tr class="ov-cat"><td colspan="9">' + esc(g) + '</td></tr>' +
+        body = groupNames.map(g => '<tr class="ov-cat"><td colspan="10">' + esc(g) + '</td></tr>' +
           stocks.map((st, i) => (st.group || "기타") === g ? rowHtml(st, i) : "").join("")).join("");
       }
       return '<table class="ov-table">' + head + body + '</table>';
@@ -2633,11 +2686,12 @@
         PERIODS.map(pd => '<button type="button" data-period="' + pd.key + '" class="' + (pd.key === period ? "on" : "") + '">' + pd.label + '</button>').join("") +
         '</div></div>' + heatmapHtml() + '</div>' +
         (hl.length ? '<div class="ov-today"><div class="ov-today-title">지금 주목할 점</div><ul>' +
-          hl.map(h => '<li data-sym="' + esc(h.symbol || "") + '"><span class="hl-tag">' + esc(h.tag) + '</span>' + esc(h.text) + '</li>').join("") +
+          hl.map(h => '<li data-sym="' + esc(h.symbol || "") + '"><span class="hl-tag' + (h.tag === "매수 기준" ? " buy" : "") + '">' + esc(h.tag) + '</span>' + esc(h.text) + '</li>').join("") +
           '</ul></div>' : "") +
         '</div>' +
         '<div class="ov-legend"><b class="up">빨강</b>은 상승, <b class="down">파랑</b>은 하락입니다. ' +
-        '칸 배경이 진할수록 그 종목의 평소 등락 폭보다 크게 움직였습니다. 머리글을 누르면 정렬됩니다.</div>' +
+        '칸 배경이 진할수록 그 종목의 평소 등락 폭보다 크게 움직였습니다. 머리글을 누르면 정렬됩니다. ' +
+        '◎는 주가가 위에서 내려와 이평선에 닿은 종목으로, 이평선 도달 매수 기준에 해당합니다.</div>' +
         '<div class="ov-scroll">' + tableHtml() + '</div>' +
         '<div class="ov-note">시장 대비는 최근 1개월 수익률에서 국내 종목은 코스피, 미국 종목은 나스닥의 수익률을 뺀 값입니다. 타일이나 행을 누르면 해당 카드로 이동합니다.</div>';
     }

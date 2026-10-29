@@ -63,6 +63,9 @@ function Resolve-TickerConfig {
         elseif ($isDomestic) { "국내 주식" }
         else { "미국 주식" }
 
+    # 종목별로 다른 이평선을 보려면 watchlist.json 에 "BuyMA": [60, 120] 처럼 적는다.
+    $buyMa = if ($raw.BuyMA) { @($raw.BuyMA | ForEach-Object { [int]$_ }) } else { $null }
+
     $alertBelow = if ($null -ne $raw.AlertBelow) { [double]$raw.AlertBelow } else { $null }
     $alertAbove = if ($null -ne $raw.AlertAbove) { [double]$raw.AlertAbove } else { $null }
 
@@ -80,10 +83,25 @@ function Resolve-TickerConfig {
         AlertAbove  = $alertAbove
         Group       = $group
         IsDomestic  = $isDomestic
+        BuyMA       = $buyMa
     }
 }
 
 $watchlistRaw = Get-Content -Path (Join-Path $root "watchlist.json") -Raw -Encoding UTF8 | ConvertFrom-Json
+# 이평선 도달 매수 기준. 사용자가 이평선에 닿았을 때 사는 방식이라, 종목·지수마다 이평선과의 거리를 매일 재서
+# 닿으면 '매수 기준 도달', 가까우면 '매수 대기'로 알린다. 기준값은 buy-rules.json 에서 바꾼다.
+$buyRules = [PSCustomObject]@{ maWindows = @(20, 60, 180); touchPct = 1.0; nearPct = 3.0; fromAboveOnly = $true }
+$buyRulesPath = Join-Path $root "buy-rules.json"
+if (Test-Path $buyRulesPath) {
+    try {
+        $br = Get-Content -Path $buyRulesPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($br.maWindows) { $buyRules.maWindows = @($br.maWindows | ForEach-Object { [int]$_ }) }
+        if ($null -ne $br.touchPct) { $buyRules.touchPct = [double]$br.touchPct }
+        if ($null -ne $br.nearPct) { $buyRules.nearPct = [double]$br.nearPct }
+        if ($null -ne $br.fromAboveOnly) { $buyRules.fromAboveOnly = [bool]$br.fromAboveOnly }
+    } catch { Write-Warning "buy-rules.json 을 읽지 못해 기본값(20·60·180일선, 1%, 3%)을 씁니다: $($_.Exception.Message)" }
+}
+
 $tickers = @($watchlistRaw | ForEach-Object { Resolve-TickerConfig $_ })
 
 $currencySymbols = @{ KRW = "₩"; USD = "$"; }
@@ -693,11 +711,13 @@ function Get-StockSnapshot {
         [DateTimeOffset]::FromUnixTimeSeconds($unix).ToOffset($exOffset).ToString("yyyy-MM-dd")
     }
 
+    $lowsArr = $result.indicators.quote[0].low
     $pairs = @(for ($i = 0; $i -lt $closes.Count; $i++) {
         if ($null -ne $closes[$i]) {
             [PSCustomObject]@{
                 Date  = ConvertTo-ExchangeDate $timestamps[$i]
                 Close = [math]::Round([double]$closes[$i], 2)
+                Low   = if ($lowsArr -and $null -ne $lowsArr[$i]) { [math]::Round([double]$lowsArr[$i], 2) } else { [math]::Round([double]$closes[$i], 2) }
             }
         }
     })
@@ -714,11 +734,13 @@ function Get-StockSnapshot {
     if ($meta.regularMarketPrice -and $meta.regularMarketTime) {
         $metaDate = ConvertTo-ExchangeDate $meta.regularMarketTime
         if ($pairs.Count -eq 0 -or $metaDate -gt $pairs[-1].Date) {
-            $pairs += [PSCustomObject]@{ Date = $metaDate; Close = [math]::Round([double]$meta.regularMarketPrice, 2) }
+            $metaLow = if ($meta.regularMarketDayLow -and [double]$meta.regularMarketDayLow -gt 0) { [math]::Round([double]$meta.regularMarketDayLow, 2) } else { [math]::Round([double]$meta.regularMarketPrice, 2) }
+            $pairs += [PSCustomObject]@{ Date = $metaDate; Close = [math]::Round([double]$meta.regularMarketPrice, 2); Low = $metaLow }
         }
     }
 
     $fullSeries = @($pairs.Close)
+    $fullLows   = @($pairs.Low)
     $fullDates  = @($pairs.Date)
 
     # Today's volume against the stock's own 20-session average, from the volume array this same
@@ -807,6 +829,7 @@ function Get-StockSnapshot {
         # 메일과 페이지가 같은 종목을 두고 다른 말을 하게 되는 구조였다.
         cross     = Get-CrossSignal -series $fullSeries
         maTrend   = Get-MaTrendComment -series $fullSeries
+        maLevels  = Get-MaLevels -series $fullSeries -lows $fullLows -windows $(if ($cfg.BuyMA) { $cfg.BuyMA } else { $buyRules.maWindows })
         summary   = $summary
         news      = $news
         finance   = $finance
@@ -881,6 +904,48 @@ function Get-MaTrendComment {
     if ($a -gt $b) { return @{ text = "단기 상승"; tone = "up" } }
     if ($a -lt $b) { return @{ text = "단기 하락"; tone = "down" } }
     return @{ text = "뚜렷한 추세 없음"; tone = $null }
+}
+
+function Get-MaLevels {
+    # 이평선마다 지금 주가의 위치. 닿음(touch): 그날 저가가 이평선 위 touchPct% 안까지 내려왔고 종가가 이평선 아래
+    # touchPct% 보다 높게 끝남. 근접(near): 종가가 이평선 위 nearPct% 안. 아래(below): 종가가 이평선 아래 touchPct% 밖.
+    # fromAbove: 5거래일 전 종가가 이평선 위에 있었음(위에서 내려와 닿은 눌림목). buySignal: 닿음이면서(설정에 따라) 위에서 내려옴.
+    param($series, $lows, $windows)
+    $n = @($series).Count
+    $i = $n - 1
+    $t = [double]$buyRules.touchPct / 100
+    @(foreach ($w in @($windows)) {
+        if ($n -lt $w + 6) { continue }
+        $ma = Get-MovingAverage -series $series -window $w
+        if ($null -eq $ma[$i] -or $null -eq $ma[$i - 1]) { continue }
+        $m = [double]$ma[$i]
+        $close = [double]$series[$i]
+        $gap = ($close / $m - 1) * 100
+        $touchAt = {
+            param([int]$k)
+            if ($null -eq $ma[$k]) { return $false }
+            ([double]$lows[$k] -le [double]$ma[$k] * (1 + $t)) -and ([double]$series[$k] -ge [double]$ma[$k] * (1 - $t))
+        }
+        $touch = & $touchAt $i
+        $touchPrev = & $touchAt ($i - 1)
+        $k5 = $i - 5
+        $fromAbove = ($null -ne $ma[$k5]) -and ([double]$series[$k5] -gt [double]$ma[$k5] * (1 + $t))
+        $slopeUp = ($null -ne $ma[$k5]) -and ($m -gt [double]$ma[$k5])
+        $state = if ($touch) { "touch" } elseif ($close -lt $m * (1 - $t)) { "below" } elseif ($gap -le [double]$buyRules.nearPct) { "near" } else { "above" }
+        $signal = $touch -and ($fromAbove -or -not $buyRules.fromAboveOnly)
+        [PSCustomObject]@{
+            window     = [int]$w
+            value      = [math]::Round($m, 2)
+            gapPct     = [math]::Round($gap, 2)
+            state      = $state
+            fromAbove  = [bool]$fromAbove
+            slopeUp    = [bool]$slopeUp
+            buySignal  = [bool]$signal
+            firstTouch = [bool]($signal -and -not $touchPrev)
+            # 장중 저가로만 닿고 종가는 이평선 위로 멀리(touchPct 밖) 끝난 경우
+            intraday   = [bool]($touch -and $gap -gt [double]$buyRules.touchPct)
+        }
+    })
 }
 
 function Get-StockPageUrl {
@@ -1283,12 +1348,28 @@ foreach ($st in $stocks) {
     if ($null -ne $st.alertAbove -and $lastV -ge [double]$st.alertAbove -and $prevV -lt [double]$st.alertAbove) {
         Add-Highlight "알림가" "$topic 알림가 $($st.currency)$(Format-Price $st.alertAbove $st.currency) 위로 올라갔습니다." 110 $st.symbol
     }
+    # 이평선 도달 매수 기준
+    $lv = @($st.maLevels | Where-Object { $_ })
+    $hit = @($lv | Where-Object { $_.buySignal })
+    if ($hit.Count) {
+        $names = ($hit | ForEach-Object { "$($_.window)일선" }) -join "과 "
+        $first = $hit[0]
+        $priceTxt = "$($st.currency)$(Format-Price $first.value $st.currency)"
+        $slopeTxt = if ($first.slopeUp) { "오르는 중인" } else { "내려가는 중인" }
+        $hitTxt = if ($first.intraday) { "장중 $slopeTxt $names($priceTxt)까지 내려왔다가 $(([double]$first.gapPct).ToString('0.0'))% 위에서 마감했습니다" } else { "$slopeTxt $names($priceTxt)에 닿았습니다" }
+        Add-Highlight "매수 기준" "$topic $hitTxt. 이평선 도달 매수 기준에 해당합니다." (105 + $(if ($first.firstTouch) { 3 } else { 0 })) $st.symbol
+    } else {
+        $near = @($lv | Where-Object { $_.state -eq "near" } | Sort-Object gapPct | Select-Object -First 1)
+        if ($near.Count) {
+            Add-Highlight "매수 대기" "$topic $($near[0].window)일선까지 $(([double]$near[0].gapPct).ToString('0.0'))% 남았습니다." (62 - [double]$near[0].gapPct) $st.symbol
+        }
+    }
     if ($null -ne $st.relM1 -and [math]::Abs([double]$st.relM1) -ge 15) {
         $relWord = if ($st.relM1 -ge 0) { "강했습니다" } else { "약했습니다" }
         Add-Highlight "시장 대비" "$topic 최근 1개월 $($st.relBase)보다 $([math]::Abs([double]$st.relM1).ToString('0.0'))%p $relWord." (40 + [math]::Abs([double]$st.relM1) / 10) $st.symbol
     }
 }
-$pageHighlights = @($pageHighlights | Sort-Object priority -Descending | Select-Object -First 6)
+$pageHighlights = @($pageHighlights | Sort-Object priority -Descending | Select-Object -First 8)
 if ($pageHighlights.Count -eq 0) {
     $pageHighlights = @([PSCustomObject]@{ tag = "전체"; text = "평소보다 크게 움직인 종목이나 가까운 실적 발표는 없습니다."; priority = 0; symbol = "" })
 }
@@ -1421,6 +1502,19 @@ $rowsHtml = foreach ($s in $stocks) {
     }
     $alertHtml = if ($alertNotes.Count) { "<div style='font-size:11.5px;font-weight:700;color:#8f5200;margin-top:3px;'>⚑ $($alertNotes -join ', ')</div>" } else { "" }
 
+    # 이평선 도달(매수 기준). 제목에는 처음 닿은 날만 올린다(이평선 근처에 며칠 머물면 매일 제목을 차지하므로).
+    $maHtml = ""
+    $hitLv = @($s.maLevels | Where-Object { $_ -and $_.buySignal })
+    if ($hitLv.Count) {
+        $maHtml = "<div style='font-size:11.5px;font-weight:700;color:#2a78d6;margin-top:3px;'>◎ $(($hitLv | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달(매수 기준)</div>"
+        if (@($hitLv | Where-Object { $_.firstTouch }).Count) {
+            [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $($hitLv[0].window)일선 도달"; priority = 105 })
+        }
+    } else {
+        $nearLv = @($s.maLevels | Where-Object { $_ -and $_.state -eq "near" } | Sort-Object gapPct | Select-Object -First 1)
+        if ($nearLv.Count) { $maHtml = "<div style='font-size:11.5px;color:#2a78d6;margin-top:3px;'>$($nearLv[0].window)일선까지 $(([double]$nearLv[0].gapPct).ToString('0.0'))%(매수 대기)</div>" }
+    }
+
     $trend = $s.maTrend
     $trendHtml = ""
     if ($trend) {
@@ -1458,6 +1552,7 @@ $rowsHtml = foreach ($s in $stocks) {
     <div style="font-weight:600;font-size:13px;color:#0b0b0b;">$($s.name)</div>
     <div style="font-size:11px;color:#898781;">$($s.ticker)</div>
     $trendHtml
+    $maHtml
     $alertHtml
     $earnHtml
     $newsHtml
