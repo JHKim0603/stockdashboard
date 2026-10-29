@@ -979,6 +979,10 @@
     "seen": "2026-09-29",
     "ko": "Dow, S&P 500, Nasdaq 선물은 채권 수익률 상승, AI 우려로 하락: KOD, SMMT, CLF, VKTX 주식에 집중"
   },
+  "Dow, S&P 500, Nasdaq Futures Mixed After Fed Holds Rates Steady: GOOG, GOOGL, IOVA, MSFT, NOW In Focus": {
+    "seen": "2026-10-29",
+    "ko": "Fed가 금리를 안정적으로 유지한 후 Dow, S&P 500, Nasdaq 선물 혼합: GOOG, GOOGL, IOVA, MSFT, NOW In Focus"
+  },
   "Dow, S&P 500, Nasdaq Futures Mixed Ahead Of Fed Rate Decision As AI Uncertainty Mounts: IOVA, PLAY, ELMT, RBLX Stocks In Focus": {
     "seen": "2026-09-15",
     "ko": "AI 불확실성이 증가함에 따라 다우, S&P 500, 나스닥 선물이 연준 금리 결정을 앞두고 혼합되었습니다: IOVA, PLAY, ELMT, RBLX 주식에 집중"
@@ -1754,6 +1758,10 @@
   "Is Chinese Memory Competition Altering The Investment Case For Micron Stock (MU)?": {
     "seen": "2026-10-16",
     "ko": "중국 메모리 경쟁이 마이크론 주식(MU)에 대한 투자 사례를 바꾸고 있습니까?"
+  },
+  "Is Google Losing Search Momentum To AI? Analysts Weigh In As Management Blames Currency Headwinds, FIFA World Cup": {
+    "seen": "2026-10-29",
+    "ko": "Google은 AI에 대한 검색 모멘텀을 잃고 있습니까? 분석가들은 경영진이 FIFA 월드컵의 통화 역풍을 비난함에 따라 무게를 두고 있습니다."
   },
   "Is Invesco S&P 500 Equal Weight ETF (RSP) a Strong ETF Right Now?": {
     "seen": "2026-10-08",
@@ -2923,6 +2931,10 @@
     "seen": "2026-10-27",
     "ko": "Microsoft 주가 예측: 60,000명의 직원이 자발적 퇴직을 제안하여 MSFT 시가총액을 세계 3위로 다시 끌어올리고 주가는 600달러에 도달할 것으로 예상됩니다."
   },
+  "Microsoft Stock Price Forecast: Stock Nears $550 After Earnings Beat, Next Target Expected to Reach $600": {
+    "seen": "2026-10-29",
+    "ko": "Microsoft 주가 예측: 수익이 상회한 후 주가가 550달러에 가까워지고 다음 목표는 600달러에 도달할 것으로 예상됩니다."
+  },
   "Microsoft Stock Strength Sets Up Strategy For A Fast Double-Digit Return": {
     "seen": "2026-10-21",
     "ko": "Microsoft Stock Strength는 빠른 두 자릿수 수익을 위한 전략을 설정합니다."
@@ -3499,6 +3511,10 @@
     "seen": "2026-10-29",
     "ko": "Google TPU 및 Nvidia 부채 위험 도전 성장 전망으로 NVDA 주식 후퇴"
   },
+  "NVDA Stock Retreats as Google TPUs and Nvidia Debt Risk Challenge the Growth Outlook": {
+    "seen": "2026-10-29",
+    "ko": "Google TPU와 Nvidia 부채 위험이 성장 전망에 도전함에 따라 NVDA 주식은 후퇴합니다"
+  },
   "NVIDIA (NASDAQ:NVDA) Shares Down 3.2%": {
     "seen": "2026-10-15",
     "ko": "NVIDIA (NASDAQ:NVDA) 주가 3.2% 하락"
@@ -3786,6 +3802,10 @@
   "Nvidia Scores Winning Streak: Trump-Xi Meeting, China Sales Outlook In Focus": {
     "seen": "2026-09-26",
     "ko": "Nvidia, 연속 우승 달성: Trump-Xi 회의, 중국 판매 전망에 초점"
+  },
+  "Nvidia Shareholders Have a Major Reason to Be Bullish After Jensen Huang's Latest Announcement": {
+    "seen": "2026-10-29",
+    "ko": "Nvidia 주주들은 Jensen Huang의 최근 발표 이후 낙관적인 주요 이유를 가지고 있습니다."
   },
   "Nvidia Spent $26 Billion on Buybacks and Dividends in a Single Quarter. Its Board Is Betting Today's Profits Last 3 More Years.": {
     "seen": "2026-09-17",
@@ -5675,6 +5695,10 @@
     "seen": "2026-10-28",
     "ko": "주식시장: 오늘 S&P 500이 상승할 것인가, 하락할 것인가?"
   },
+  "Stock markets continue to rise as US indices gain": {
+    "seen": "2026-10-29",
+    "ko": "미국 지수가 상승하면서 주식 시장은 계속 상승하고 있습니다."
+  },
   "Stock Of The Day: AI Energy Play Bloom Energy Nears Buy Point, S&P 500 Entry": {
     "seen": "2026-09-12",
     "ko": "오늘의 주식: AI 에너지 플레이 Bloom Energy가 매수 지점에 가까워지고 S&P 500 진입"
@@ -5715,6 +5739,10 @@
     "seen": "2026-09-15",
     "ko": "주가는 하락했지만 트레이더들은 AI 산업이 둔화될 것이라는 경고를 크게 무시했습니다."
   },
+  "Stocks Without AI Are Beating the S&P 500 by 6 Points This Month": {
+    "seen": "2026-10-29",
+    "ko": "AI 없는 주식은 이번 달 S&P 500을 6포인트 앞섰습니다."
+  },
   "Strip Out AI and the S&P 500 Looks Very Different, Goldman Index Shows": {
     "seen": "2026-10-07",
     "ko": "Strip Out AI와 S&P 500은 매우 다르게 보인다고 Goldman Index가 밝혔습니다."
@@ -5735,6 +5763,10 @@
     "seen": "2026-10-16",
     "ko": "TD Cowen은 1분기 실적보다 Microsoft Stock(MSFT) 목표 가격을 16% 높였습니다. 이유는 다음과 같습니다"
   },
+  "Tech Futures Fall On Google, These Huge Losers": {
+    "seen": "2026-10-29",
+    "ko": "기술 미래가 Google에 떨어지다, 이 거대한 패자"
+  },
   "Tech Futures Fall, Yields Rise After S&P 500 Hits High; Six AI Buys": {
     "seen": "2026-10-07",
     "ko": "기술 선물 하락, S&P 500 최고치 도달 후 수익률 상승; 6가지 AI 구매"
@@ -5742,6 +5774,10 @@
   "Tech Rally Continues on Anthropic Tailwinds... Nasdaq Up 1.2%": {
     "seen": "2026-10-28",
     "ko": "인류의 순풍에 기술 랠리가 계속된다... 나스닥 1.2% 상승"
+  },
+  "Tech Rally Stalls as Alphabet, Samsung Disappoint: Markets Wrap": {
+    "seen": "2026-10-29",
+    "ko": "알파벳으로 인한 기술 랠리 정체, 삼성 실망: 시장 마무리"
   },
   "Tech Stocks Are Crushing the Market, but There's a Sneaky (and Dangerous) Risk for S&P 500 Investors": {
     "seen": "2026-10-14",
@@ -6371,6 +6407,10 @@
     "seen": "2026-10-01",
     "ko": "Micron Technology(MU)가 4분기 실적 발표에서 말한 내용"
   },
+  "What Microsoft (MSFT) Said on Its Q1 Earnings Call": {
+    "seen": "2026-10-29",
+    "ko": "Microsoft(MSFT)가 1분기 실적 발표에서 밝힌 내용"
+  },
   "What Palantir Technologies Holders Got Right": {
     "seen": "2026-10-23",
     "ko": "Palantir Technologies 보유자가 옳은 것"
@@ -6482,6 +6522,10 @@
   "Why Alphabet Stock Just Popped": {
     "seen": "2026-09-13",
     "ko": "알파벳 주식이 급등한 이유"
+  },
+  "Why Alphabet’s stock could see its worst drop in years after the latest results": {
+    "seen": "2026-10-29",
+    "ko": "알파벳 주가가 최근 결과 이후 몇 년 만에 최악의 하락세를 보일 수 있는 이유"
   },
   "Why Are Nvidia, AMD and Micron Stocks Crashing Today? AI Spending Fears Hit Chips": {
     "seen": "2026-10-23",
