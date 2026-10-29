@@ -10,7 +10,10 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   headlines (Google News RSS, no key), quarterly financials + analyst consensus (Naver Finance,
   no key) for the tickers listed in `watchlist.json`, then renders `template.html` into
   `dashboard.html`.
-- `watchlist.json` — the ticker list. Only `"Symbol"` is required.
+- `watchlist.json` — the ticker list. Only `"Symbol"` is required. ETF 는 실적·목표주가가 없어
+  `"FinanceMode": "none"` 으로 그 조회를 끄고, 자동 규칙이 맞히지 못하는 거래소 표기와 메일 가격 링크를 `"MarketLabel"`,
+  `"PageUrl"` 로 직접 적습니다(예: QLD 는 NYSE Arca, `google.com/finance/quote/QLD:NYSEARCA`).
+- `buy-rules.json` — 이평선 도달 매수 기준과 분할 매수 단계의 기준값.
 - `template.html` — the dashboard UI: per-card 1M/3M/6M/1Y range toggle + 20/60/180일 이동평균선
   with a plain-language trend comment (cross event, 정배열/역배열), sparkline with hover tooltip,
   a "최근 이슈" news list (real article titles/links, not AI-written summaries), 실적/목표주가
@@ -21,15 +24,19 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   that day reuse them instead of asking Nasdaq again. Committed back by the workflow.
 - `run.bat` — double-click launcher (bypasses PowerShell execution-policy prompts).
 - `dashboard.html` — generated output, opened automatically after each run. Not tracked in git.
-- `email-summary.html` / `email-subject.txt` — generated daily email body/subject (price + top
-  2 headlines per ticker, golden/dead cross tags). Written every run for local preview; actually
-  *sending* it only happens in the GitHub Actions workflow. Not tracked in git.
+- `email-summary.html` / `email-subject.txt` — generated daily email body/subject. Written every run for local
+  preview; actually *sending* it only happens in the GitHub Actions workflow. Not tracked in git.
+  본문 순서는 페이지와 같습니다(2026-10-29): 지금 주목할 점, **오늘의 매수 단계**(분할 매수 3·2·1단계와 이평선 도달
+  종목, 괄호 안은 52주 고점 대비 하락률), 공포·탐욕지수, **기간별 등락**(분야별 소제목에 오늘 상승·하락 종목 수, 오늘·1주·
+  1개월·1년, 평소 등락 폭보다 크면 칸 색칠), **다가오는 일정 14일**, 종목별 상세(분야별, 추세, 매수 신호, 알림가, 실적, 기사 2건).
+  지금 주목할 점에서는 단계별로 묶은 매수 단계 줄을 뺍니다(매수 단계 상자와 겹쳐서). 메일 크기는 약 45KB 입니다(Gmail 은
+  102KB 가 넘으면 자릅니다).
 
 ## What's on the page
 
 - **한눈 요약 (2026-10-28, work-dashboard 요약판을 옮겨 온 것)**: 카드 위 한 덩어리로 세 부분입니다.
   - **분야별 등락 지도** (Finviz 지도 방식): `watchlist.json` 의 `Group`(국내 반도체, 미국 반도체, 빅테크·AI, 시장 지수,
-    코인; 없으면 시장으로 자동 분류)마다 한 줄, 종목마다 타일 하나. [오늘]·[1주]·[1개월]·[연초 대비]·[1년]으로 기간을 바꿔
+    레버리지 ETF, 코인; 없으면 시장으로 자동 분류)마다 한 줄, 종목마다 타일 하나. [오늘]·[1주]·[1개월]·[연초 대비]·[1년]으로 기간을 바꿔
     봅니다. 타일 색은 그 종목의 평소 등락 폭(같은 기간 수익률의 표준편차) 대비 0.4배·1배·2배를 넘을 때마다 진해집니다.
   - **지금 주목할 점**: 실적 발표 3일 이내, 52주 신고가·신저가와 고점 3% 이내, 20/60일선 교차, 거래량 평균의 2배 이상,
     하루 등락이 5%와 평소 폭의 2배를 모두 넘을 때, 알림가 돌파·이탈, 시장 대비 1개월 ±15%p 이상을 문장으로 최대 6개
@@ -46,6 +53,24 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   - 표시: 지금 주목할 점 맨 위([매수 기준], [매수 대기]), 등락 지도 타일의 '◎ 20일선 도달', 기간별 표의 '이평선' 칸, 카드 가격 줄
     배지와 '이평선과의 거리' 줄, 메일 종목 줄. 메일 제목에는 처음 닿은 날만 '샌디스크 180일선 도달'처럼 올립니다.
   - 그날 저가는 야후 일봉의 저가(장중이면 그때까지의 저가)입니다. 본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다.
+- **분할 매수 단계 (2026-10-29)**: "120일선에 닿으면 사고 200일선에 닿으면 더 산다. 전고점 대비 −10%, −20%, −30%마다 더
+  줍는다"는 QLD 적립식 매수법을 종목마다 그대로 적용합니다(기준값은 `buy-rules.json` 의 `dip`). 두 기준 중 높은 쪽이 그날의 단계입니다.
+  - **1단계 매수 추천**: 52주 고점보다 10% 이상 낮거나 120일선에 닿음.
+  - **2단계 추가 매수 추천**: 52주 고점보다 20% 이상 낮거나 200일선에 닿음.
+  - **3단계 매수 적극추천**: 52주 고점보다 30% 이상 낮음.
+  - '닿음'은 이평선 도달 매수 기준과 같은 `touchPct`(1%)를 씁니다. 그날 저가가 선 위 1% 안까지 내려왔거나 선 아래에 있으면
+    닿은 것으로 봅니다. 고점은 카드 요약 문장의 '52주 고점'과 같은 값(야후 52주 고가)입니다.
+  - 드문 알림이 아니라 '오늘 얼마나 살 구간인가'를 말하는 표시라, 그 구간에 머무는 동안 계속 켜져 있습니다.
+  - 표시: 지금 주목할 점(오늘 단계가 오른 종목은 한 줄씩, 이미 2단계 이상에 있던 종목은 단계별로 한 줄에 묶음), 등락 지도 타일과
+    기간별 표 '이평선' 칸, 카드 가격 줄 배지와 근거 줄('52주 고점 대비 −47.7%(3단계 기준 −30%), 120일선 −17.9%(도달), 200일선 +2.5%'),
+    메일 종목 줄. 메일 제목에는 2단계 이상으로 오른 날만 'SK하이닉스 매수 적극추천'처럼 올립니다.
+  - 기준 숫자가 2배 레버리지 QLD 에서 나온 것이라 변동성이 큰 종목일수록 자주 켜집니다. 5년치(2021-10~2026-10)로 돌려 보니
+    3단계가 켜져 있던 날이 S&P 500 은 0%, 나스닥 3%, 마이크로소프트 4% 였고, 샌디스크 31%, 마이크론 29%, 이더리움 54% 였습니다.
+    그런 종목은 `watchlist.json` 에 `"DipSteps": [20, 40, 60]` 처럼 단계를 넓게 적습니다.
+  - 참고: [QLD 조건부 적립 프로젝트](https://github.com/keyonetwoonetwo/QLD-Indicator-Based-DCA-Trading-KB)는 QQQ 200일선 위아래,
+    당일 양봉과 음봉, 공포·탐욕지수(10 미만, 45 미만, 그 이상)로 12칸 금액표를 만들어 '200일선 아래, 음봉, 공포'일 때 가장 많이
+    삽니다. 같은 생각(빠질수록, 무서울수록 더 산다)이며, 이 대시보드는 그중 가격 기준만 단계로 보여 주고 공포·탐욕지수는 위쪽에 따로 둡니다.
+  - 본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다.
 - **다가오는 일정 (120일)**: 미국 종목 실적 발표일(Nasdaq/Zacks)과 `market-calendar.json` 의 시장 일정(FOMC, 미국 CPI,
   한국은행 금통위, 미국·한국 증시 휴장일)을 날짜순 한 목록으로 보여 줍니다. **`market-calendar.json` 은 매년 초에 그해 일정을
   더해야 합니다**(2027년 한국 증시 설 연휴는 한국거래소 발표 뒤 추가).
@@ -62,6 +87,12 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   target price, next earnings (US listings), alert-level flag, and the 최근 이슈 news list.
 - **News tags:** `[호재]` / `[악재]` come from headline keywords only (not the article body).
   English headlines are machine-translated; the link always goes to the original.
+- **스팸 거르기 (2026-10-29)**: 도박 광고 글은 단어(카지노, 바카라, 토토, 먹튀 등)와 출처(Calgary Roughnecks, icaremn.com 등)로
+  거릅니다. 목록은 `Update-StockDashboard.ps1` 의 `$spamKeywords`, `$spamSources` 이고 정규식입니다. 걸러낸 제목은 실행 기록에
+  남습니다. 처음 켠 날 이더리움 기사에서 8~16건이 걸렸습니다(모두 Calgary Roughnecks). work-dashboard 목록에서 '베팅', '배팅',
+  '도박'은 뺐습니다('거세질 역외 베팅'처럼 정상 기사에 흔합니다). 다른 낱말 안에 들어가는 단어는 앞뒤 글자를 보고 맞춥니다:
+  `포커(?!스)`('[마켓포커스]', '포커스온경제'), `(?<!포)토토`('포토토크'), `(?<!분)야동`('분야동향'), `머니상(?!승)`.
+- **메일 용량**: 실행 기록에 `email-summary.html (44.6 KB)` 처럼 남기고, 90KB 를 넘으면 경고합니다(work-dashboard 와 같음).
 - **Stale warning:** the 조회 시각 pill turns red with `N시간 전 데이터` once the data is over
   26 hours old. KST Sunday/Monday runs are skipped on purpose, so from Sunday until the Tuesday
   slots finish (14:00 KST) up to 80 hours counts as normal. Before this the pill was always green,

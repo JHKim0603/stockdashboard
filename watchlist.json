@@ -10,6 +10,7 @@
   {"Symbol": "^IXIC", "DisplayName": "나스닥", "NewsQuery": "Nasdaq Composite index", "Group": "시장 지수"},
   {"Symbol": "^GSPC", "DisplayName": "S&P 500", "NewsQuery": "S&P 500 index", "Group": "시장 지수"},
   {"Symbol": "^KS11", "DisplayName": "KOSPI", "NewsQuery": "코스피 지수", "Group": "시장 지수"},
+  {"Symbol": "QLD", "DisplayName": "QLD", "NewsQuery": "QLD 레버리지 ETF", "NewsLang": "ko", "MarketLabel": "NYSE Arca", "FinanceMode": "none", "PageUrl": "https://www.google.com/finance/quote/QLD:NYSEARCA", "Group": "레버리지 ETF"},
   {"Symbol": "BTC-KRW", "DisplayName": "비트코인", "NewsQuery": "비트코인", "NewsLang": "ko", "Group": "코인"},
   {"Symbol": "ETH-USD", "DisplayName": "이더리움", "NewsQuery": "이더리움", "NewsLang": "ko", "Group": "코인"}
 ]

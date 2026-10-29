@@ -455,7 +455,8 @@
   /* 이평선 도달 매수 기준 */
   .cross-badge.ma { color: #fff; background: var(--accent); }
   .ma-levels { font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
-  .ma-levels .lv { white-space: nowrap; margin-right: 10px; font-variant-numeric: tabular-nums; }
+  /* inline-block: 칸 사이에 공백 글자가 없어서, 그냥 inline 이면 '(아래에서 닿음)'이 붙어 길어진 줄이 줄바꿈 없이 카드 밖으로 잘렸다 */
+  .ma-levels .lv { display: inline-block; white-space: nowrap; margin-right: 10px; font-variant-numeric: tabular-nums; }
   .ma-levels .lv.touch { color: var(--accent); font-weight: 700; }
   .ma-levels .lv.near { color: var(--accent); }
   .ov-ma { font-size: 12.5px; color: var(--ink-muted); }
@@ -463,6 +464,15 @@
   .ov-ma.touch { display: inline-block; color: #fff; background: var(--accent); font-weight: 700; padding: 1px 8px; border-radius: 10px; }
   .hm-ma { font-size: 12px; font-weight: 700; color: var(--accent); }
   .hl-tag.buy { color: #fff; background: var(--accent); padding: 0 6px; border-radius: 4px; }
+  /* 분할 매수 단계: dip1 매수 추천, dip2 추가 매수 추천, dip3 매수 적극추천 */
+  .cross-badge.dip1 { color: var(--accent); background: var(--accent-wash); }
+  .cross-badge.dip2 { color: var(--accent); background: var(--accent-wash); border: 1px solid var(--accent); padding: 3px 8px; }
+  .cross-badge.dip3 { color: #fff; background: var(--accent); box-shadow: 0 0 0 2px var(--accent-wash); }
+  .dip-line { font-size: 12.5px; line-height: 1.5; color: var(--accent); }
+  .dip-line.dip2, .dip-line.dip3 { font-weight: 650; }
+  .ov-ma.dip1 { color: var(--accent); }
+  .ov-ma.dip2 { color: var(--accent); font-weight: 700; }
+  .ov-ma.dip3 { display: inline-block; color: #fff; background: var(--accent); font-weight: 700; padding: 1px 8px; border-radius: 10px; }
 
   .card-head {
     display: flex;
@@ -1349,6 +1359,15 @@
       mb.textContent = "◎ " + maHits.map(l => l.window + "일선").join("·") + " 도달";
       mb.title = "주가가 위에서 내려와 이평선에 닿았습니다. 이평선 도달 매수 기준에 해당합니다.";
       priceRow.appendChild(mb);
+    }
+
+    const dip = stock.dip;
+    if (dip && dip.level >= 1) {
+      const db = document.createElement("div");
+      db.className = "cross-badge dip" + dip.level;
+      db.textContent = (dip.level >= 2 ? "▼ " : "") + dip.label;
+      db.title = "분할 매수 단계입니다. " + dip.detail;
+      priceRow.appendChild(db);
     }
 
     const alertState = alertStateOf(stock, last);
@@ -2282,6 +2301,14 @@
       });
       block.appendChild(lvEl);
     }
+    // 분할 매수 단계의 근거: 52주 고점 대비 하락률(어느 단계 기준을 넘었는지)과 120·200일선과의 거리
+    const dip = stock.dip;
+    if (dip && dip.level >= 1) {
+      const dl = document.createElement("div");
+      dl.className = "dip-line dip" + dip.level;
+      dl.textContent = (dip.level >= 2 ? "▼ " : "") + dip.label + ": " + dip.detail;
+      block.appendChild(dl);
+    }
 
     block.appendChild(slot);
     render();
@@ -2551,12 +2578,16 @@
     setTimeout(() => card.classList.remove("flash"), 1200);
   };
   const idxOfSymbol = sym => stocks.findIndex(st => st.symbol === sym);
-  // 이평선 도달 매수 기준: 닿은 이평선(위에서 내려옴), 없으면 가장 가까운 '매수 대기', 없으면 가장 가까운 이평선
+  // 이평선 매수 신호 요약. 순서: 분할 매수 2단계 이상, 이평선 도달(위에서 내려옴), 분할 매수 1단계, '매수 대기', 가장 가까운 이평선
   const maSummary = st => {
+    const dip = st.dip;
+    const dipSum = dip && dip.level >= 1 ? { cls: "dip" + dip.level, text: (dip.level >= 2 ? "▼ " : "") + dip.label } : null;
+    if (dipSum && dip.level >= 2) return dipSum;
     const lv = (st.maLevels || []).filter(Boolean);
-    if (!lv.length) return null;
+    if (!lv.length) return dipSum;
     const hit = lv.filter(l => l.buySignal);
     if (hit.length) return { cls: "touch", text: "◎ " + hit.map(l => l.window + "일선").join("·") + " 도달", hit };
+    if (dipSum) return dipSum;
     const near = lv.filter(l => l.state === "near").sort((a, b) => a.gapPct - b.gapPct)[0];
     if (near) return { cls: "near", text: near.window + "일선까지 " + near.gapPct.toFixed(1) + "%" };
     const closest = lv.slice().sort((a, b) => Math.abs(a.gapPct) - Math.abs(b.gapPct))[0];
@@ -2623,7 +2654,7 @@
           const v = perfOf(x.st, period);
           return '<button type="button" class="hm-tile ' + tileLv(v, thrOf(x.st, period)) + '" data-i="' + x.i + '" title="' + esc(x.st.name) + ' 카드로 이동">' +
             '<span class="hm-name">' + esc(x.st.name) + '</span><span class="hm-pct ' + dirCls(v) + '">' + fmtPct(v) + '</span>' +
-            (function () { const ms = maSummary(x.st); return ms && ms.cls === "touch" ? '<span class="hm-ma">' + esc(ms.text) + '</span>' : ""; })() + '</button>';
+            (function () { const ms = maSummary(x.st); return ms && /^(touch|dip2|dip3)$/.test(ms.cls) ? '<span class="hm-ma">' + esc(ms.text) + '</span>' : ""; })() + '</button>';
         }).join("");
         return '<div class="hm-row"><div class="hm-label"><b>' + esc(g) + '</b><span class="hm-dir ' + dir + '">' + esc(dirTxt) + '</span></div>' +
           '<div class="hm-tiles">' + tiles + '</div></div>';
@@ -2686,12 +2717,21 @@
         PERIODS.map(pd => '<button type="button" data-period="' + pd.key + '" class="' + (pd.key === period ? "on" : "") + '">' + pd.label + '</button>').join("") +
         '</div></div>' + heatmapHtml() + '</div>' +
         (hl.length ? '<div class="ov-today"><div class="ov-today-title">지금 주목할 점</div><ul>' +
-          hl.map(h => '<li data-sym="' + esc(h.symbol || "") + '"><span class="hl-tag' + (h.tag === "매수 기준" ? " buy" : "") + '">' + esc(h.tag) + '</span>' + esc(h.text) + '</li>').join("") +
+          hl.map(h => '<li data-sym="' + esc(h.symbol || "") + '"><span class="hl-tag' + (/^(매수 (기준|추천|적극추천)|추가 매수 추천)$/.test(h.tag) ? " buy" : "") + '">' + esc(h.tag) + '</span>' + esc(h.text) + '</li>').join("") +
           '</ul></div>' : "") +
         '</div>' +
         '<div class="ov-legend"><b class="up">빨강</b>은 상승, <b class="down">파랑</b>은 하락입니다. ' +
         '칸 배경이 진할수록 그 종목의 평소 등락 폭보다 크게 움직였습니다. 머리글을 누르면 정렬됩니다. ' +
-        '◎는 주가가 위에서 내려와 이평선에 닿은 종목으로, 이평선 도달 매수 기준에 해당합니다.</div>' +
+        '◎는 주가가 위에서 내려와 이평선에 닿은 종목으로, 이평선 도달 매수 기준에 해당합니다.' +
+        (function () {
+          // 분할 매수 단계의 기본 기준(buy-rules.json). 종목별로 DipSteps 를 정한 종목은 카드에 그 종목의 기준이 적힙니다.
+          const r = (stocks.find(st => st.dip && st.dip.defSteps && st.dip.defSteps.length) || {}).dip;
+          if (!r) return "";
+          const names = ["매수 추천", "추가 매수 추천", "매수 적극추천"];
+          const parts = r.defSteps.slice(0, 3).map((s, i) => (i ? "" : "52주 고점보다 ") + s + "% 낮" +
+            (r.maSteps && r.maSteps[i] ? "거나 " + r.maSteps[i] + "일선에 닿으면 " : "으면 ") + names[i]);
+          return ' ▼는 분할 매수 단계입니다. ' + parts.join(", ") + '입니다.';
+        })() + '</div>' +
         '<div class="ov-scroll">' + tableHtml() + '</div>' +
         '<div class="ov-note">시장 대비는 최근 1개월 수익률에서 국내 종목은 코스피, 미국 종목은 나스닥의 수익률을 뺀 값입니다. 타일이나 행을 누르면 해당 카드로 이동합니다.</div>';
     }

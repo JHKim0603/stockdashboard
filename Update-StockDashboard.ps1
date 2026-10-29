@@ -19,6 +19,7 @@ $PSDefaultParameterValues['Invoke-WebRequest:TimeoutSec'] = 30
 #   (-KRW 는 Yahoo 가 날짜별 환율로 환산한 원화 시세),
 #   anything else = NASDAQ
 #   (NYSE tickers need an explicit "FinanceCode": "SYMBOL.N" override — the auto-default assumes NASDAQ)
+#   ETF 는 "FinanceMode": "none" 과 "MarketLabel", "PageUrl" 을 직접 적는다. 예: QLD(NYSE Arca).
 function Resolve-TickerConfig {
     param($raw)
 
@@ -41,8 +42,10 @@ function Resolve-TickerConfig {
 
     $newsLang = if ($raw.NewsLang) { $raw.NewsLang } elseif ($isDomestic) { "ko" } else { "en" }
 
+    # ETF 는 실적·목표주가가 없어 "FinanceMode": "none" 으로 끈다(지수와 코인처럼 네이버와 Nasdaq 실적 조회를 하지 않는다).
     $financeMode =
-        if ($raw.FinanceMode) { $raw.FinanceMode }
+        if ($raw.FinanceMode -eq "none") { $null }
+        elseif ($raw.FinanceMode) { $raw.FinanceMode }
         elseif ($isIndex -or $isCrypto) { $null }
         elseif ($isDomestic) { "domestic" }
         else { "overseas" }
@@ -65,6 +68,8 @@ function Resolve-TickerConfig {
 
     # 종목별로 다른 이평선을 보려면 watchlist.json 에 "BuyMA": [60, 120] 처럼 적는다.
     $buyMa = if ($raw.BuyMA) { @($raw.BuyMA | ForEach-Object { [int]$_ }) } else { $null }
+    # 분할 매수 단계의 고점 대비 하락 기준(%)을 종목별로 바꾸려면 "DipSteps": [20, 40, 60] 처럼 적는다.
+    $dipSteps = if ($raw.DipSteps) { @($raw.DipSteps | ForEach-Object { [double]$_ }) } else { $null }
 
     $alertBelow = if ($null -ne $raw.AlertBelow) { [double]$raw.AlertBelow } else { $null }
     $alertAbove = if ($null -ne $raw.AlertAbove) { [double]$raw.AlertAbove } else { $null }
@@ -84,13 +89,18 @@ function Resolve-TickerConfig {
         Group       = $group
         IsDomestic  = $isDomestic
         BuyMA       = $buyMa
+        DipSteps    = $dipSteps
+        # 메일 가격 링크를 직접 정할 때(NYSE Arca 상장 ETF 처럼 아래 자동 규칙이 맞히지 못하는 경우).
+        PageUrl     = $raw.PageUrl
     }
 }
 
 $watchlistRaw = Get-Content -Path (Join-Path $root "watchlist.json") -Raw -Encoding UTF8 | ConvertFrom-Json
 # 이평선 도달 매수 기준. 사용자가 이평선에 닿았을 때 사는 방식이라, 종목·지수마다 이평선과의 거리를 매일 재서
 # 닿으면 '매수 기준 도달', 가까우면 '매수 대기'로 알린다. 기준값은 buy-rules.json 에서 바꾼다.
-$buyRules = [PSCustomObject]@{ maWindows = @(20, 60, 180); touchPct = 1.0; nearPct = 3.0; fromAboveOnly = $true }
+$buyRules = [PSCustomObject]@{ maWindows = @(20, 60, 180); touchPct = 1.0; nearPct = 3.0; fromAboveOnly = $true
+    # 분할 매수 단계(Get-DipSignal). 52주 고점 대비 하락률과 장기 이평선(120·200일선) 도달로 1~3단계를 정한다.
+    dip = [PSCustomObject]@{ drawdownSteps = @(10.0, 20.0, 30.0); maSteps = @(120, 200) } }
 $buyRulesPath = Join-Path $root "buy-rules.json"
 if (Test-Path $buyRulesPath) {
     try {
@@ -99,6 +109,10 @@ if (Test-Path $buyRulesPath) {
         if ($null -ne $br.touchPct) { $buyRules.touchPct = [double]$br.touchPct }
         if ($null -ne $br.nearPct) { $buyRules.nearPct = [double]$br.nearPct }
         if ($null -ne $br.fromAboveOnly) { $buyRules.fromAboveOnly = [bool]$br.fromAboveOnly }
+        if ($br.dip) {
+            if ($br.dip.drawdownSteps) { $buyRules.dip.drawdownSteps = @($br.dip.drawdownSteps | ForEach-Object { [double]$_ }) }
+            if ($br.dip.maSteps) { $buyRules.dip.maSteps = @($br.dip.maSteps | ForEach-Object { [int]$_ }) }
+        }
     } catch { Write-Warning "buy-rules.json 을 읽지 못해 기본값(20·60·180일선, 1%, 3%)을 씁니다: $($_.Exception.Message)" }
 }
 
@@ -324,6 +338,28 @@ function Get-ChartUri {
     "https://query1.finance.yahoo.com/v8/finance/chart/$($symbol)?interval=1d&range=2y"
 }
 
+# 도박 스팸 기사 거르기. work-dashboard 의 newsBlocklist 와 같은 방식(단어와 출처 두 가지)이다. 2026-10-29 에 QLD 를
+# 'QLD 레버리지 ETF' 로 찾자 'Calgary Roughnecks' 라는 출처의 카지노 광고 글이 최근 이슈에 섞였다.
+# work-dashboard 목록에서 '베팅', '배팅', '도박'은 뺐다. 주식 기사에서는 '3배 레버리지 베팅', '거세질 역외 베팅'처럼
+# 정상 기사에 흔히 나온다. 목록은 정규식이다(대소문자 무시). 다른 낱말 안에 우연히 들어가는 단어는 앞뒤 글자를 보고 맞춘다:
+# '포커'는 '[마켓포커스]'와 '포커스온경제', '토토'는 '포토토크', '야동'은 '분야동향', '머니상'은 '머니상승'에 걸린다.
+# 단어를 아예 빼면 안 된다. 2026-10-29 실제 스팸 제목은 '토토 hydra 보너스 기능', '토트넘 뉴캐슬 토토 진행 구조'처럼
+# '토토' 하나만 들어 있었다.
+$spamKeywords = @("카지노", "casino", "바카라", "baccarat", "슬롯머신", "(?<!포)토토", "벳365", "bet365", "먹튀", "홀덤",
+    "포커(?!스)", "사설놀이터", "머니상(?!승)", "성인용품", "(?<!분)야동", "비아그라")
+$spamSources = @("Calgary Roughnecks", "icaremn\.com", "Spazio Aperto Salento", "Platea Magazine", "plateamagazine", "casinotoki")
+$script:spamBlocked = 0
+function Test-SpamHeadline {
+    param([string]$title, [string]$source)
+    $haystack = "$title $source"
+    $hit = @($spamKeywords | Where-Object { $haystack -match $_ }) + @($spamSources | Where-Object { $source -and $source -match $_ })
+    if (-not $hit.Count) { return $false }
+    # 걸러낸 제목을 실행 기록에 남긴다. 정상 기사가 잘못 걸리면 여기서 보인다.
+    $script:spamBlocked++
+    Write-Host "    (스팸 차단 '$($hit[0])': $source | $title)"
+    return $true
+}
+
 function Get-NewsHeadlines {
     # Google News RSS 는 관련도순이고 기간을 묻지 않으면 기간을 따지지 않는다. 그래서 앞에서
     # N건을 자르면 "역대 가장 잘 맞는 기사"가 나온다 - work-dashboard 에서 322일, 1,569일 전
@@ -377,6 +413,8 @@ function Get-NewsHeadlines {
             }
             # 날짜를 확인할 수 없거나 기간 밖이면 버린다 - 이 목록의 존재 이유가 최신성이다.
             if ($pubDate.UtcDateTime -lt $cutoff) { continue }
+            # 자르기 전에 거른다. 자른 뒤에 거르면 스팸이 빠진 만큼 기사 수가 줄어든다.
+            if (Test-SpamHeadline -title $title -source $source) { continue }
             [PSCustomObject]@{
                 title   = $title
                 source  = $source
@@ -830,6 +868,7 @@ function Get-StockSnapshot {
         cross     = Get-CrossSignal -series $fullSeries
         maTrend   = Get-MaTrendComment -series $fullSeries
         maLevels  = Get-MaLevels -series $fullSeries -lows $fullLows -windows $(if ($cfg.BuyMA) { $cfg.BuyMA } else { $buyRules.maWindows })
+        dip       = Get-DipSignal -series $fullSeries -lows $fullLows -high $rangeHigh -steps $(if ($cfg.DipSteps) { $cfg.DipSteps } else { $buyRules.dip.drawdownSteps })
         summary   = $summary
         news      = $news
         finance   = $finance
@@ -948,10 +987,90 @@ function Get-MaLevels {
     })
 }
 
+function Get-DipSignal {
+    # 분할 매수 단계. "120일선에 닿으면 사고 200일선에 닿으면 더 산다. 고점 대비 -10%, -20%, -30%마다 더 줍는다"는
+    # QLD 적립식 매수법을 종목마다 그대로 적용한다. 두 기준 중 높은 쪽이 그날의 단계다.
+    #   1 매수 추천: 52주 고점보다 steps[0]% 이상 낮거나 maSteps[0]일선에 닿음
+    #   2 추가 매수 추천: steps[1]% 이상 낮거나 maSteps[1]일선에 닿음
+    #   3 매수 적극추천: steps[2]% 이상 낮음
+    # '닿음'은 이평선 도달 매수 기준과 같은 touchPct 를 쓴다. 그날 저가가 선 위 touchPct% 안까지 내려왔거나 선 아래에 있으면
+    # 닿은 것으로 본다. 고점은 페이지의 '52주 고점보다 N% 낮고' 문장과 같은 값(야후 52주 고가)이다.
+    #
+    # 드문 알림이 아니라 '오늘 얼마나 살 구간인가'를 말하는 표시라, 그 구간에 머무는 동안 계속 켜져 있다. 메일 제목에는 단계가
+    # 오른 날만 싣는다. 2026-10-29 에 5년치로 돌려 보니 3단계가 켜진 날이 S&P 500 은 0%, 나스닥은 3% 였지만 샌디스크는 31%,
+    # 이더리움은 54% 였다. 기준 숫자가 2배 레버리지 QLD 에서 나온 것이라 변동성이 큰 종목일수록 자주 켜진다. 그런 종목은
+    # watchlist.json 에 "DipSteps": [20, 40, 60] 처럼 단계를 넓게 적는다.
+    param($series, $lows, $high, $steps)
+    $s = [double[]]@($series)
+    $lw = [double[]]@($lows)
+    $n = $s.Length
+    if ($n -lt 2 -or $lw.Length -ne $n -or -not $high -or [double]$high -le 0) { return $null }
+    $st = @(@($steps | ForEach-Object { [double]$_ }) | Sort-Object)
+    $maW = @($buyRules.dip.maSteps | ForEach-Object { [int]$_ })
+    $t = [double]$buyRules.touchPct / 100
+    $hi = [double]$high
+    $mas = @{}
+    foreach ($w in $maW) { $mas[$w] = Get-MovingAverage -series $s -window $w }
+
+    $evalAt = {
+        param([int]$k)
+        $dd = [math]::Max(0.0, (1 - $s[$k] / $hi) * 100)
+        $ddTier = @($st | Where-Object { $dd -ge $_ }).Count
+        $maTier = 0
+        for ($m = 0; $m -lt $maW.Count; $m++) {
+            $ma = $mas[$maW[$m]][$k]
+            if ($null -ne $ma -and $lw[$k] -le [double]$ma * (1 + $t)) { $maTier = $m + 1 }
+        }
+        [PSCustomObject]@{ dd = $dd; ddTier = [int]$ddTier; maTier = [int]$maTier; level = [int][math]::Min(3, [math]::Max($ddTier, $maTier)) }
+    }
+    $today = & $evalAt ($n - 1)
+    $prev = & $evalAt ($n - 2)
+    $level = $today.level
+    $i = $n - 1
+
+    $maLines = @(for ($m = 0; $m -lt $maW.Count; $m++) {
+        $ma = $mas[$maW[$m]][$i]
+        if ($null -eq $ma) { continue }
+        [PSCustomObject]@{ window = $maW[$m]; gapPct = [math]::Round(($s[$i] / [double]$ma - 1) * 100, 1); reached = [bool]($lw[$i] -le [double]$ma * (1 + $t)) }
+    })
+    $ddVal = [math]::Round([double]$today.dd, 1)
+    $ddTxt = if ($ddVal -lt 0.05) { "52주 고점" } else { "52주 고점 대비 −$($ddVal.ToString('0.0'))%" }
+    if ($today.ddTier -ge 1) { $ddTxt += "($($today.ddTier)단계 기준 −$($st[$today.ddTier - 1].ToString('0.#'))%)" }
+    $detail = (@($ddTxt) + @($maLines | ForEach-Object {
+        # 종가는 선 위 touchPct 밖에서 끝나고 장중 저가만 닿았으면, 이평선 도달 매수 기준처럼 '장중 도달'로 구분한다.
+        $mark = if (-not $_.reached) { "" } elseif ([double]$_.gapPct -gt [double]$buyRules.touchPct) { "(장중 도달)" } else { "(도달)" }
+        "$($_.window)일선 $(if ($_.gapPct -gt 0) { '+' } elseif ($_.gapPct -lt 0) { '−' })$(([math]::Abs([double]$_.gapPct)).ToString('0.0'))%$mark"
+    })) -join ", "
+
+    # 오늘 단계를 만든 기준. 고점 대비 하락과 이평선이 같은 단계를 함께 만들면 둘 다 적는다.
+    $byDrawdown = [bool]($level -ge 1 -and $today.ddTier -ge $level)
+    $byMa = if ($level -ge 1 -and $level -le $maW.Count -and $today.maTier -ge $level) { $maW[$level - 1] } else { 0 }
+    $why = @()
+    if ($byDrawdown) { $why += "고점 대비 −$($ddVal.ToString('0.0'))%" }
+    if ($byMa) { $why += "${byMa}일선 도달" }
+
+    [PSCustomObject]@{
+        level      = $level
+        label      = $(switch ($level) { 3 { "매수 적극추천" } 2 { "추가 매수 추천" } 1 { "매수 추천" } default { $null } })
+        # 단계가 오늘 오른 날. 지금 주목할 점에 한 줄씩 올리고, 2단계 이상이면 메일 제목에도 싣는다.
+        firstDay   = [bool]($level -ge 1 -and $prev.level -lt $level)
+        dd         = $ddVal
+        byDrawdown = $byDrawdown
+        byMa       = [int]$byMa
+        why        = ($why -join ", ")
+        detail     = $detail
+        steps      = $st
+        # 페이지 범례가 기본 기준을 적을 때 쓴다(buy-rules.json 을 바꾸면 범례도 따라 바뀌게).
+        defSteps   = @($buyRules.dip.drawdownSteps | ForEach-Object { [double]$_ })
+        maSteps    = $maW
+    }
+}
+
 function Get-StockPageUrl {
     # Where the email's price link should go — a real per-ticker page to read more, the same
     # way news links already go to their source article.
     param($cfg)
+    if ($cfg.PageUrl) { return [string]$cfg.PageUrl }
     if ($cfg.IsIndex) {
         switch ($cfg.Symbol) {
             "^IXIC" { return "https://www.google.com/finance/quote/.IXIC:INDEXNASDAQ" }
@@ -1303,8 +1422,9 @@ function Format-Price {
 # 평소보다 큰 하루 등락, 알림가 돌파·이탈, 시장보다 크게 강하거나 약한 종목을 문장으로 모은다.
 $pageHighlights = New-Object System.Collections.ArrayList
 function Add-Highlight {
-    param([string]$tag, [string]$text, [double]$priority, [string]$symbol)
-    [void]$pageHighlights.Add([PSCustomObject]@{ tag = $tag; text = $text; priority = $priority; symbol = $symbol })
+    # kind 는 메일이 고를 때 쓴다. 'dipGroup'(단계별로 묶은 줄)은 메일의 '오늘의 매수 단계' 상자와 겹쳐 메일에서는 뺀다.
+    param([string]$tag, [string]$text, [double]$priority, [string]$symbol, [string]$kind = "")
+    [void]$pageHighlights.Add([PSCustomObject]@{ tag = $tag; text = $text; priority = $priority; symbol = $symbol; kind = $kind })
 }
 foreach ($st in $stocks) {
     $nm = [string]$st.name
@@ -1364,11 +1484,38 @@ foreach ($st in $stocks) {
             Add-Highlight "매수 대기" "$topic $($near[0].window)일선까지 $(([double]$near[0].gapPct).ToString('0.0'))% 남았습니다." (62 - [double]$near[0].gapPct) $st.symbol
         }
     }
+    # 분할 매수 단계가 오늘 오른 종목은 한 줄씩 올린다. 이미 그 단계에 있던 종목은 아래 루프 뒤에서 단계별로 묶는다.
+    $dip = $st.dip
+    if ($dip -and $dip.level -ge 1 -and $dip.firstDay) {
+        $ddPart = "52주 고점보다 $(([double]$dip.dd).ToString('0.0'))%"
+        $how = if ($dip.byDrawdown -and $dip.byMa) { "$ddPart 내려오고 $($dip.byMa)일선에 닿아" }
+            elseif ($dip.byMa) { "$($dip.byMa)일선에 닿아" } else { "$ddPart 내려와" }
+        $prio = switch ([int]$dip.level) { 3 { 118 } 2 { 108 } default { 92 } }
+        Add-Highlight $dip.label "$topic 오늘 $how $($dip.label) 구간에 들어왔습니다." $prio $st.symbol
+    }
     if ($null -ne $st.relM1 -and [math]::Abs([double]$st.relM1) -ge 15) {
         $relWord = if ($st.relM1 -ge 0) { "강했습니다" } else { "약했습니다" }
         Add-Highlight "시장 대비" "$topic 최근 1개월 $($st.relBase)보다 $([math]::Abs([double]$st.relM1).ToString('0.0'))%p $relWord." (40 + [math]::Abs([double]$st.relM1) / 10) $st.symbol
     }
 }
+# 이미 2단계 이상에 있던 종목은 단계별로 한 줄에 묶는다. 하락장에서는 여러 종목이 한꺼번에 같은 단계에 머물러서, 한 종목씩
+# 올리면 지금 주목할 점이 이 표시로 가득 찬다. 1단계는 흔해서 오른 날에만 올린다.
+foreach ($lvl in 3, 2) {
+    $grp = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq $lvl -and -not $_.dip.firstDay } | Sort-Object { [double]$_.dip.dd } -Descending)
+    if (-not $grp.Count) { continue }
+    $grpLabel = $grp[0].dip.label
+    $prioGrp = if ($lvl -eq 3) { 100 } else { 94 }
+    if (-not @($grp | Where-Object { $_.dip.byMa }).Count) {
+        # 모두 고점 대비 하락으로 이 단계가 된 경우: '52주 고점 대비 A −48.9%, B −41.2%로'처럼 기준을 한 번만 적는다.
+        $items = @($grp | ForEach-Object { "$($_.name) −$(([double]$_.dip.dd).ToString('0.0'))%" })
+        Add-Highlight $grpLabel "52주 고점 대비 $($items -join ', ')로 $grpLabel 구간입니다." $prioGrp $grp[0].symbol "dipGroup"
+    } else {
+        $items = @($grp | ForEach-Object { "$($_.name)($($_.dip.why))" })
+        Add-Highlight $grpLabel "$($items -join ', ')$(Get-Josa $items[-1] '이' '가') $grpLabel 구간입니다." $prioGrp $grp[0].symbol "dipGroup"
+    }
+}
+# 메일은 묶음 줄을 빼고 다시 고르므로 자르기 전 목록을 남겨 둔다.
+$allHighlights = @($pageHighlights)
 $pageHighlights = @($pageHighlights | Sort-Object priority -Descending | Select-Object -First 8)
 if ($pageHighlights.Count -eq 0) {
     $pageHighlights = @([PSCustomObject]@{ tag = "전체"; text = "평소보다 크게 움직인 종목이나 가까운 실적 발표는 없습니다."; priority = 0; symbol = "" })
@@ -1445,6 +1592,47 @@ $emailDateStr = "{0}년 {1}월 {2}일 ({3})" -f $nowKst.Year, $nowKst.Month, $no
 $MOVE_THRESHOLD_PCT = 7
 $highlights = New-Object System.Collections.ArrayList
 
+# 메일 표 칸. 칸마다 style 을 반복하면 표가 금세 커져서(Gmail 은 102KB 가 넘으면 메일을 자른다) work-dashboard 처럼
+# 여백은 표의 cellpadding, 색은 bgcolor 와 font 속성으로 준다.
+function Get-MailPctText {
+    param($v)
+    if ($null -eq $v) { return "–" }
+    $d = [double]$v
+    $digits = if ([math]::Abs($d) -ge 100) { "0" } else { "0.0" }
+    "$(if ($d -gt 0) { '+' } elseif ($d -lt 0) { '−' })$([math]::Abs($d).ToString($digits))%"
+}
+function Get-MailPctCell {
+    # 페이지 기간별 표와 같은 규칙: 그 종목의 평소 등락 폭(같은 기간 수익률의 표준편차)보다 크면 옅게, 2배 이상이면 진하게.
+    param($v, $thr)
+    if ($null -eq $v) { return "<td align=right nowrap><font color=#898781>–</font></td>" }
+    $d = [double]$v
+    $fc = if ($d -gt 0.005) { "#c62828" } elseif ($d -lt -0.005) { "#1f5fcc" } else { "#52514e" }
+    $bg = ""
+    if ($thr -and [double]$thr -gt 0) {
+        $r = [math]::Abs($d) / [double]$thr
+        if ($r -ge 2) { $bg = if ($d -gt 0) { " bgcolor=#f6caca" } else { " bgcolor=#cfdcf6" } }
+        elseif ($r -ge 1) { $bg = if ($d -gt 0) { " bgcolor=#fbe6e6" } else { " bgcolor=#e7eefb" } }
+    }
+    "<td align=right nowrap$bg><font color=$fc>$(Get-MailPctText $d)</font></td>"
+}
+function Get-MailSignal {
+    # 기간별 표의 종목 이름 아래 한 줄. 페이지 '이평선' 칸과 같은 순서로 하나만 고른다:
+    # 분할 매수 2단계 이상, 이평선 도달(매수 기준), 분할 매수 1단계, 매수 대기.
+    param($stk)
+    $dp = $stk.dip
+    if ($dp -and [int]$dp.level -ge 2) { return "<font color=#2a78d6><b>▼ $($dp.label)</b></font>" }
+    $touched = @($stk.maLevels | Where-Object { $_ -and $_.buySignal })
+    if ($touched.Count) { return "<font color=#2a78d6><b>◎ $(($touched | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달</b></font>" }
+    if ($dp -and [int]$dp.level -eq 1) { return "<font color=#2a78d6>$($dp.label)</font>" }
+    $nearest = @($stk.maLevels | Where-Object { $_ -and $_.state -eq "near" } | Sort-Object gapPct | Select-Object -First 1)
+    if ($nearest.Count) { return "<font color=#2a78d6>$($nearest[0].window)일선까지 $(([double]$nearest[0].gapPct).ToString('0.0'))%</font>" }
+    return ""
+}
+# 메일도 페이지처럼 분야(watchlist.json 의 Group)별로 묶는다. 순서는 관심 종목 목록에 처음 나온 순서다.
+function Get-GroupName { param($stk) if ($stk.group) { [string]$stk.group } else { "기타" } }
+$groupOrder = @($stocks | ForEach-Object { Get-GroupName $_ } | Select-Object -Unique)
+$inv = [Globalization.CultureInfo]::InvariantCulture
+
 $rowsHtml = foreach ($s in $stocks) {
     $last = $s.series[-1]
     $prev = $s.series[-2]
@@ -1515,6 +1703,19 @@ $rowsHtml = foreach ($s in $stocks) {
         if ($nearLv.Count) { $maHtml = "<div style='font-size:11.5px;color:#2a78d6;margin-top:3px;'>$($nearLv[0].window)일선까지 $(([double]$nearLv[0].gapPct).ToString('0.0'))%(매수 대기)</div>" }
     }
 
+    # 분할 매수 단계. 적극추천은 색을 채운 표시로 눈에 띄게 하고, 제목에는 2단계 이상으로 오른 날만 올린다.
+    $dipHtml = ""
+    $dp = $s.dip
+    if ($dp -and $dp.level -ge 1) {
+        $dipLabel = if ($dp.level -ge 3) {
+            "<span style='background:#2a78d6;color:#ffffff;font-weight:700;padding:1px 6px;border-radius:4px;'>▼ $($dp.label)</span>"
+        } elseif ($dp.level -eq 2) { "<b>▼ $($dp.label)</b>:" } else { "$($dp.label):" }
+        $dipHtml = "<div style='font-size:11.5px;color:#2a78d6;margin-top:4px;'>${dipLabel} $($dp.detail)</div>"
+        if ($dp.firstDay -and $dp.level -ge 2) {
+            [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $($dp.label)"; priority = $(if ($dp.level -ge 3) { 115 } else { 104 }) })
+        }
+    }
+
     $trend = $s.maTrend
     $trendHtml = ""
     if ($trend) {
@@ -1539,20 +1740,21 @@ $rowsHtml = foreach ($s in $stocks) {
         $newsHtml = $newsLines -join ""
     }
 
+    # 1개월 등락은 위 기간별 표로 옮겼다(이 칸에는 오늘 값만 둔다).
     $priceInner = @"
 <div style="font-weight:650;font-size:14px;color:#0b0b0b;">$($s.currency)$priceFmt</div>
     <div style="font-size:12px;font-weight:600;color:$color;">$arrow $([math]::Abs($pct).ToString("N2"))%</div>
-    $(if ($s.perf -and $null -ne $s.perf.m1) { "<div style='font-size:11px;color:#898781;margin-top:2px;'>1개월 $(if ($s.perf.m1 -gt 0) { '+' })$(([double]$s.perf.m1).ToString('0.0'))%</div>" })
 "@
     $priceHtml = if ($s.pageUrl) { "<a href='$($s.pageUrl)' style='text-decoration:none;display:block;'>$priceInner</a>" } else { $priceInner }
 
-    @"
+    $rowHtml = @"
 <tr>
   <td style="padding:10px 12px;border-bottom:1px solid #e1e0d9;width:auto;">
     <div style="font-weight:600;font-size:13px;color:#0b0b0b;">$($s.name)</div>
     <div style="font-size:11px;color:#898781;">$($s.ticker)</div>
     $trendHtml
     $maHtml
+    $dipHtml
     $alertHtml
     $earnHtml
     $newsHtml
@@ -1562,7 +1764,120 @@ $rowsHtml = foreach ($s in $stocks) {
   </td>
 </tr>
 "@
+    [PSCustomObject]@{ group = (Get-GroupName $s); html = $rowHtml }
 }
+
+# --- 메일 본문 덩어리. 순서는 페이지와 같다: 지금 주목할 점, 매수 단계, 공포·탐욕지수, 기간별 표, 일정, 종목별 상세.
+
+# 지금 주목할 점. 단계별로 묶은 매수 단계 줄은 아래 '오늘의 매수 단계' 상자와 겹쳐서 빼고 다시 8개를 고른다.
+$mailHighlights = @($allHighlights | Where-Object { $_.kind -ne "dipGroup" } | Sort-Object priority -Descending | Select-Object -First 8)
+$mailHlLines = if ($mailHighlights.Count) {
+    @($mailHighlights | ForEach-Object {
+        $tagColor = if ($_.tag -match '^(매수 (기준|추천|적극추천)|추가 매수 추천)$') { "#2a78d6" } else { "#6e6c66" }
+        "· <font color=$tagColor>[$($_.tag)]</font> $([System.Net.WebUtility]::HtmlEncode([string]$_.text))"
+    })
+} else { @("· 평소보다 크게 움직인 종목이나 가까운 실적 발표는 없습니다.") }
+$mailHlHtml = "<div style='margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>지금 주목할 점</div><div style='font-size:12.5px;color:#0b0b0b;line-height:1.65;'>$($mailHlLines -join '<br>')</div></div>"
+
+# 오늘의 매수 단계. 분할 매수 3, 2, 1단계와 이평선 도달(매수 기준) 종목을 한 상자에 모은다. 페이지에서는 카드와 표에
+# 흩어져 있는 표시라, 메일에서는 오늘 살 구간인 종목을 한눈에 보이게 한다.
+$ladderLines = @(foreach ($lvl in 3, 2, 1) {
+    $grp = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq $lvl } | Sort-Object { [double]$_.dip.dd } -Descending)
+    if (-not $grp.Count) { continue }
+    $lab = $grp[0].dip.label
+    $tag = if ($lvl -ge 3) { "<span style='background:#2a78d6;color:#ffffff;font-weight:700;padding:1px 6px;border-radius:4px;'>▼ $lab</span>" }
+        elseif ($lvl -eq 2) { "<font color=#2a78d6><b>▼ $lab</b></font>" } else { "<font color=#2a78d6><b>$lab</b></font>" }
+    # 종목 사이와 이유 사이가 모두 쉼표면 어디서 종목이 바뀌는지 안 보여서, 이유는 종목 이름 뒤 괄호에 넣는다.
+    # 괄호 안 % 는 52주 고점 대비 하락률이다(아래 설명 줄에 적는다).
+    $items = @($grp | ForEach-Object { "$($_.name)<font color=#6e6c66>($($_.dip.why -replace '고점 대비 ', ''))</font>$(if ($_.dip.firstDay) { ' <font color=#c62828><b>오늘 진입</b></font>' })" })
+    "<tr><td valign=top nowrap>$tag</td><td>$($items -join ', ')</td></tr>"
+})
+$touchItems = @(foreach ($stk in $stocks) {
+    $touched = @($stk.maLevels | Where-Object { $_ -and $_.buySignal })
+    if ($touched.Count) { "$($stk.name)<font color=#6e6c66>($(($touched | ForEach-Object { "$($_.window)일선$(if ($_.intraday) { ' 장중' })" }) -join ', '))</font>" }
+})
+if ($touchItems.Count) { $ladderLines += "<tr><td valign=top nowrap><font color=#2a78d6><b>◎ 이평선 도달</b></font></td><td>$($touchItems -join ', ')</td></tr>" }
+$ddStepsM = @($buyRules.dip.drawdownSteps)
+$maStepsM = @($buyRules.dip.maSteps)
+$stepNames = @("1단계 매수 추천", "2단계 추가 매수 추천", "3단계 매수 적극추천")
+$ruleParts = @(for ($i = 0; $i -lt [math]::Min(3, $ddStepsM.Count); $i++) {
+    "$(if ($i -eq 0) { '52주 고점보다 ' })$($ddStepsM[$i])% 낮$(if ($i -lt $maStepsM.Count) { "거나 $($maStepsM[$i])일선에 닿으면" } else { '으면' }) $($stepNames[$i])"
+})
+$ladderBody = if ($ladderLines.Count) {
+    "<table width=100% cellpadding=4 cellspacing=0 style='margin-top:4px;font-size:12.5px;color:#0b0b0b;line-height:1.5;'>$($ladderLines -join '')</table>"
+} else { "<div style='font-size:12.5px;color:#52514e;margin-top:4px;'>오늘은 매수 단계에 든 종목이 없습니다.</div>" }
+$ladderHtml = @"
+<div style="margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-left:4px solid #2a78d6;border-radius:6px;">
+  <div style="font-size:12px;font-weight:700;color:#0b0b0b;">오늘의 매수 단계</div>
+  $ladderBody
+  <div style="font-size:10.5px;color:#898781;margin-top:6px;line-height:1.5;">괄호 안 %는 52주 고점 대비 하락률입니다. $($ruleParts -join ', ')입니다. 종목별로 기준을 따로 정한 종목은 대시보드 카드에 그 기준이 적힙니다. 본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다.</div>
+</div>
+"@
+
+# 기간별 등락. 페이지 한눈 요약의 기간별 표와 분야별 등락 지도를 합친 모양이다(분야 소제목에 오늘 상승과 하락 종목 수).
+$perfRows = @(foreach ($g in $groupOrder) {
+    $members = @($stocks | Where-Object { (Get-GroupName $_) -eq $g })
+    if (-not $members.Count) { continue }
+    $d1s = @($members | ForEach-Object { if ($_.perf) { $_.perf.d1 } } | Where-Object { $null -ne $_ })
+    $nUp = @($d1s | Where-Object { [double]$_ -gt 0 }).Count
+    $nDown = @($d1s | Where-Object { [double]$_ -lt 0 }).Count
+    $dirColor = if ($nUp -gt $nDown) { "#c62828" } elseif ($nDown -gt $nUp) { "#1f5fcc" } else { "#898781" }
+    $dirArrow = if ($nUp -gt $nDown) { "▲ " } elseif ($nDown -gt $nUp) { "▼ " } else { "" }
+    $dirTxt = (@($(if ($nUp) { "상승 $nUp" }), $(if ($nDown) { "하락 $nDown" })) | Where-Object { $_ }) -join ", "
+    if (-not $dirTxt) { $dirTxt = "보합" }
+    "<tr><td colspan=6 style='padding-top:10px;border-bottom:1px solid #e1e0d9;'><font size=1 color=#6e6c66><b>$g</b></font> <font size=1 color=$dirColor><b>$dirArrow$dirTxt</b></font></td></tr>"
+    foreach ($stk in $members) {
+        $trendM = $stk.maTrend
+        $tc = if ($trendM -and $trendM.tone -eq "up") { "#c62828" } elseif ($trendM -and $trendM.tone -eq "down") { "#1f5fcc" } else { "#898781" }
+        $sig = Get-MailSignal $stk
+        $pf = $stk.perf
+        $thr = if ($pf) { $pf.thr } else { $null }
+        $valTxt = "$($stk.currency)$(Format-Price ([double]$stk.series[-1]) $stk.currency)"
+        "<tr><td><b>$($stk.name)</b>$(if ($trendM) { " <font size=1 color=$tc>$($trendM.text)</font>" })$(if ($sig) { "<br><font size=1>$sig</font>" })</td><td align=right nowrap>$valTxt</td>$(Get-MailPctCell $pf.d1 $thr.d1)$(Get-MailPctCell $pf.w1 $thr.w1)$(Get-MailPctCell $pf.m1 $thr.m1)$(Get-MailPctCell $pf.y1 $thr.y1)</tr>"
+    }
+})
+$perfHtml = @"
+<div style="margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-radius:6px;">
+  <div style="font-size:12px;font-weight:700;color:#0b0b0b;">기간별 등락</div>
+  <table width="100%" cellpadding=4 cellspacing=0 style="margin-top:2px;font-size:12.5px;color:#0b0b0b;">
+    <tr style="font-size:10.5px;color:#898781;"><td>종목 (최근 흐름)</td><td align=right>현재가</td><td align=right>오늘</td><td align=right>1주</td><td align=right>1개월</td><td align=right>1년</td></tr>
+    $($perfRows -join "")
+  </table>
+  <div style="font-size:10.5px;color:#898781;margin-top:8px;line-height:1.5;">빨강은 상승, 파랑은 하락입니다. 칸 배경은 그 종목의 평소 등락 폭보다 크게 움직인 칸이고, 2배 이상이면 진하게 칠합니다.</div>
+</div>
+"@
+
+# 다가오는 일정(14일). 페이지 '다가오는 일정'(120일)에서 가까운 것만 싣는다(실적 발표, FOMC, CPI, 금통위, 휴장).
+$schedLines = @(foreach ($ev in $scheduleItems) {
+    $d0 = [datetime]::ParseExact([string]$ev.date, "yyyy-MM-dd", $inv)
+    $dEnd = [datetime]::ParseExact([string]$ev.end, "yyyy-MM-dd", $inv)
+    $left = ($d0 - $nowKst.Date).Days
+    if ($left -gt 14) { continue }
+    $dTxt = if ($left -lt 0) { "진행 중" } elseif ($left -eq 0) { "오늘" } else { "D-$left" }
+    $when = "$($d0.Month)/$($d0.Day)($($dayNames[[int]$d0.DayOfWeek]))$(if ($dEnd -gt $d0) { "~$($dEnd.Month)/$($dEnd.Day)" })"
+    $evNote = if ($ev.note) { " <font size=1 color=#898781>$([System.Net.WebUtility]::HtmlEncode([string]$ev.note))</font>" } else { "" }
+    "<tr><td nowrap valign=top>$when</td><td nowrap valign=top><font color=#6e6c66>$dTxt</font></td><td><font color=#6e6c66>[$($ev.kind)]</font> $([System.Net.WebUtility]::HtmlEncode([string]$ev.title))$evNote</td></tr>"
+})
+$scheduleMailHtml = if ($schedLines.Count) { @"
+<div style="margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-radius:6px;">
+  <div style="font-size:12px;font-weight:700;color:#0b0b0b;">다가오는 일정 (14일)</div>
+  <table width="100%" cellpadding=3 cellspacing=0 style="margin-top:4px;font-size:12.5px;color:#0b0b0b;">
+    $($schedLines -join "")
+  </table>
+</div>
+"@ } else { "" }
+
+# 종목별 상세. 분야마다 소제목과 표를 따로 둔다(페이지 카드 구역과 같다).
+$detailHtml = (@(foreach ($g in $groupOrder) {
+    $rows = @($rowsHtml | Where-Object { $_.group -eq $g } | ForEach-Object { $_.html })
+    if (-not $rows.Count) { continue }
+    @"
+<div style="margin:18px 0 6px;font-size:11.5px;font-weight:700;color:#6e6c66;letter-spacing:0.6px;">$g</div>
+  <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e1e0d9;">
+    $($rows -join "`n")
+  </table>
+"@
+})) -join "`n"
 
 $fxLine = if ($usdKrw) { " · USD/KRW $($usdKrw.ToString('N2'))" } else { "" }
 $fgLine = if ($fearGreed) { " · 공포·탐욕지수 $($fearGreed.score)($($fearGreed.ratingKo))" } else { "" }
@@ -1654,11 +1969,13 @@ $emailHtml = @"
   <div style="margin-bottom:16px;">
     <a href="$dashboardUrl" style="display:inline-block;background:#2a78d6;color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 18px;border-radius:6px;">📊 대시보드 열기 →</a>
   </div>
-  $(if ($pageHighlights.Count) { "<div style='margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>지금 주목할 점</div><div style='font-size:12.5px;color:#0b0b0b;line-height:1.65;'>$((@($pageHighlights | ForEach-Object { "· <font color=#6e6c66>[$($_.tag)]</font> $([System.Net.WebUtility]::HtmlEncode([string]$_.text))" })) -join '<br>')</div></div>" })
+  $mailHlHtml
+  $ladderHtml
   $fgBlockHtml
-  <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e1e0d9;border-radius:8px;">
-    $($rowsHtml -join "`n")
-  </table>
+  $perfHtml
+  $scheduleMailHtml
+  <div style="margin:22px 0 0;font-size:12px;font-weight:700;color:#0b0b0b;">종목별 상세</div>
+  $detailHtml
   <div style="margin-top:16px;font-size:11px;color:#898781;line-height:1.6;">
     출처: 시세 Yahoo Finance, 뉴스 Google 뉴스(영문 기사는 자동 번역). 개인 투자 판단의 참고용 요약입니다.<br>
     실적, 목표주가, 이동평균선, 전체 차트는 <a href="$dashboardUrl" style="color:#2a78d6;">대시보드</a>에서 확인하시기 바랍니다.
@@ -1683,7 +2000,14 @@ $fgSubject = if ($fearGreed) {
 $topHighlights = @($highlights | Sort-Object priority -Descending | Select-Object -First 3 -ExpandProperty text)
 $highlightSubject = if ($topHighlights.Count -gt 0) { " · ⚠ " + ($topHighlights -join ", ") } else { "" }
 [System.IO.File]::WriteAllText((Join-Path $root "email-subject.txt"), "JH 주식 투자 Dashboard - $emailDateStr$highlightSubject$fgSubject", $utf8NoBom)
-Write-Host "Email summary written: email-summary.html"
+$emailKb = [math]::Round($utf8NoBom.GetByteCount($emailHtml) / 1KB, 1)
+Write-Host "Email summary written: email-summary.html ($emailKb KB)"
+# work-dashboard 와 같은 경고. Gmail 은 본문이 102KB 를 넘으면 뒷부분을 '[메시지 잘림]'으로 접는다(이 메일에서는
+# 맨 아래 종목별 상세가 사라진다). 2026-10-29 개편으로 34KB 에서 46KB 가 됐다. 배포는 막지 않는다.
+if ($emailKb -gt 90) {
+    Write-Warning "메일 본문 $emailKb KB - Gmail 잘림 기준(102KB)에 가깝습니다. 종목별 기사 수나 섹션을 줄이세요."
+    if ($env:CI) { Write-Host "::warning::메일 본문 $emailKb KB - Gmail 잘림 기준 102KB 의 $([math]::Round($emailKb / 102 * 100))%" }
+}
 
 # --- Output checks -------------------------------------------------------------------------
 # Same idea as work-dashboard's: the checks that used to be made by eye after a run. Failing
@@ -1703,6 +2027,11 @@ if ($stocks.Count -lt [Math]::Ceiling($tickers.Count / 2)) {
 }
 foreach ($s in $stocks) {
     if (@($s.series).Count -eq 0) { $problems.Add("$($s.symbol): 시계열이 비어 있습니다") }
+}
+# 시세와 52주 고가만 있으면 모든 종목이 단계를 갖는다. 하나도 없으면 계산이 고장 난 것이고, 그날 메일은 신호가 없는
+# 평범한 날처럼 보이게 된다.
+if ($stocks.Count -and -not @($stocks | Where-Object { $_.dip }).Count) {
+    $problems.Add("분할 매수 단계를 한 종목도 계산하지 못했습니다")
 }
 
 $newsCut = $nowKst.Date.AddDays(-45)
@@ -1727,6 +2056,7 @@ if ($problems.Count -gt 0) {
     if ($env:CI) { Write-Host "::error::생성물 점검 실패 $($problems.Count)건" }
     throw "생성물 점검 $($problems.Count)건 실패 - 이전 배포본을 유지합니다."
 }
+if ($script:spamBlocked -gt 0) { Write-Host "스팸 헤드라인 $($script:spamBlocked)건 차단됨" }
 $newsCount = 0
 foreach ($s in $stocks) { $newsCount += @($s.news | Where-Object { $_ }).Count }
 Write-Host "생성물 점검 통과 (종목 $($stocks.Count)/$($tickers.Count)개 · 뉴스 ${newsCount}건)"

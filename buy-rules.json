@@ -3,5 +3,10 @@
   "maWindows": [20, 60, 180],
   "touchPct": 1.0,
   "nearPct": 3.0,
-  "fromAboveOnly": true
+  "fromAboveOnly": true,
+  "dip": {
+    "//": "분할 매수 단계입니다. 52주 고점보다 drawdownSteps 의 첫째 값(%) 이상 낮거나 maSteps 의 첫째 이평선에 닿으면 1단계 매수 추천, 둘째 값 이상 낮거나 둘째 이평선에 닿으면 2단계 추가 매수 추천, 셋째 값 이상 낮으면 3단계 매수 적극추천입니다. '닿음'은 위의 touchPct 를 씁니다. 종목별로 하락 기준을 바꾸려면 watchlist.json 항목에 \"DipSteps\": [20, 40, 60] 처럼 적습니다(변동성이 큰 종목과 코인).",
+    "drawdownSteps": [10, 20, 30],
+    "maSteps": [120, 200]
+  }
 }
