@@ -1537,6 +1537,66 @@ function Format-Price {
     param($v, $ccy)
     if ($ccy -eq "₩") { "{0:N0}" -f [double]$v } else { "{0:N2}" -f [double]$v }
 }
+# 종목 한 줄 해설(카드 가격 아래, 메일 종목 칸). 증권 앱의 AI 종목 요약처럼 '지금 어떤 흐름이고 다음 매수 기준선이
+# 어디인지'를 문장으로 적는다. AI 를 부르지 않고 이 스크립트가 계산한 값으로 만든다. 문장: 추세, 매수 신호(있을 때),
+# 아래로 가장 가까운 매수 기준선(이평선·분할 매수 기준 중 현재가 바로 아래 값).
+function Get-StockComment {
+    param($st)
+    $out = @()
+    $out += switch -Wildcard ([string]$st.maTrend.text) {
+        "골든크로스*" { "20일선이 60일선을 넘어 상승으로 돌아섰습니다." }
+        "데드크로스*" { "20일선이 60일선 아래로 내려가 하락으로 돌아섰습니다." }
+        "정배열*"     { "이평선이 정배열이라 상승 추세입니다." }
+        "역배열*"     { "이평선이 역배열이라 하락 추세입니다." }
+        "단기 상승"   { "단기적으로 오르는 흐름입니다." }
+        "단기 하락"   { "단기적으로 내리는 흐름입니다." }
+        default       { "뚜렷한 추세는 없습니다." }
+    }
+    $series = @($st.series | ForEach-Object { [double]$_ })
+    if ($series.Count -lt 2) { return ($out -join " ") }
+    $last = $series[-1]
+    $ccy = [string]$st.currency
+    $dip = $st.dip
+    $hit = @($st.maLevels | Where-Object { $_ -and $_.buySignal })
+    if ($dip -and [int]$dip.level -ge 1) {
+        if ($dip.byDrawdown) { $out += "52주 고점보다 $(([double]$dip.dd).ToString('0.0'))% 낮아 $($dip.label) 구간입니다." }
+        elseif ($dip.byMa) { $out += "$($dip.byMa)일선에 닿아 $($dip.label) 구간입니다." }
+    } elseif ($hit.Count) {
+        $out += "$($hit[0].window)일선에 닿아 이평선 도달 매수 기준에 해당합니다."
+    }
+    # 아래로 가장 가까운 매수 기준선. 이평선(20·60·180, 분할 매수의 120·200)과 분할 매수 하락 기준을 모아 현재가 바로 아래 값을 고른다.
+    $cands = New-Object System.Collections.ArrayList
+    foreach ($l in @($st.maLevels | Where-Object { $_ })) { [void]$cands.Add([PSCustomObject]@{ name = "$($l.window)일선"; v = [double]$l.value; note = "" }) }
+    if ($dip) {
+        foreach ($w in @($dip.maSteps)) {
+            if (@($cands | Where-Object { $_.name -eq "${w}일선" }).Count) { continue }
+            $ma = Get-MovingAverage -series $series -window ([int]$w)
+            if ($null -ne $ma[-1]) { [void]$cands.Add([PSCustomObject]@{ name = "${w}일선"; v = [double]$ma[-1]; note = "" }) }
+        }
+        if ($st.rangeHigh) {
+            $k = 0
+            foreach ($stp in @($dip.steps | Select-Object -First 3)) {
+                $k++
+                [void]$cands.Add([PSCustomObject]@{ name = "분할 매수 ${k}단계 기준"; v = [double]$st.rangeHigh * (1 - [double]$stp / 100); note = "고점 대비 −$(([double]$stp).ToString('0.#'))%, " })
+            }
+        }
+    }
+    # 이미 닿아 있는 선(현재가 1% 안)은 '다음' 기준선이 아니다.
+    $below = @($cands | Where-Object { $_.v -lt $last * 0.99 } | Sort-Object v -Descending)
+    if ($below.Count) {
+        $b = $below[0]
+        $gap = (1 - $b.v / $last) * 100
+        # 값 뒤에 조사를 붙이지 않는다(숫자 끝자리에 따라 '로/으로'가 바뀐다).
+        $out += "다음 매수 기준선은 현재가보다 $($gap.ToString('0.0'))% 아래인 $($b.name)($($b.note)$ccy$(Format-Price $b.v $ccy))입니다."
+    } elseif ($cands.Count) {
+        $out += "아래에 남은 매수 기준선은 없습니다."
+    }
+    $out -join " "
+}
+foreach ($st in $stocks) {
+    $st | Add-Member -NotePropertyName comment -NotePropertyValue (Get-StockComment $st) -Force
+}
+
 # 지금 주목할 점(페이지 맨 위, 메일 맨 위). 실적 발표 임박, 52주 신고가·신저가, 이동평균 교차, 거래량 급증,
 # 평소보다 큰 하루 등락, 알림가 돌파·이탈, 시장보다 크게 강하거나 약한 종목을 문장으로 모은다.
 $pageHighlights = New-Object System.Collections.ArrayList
@@ -1691,6 +1751,70 @@ foreach ($st in $stocks) {
 }
 $scheduleItems = @($scheduleItems | Sort-Object date)
 
+# 오늘의 브리핑(페이지 한눈 요약 맨 위, 메일 맨 위). 증권 앱의 AI 시장 요약처럼 오늘 상황을 항목별로 한두 문장씩 정리한다.
+# AI 를 부르지 않고 이 스크립트가 계산한 값으로 문장을 만든다(같은 데이터면 늘 같은 문장이고 숫자가 틀릴 일이 없다).
+# 항목: 시장(코스피·나스닥), 관심 종목(오른 수·내린 수, 가장 크게 움직인 종목), 매수 신호(분할 매수 단계, 이평선 도달),
+# 심리·일정(공포·탐욕지수, 3일 안 일정). 한 문장에 한 내용.
+$brief = New-Object System.Collections.ArrayList
+function Add-Brief { param([string]$label, [string]$text) if ($text) { [void]$brief.Add([PSCustomObject]@{ label = $label; text = $text }) } }
+$mvMid = { param([double]$p) if ([math]::Abs($p) -lt 0.05) { "보합이었고" } elseif ($p -gt 0) { "$([math]::Abs($p).ToString('0.0'))% 올랐고" } else { "$([math]::Abs($p).ToString('0.0'))% 내렸고" } }
+$mvEnd = { param([double]$p) if ([math]::Abs($p) -lt 0.05) { "보합이었습니다." } elseif ($p -gt 0) { "$([math]::Abs($p).ToString('0.0'))% 올랐습니다." } else { "$([math]::Abs($p).ToString('0.0'))% 내렸습니다." } }
+$stripBy = @{}
+foreach ($x in @($marketStrip)) { $stripBy[[string]$x.symbol] = $x }
+$mkParts = @()
+if ($stripBy.ContainsKey("^KS11")) { $mkParts += , @("코스피는", [double]$stripBy["^KS11"].d1) }
+if ($stripBy.ContainsKey("^IXIC")) { $mkParts += , @("나스닥은", [double]$stripBy["^IXIC"].d1) }
+if ($mkParts.Count -eq 2) { Add-Brief "시장" "$($mkParts[0][0]) $(& $mvMid $mkParts[0][1]) $($mkParts[1][0]) $(& $mvEnd $mkParts[1][1])" }
+elseif ($mkParts.Count -eq 1) { Add-Brief "시장" "$($mkParts[0][0]) $(& $mvEnd $mkParts[0][1])" }
+if ($brief.Count -and $stripBy.ContainsKey("^VIX") -and [double]$stripBy["^VIX"].last -ge 25) {
+    $brief[$brief.Count - 1].text += " 미국 증시 불안 지수(VIX)가 $(([double]$stripBy['^VIX'].last).ToString('0.0'))로 높습니다."
+}
+$members = @($stocks | Where-Object { $_.kind -ne "index" -and $_.perf -and $null -ne $_.perf.d1 })
+if ($members.Count) {
+    $nUp = @($members | Where-Object { [double]$_.perf.d1 -ge 0.05 }).Count
+    $nDn = @($members | Where-Object { [double]$_.perf.d1 -le -0.05 }).Count
+    $top = @($members | Sort-Object { [math]::Abs([double]$_.perf.d1) } -Descending)[0]
+    $topD = [double]$top.perf.d1
+    $txt = if ($nDn -eq $members.Count) { "관심 종목 $($members.Count)개가 모두 내렸습니다." }
+        elseif ($nUp -eq $members.Count) { "관심 종목 $($members.Count)개가 모두 올랐습니다." }
+        else { "관심 종목 $($members.Count)개 중 오른 종목은 ${nUp}개, 내린 종목은 ${nDn}개입니다." }
+    if ([math]::Abs($topD) -ge 0.05) { $txt += " 가장 크게 움직인 종목은 $($top.name)$(Get-Josa ([string]$top.name) '으로' '로') 하루 사이 $(& $mvEnd $topD)" }
+    Add-Brief "관심 종목" $txt
+}
+$sig = @()
+$lv3 = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq 3 })
+$lv2 = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq 2 })
+$lv1 = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq 1 })
+$cnt = @()
+if ($lv3.Count) { $cnt += "매수 적극추천 $($lv3.Count)개" }
+if ($lv2.Count) { $cnt += "추가 매수 추천 $($lv2.Count)개" }
+if ($lv1.Count) { $cnt += "매수 추천 $($lv1.Count)개" }
+if ($cnt.Count) { $sig += "분할 매수 단계에 든 종목은 $($cnt -join ', ')입니다." }
+$newDip = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -ge 1 -and $_.dip.firstDay })
+if ($newDip.Count) { $sig += "오늘 새로 단계에 든 종목은 $(($newDip | ForEach-Object { "$($_.name)($($_.dip.label))" }) -join ', ')입니다." }
+$maHit = @($stocks | Where-Object { @($_.maLevels | Where-Object { $_ -and $_.buySignal }).Count })
+if ($maHit.Count) {
+    $sig += "이평선에 닿아 매수 기준에 해당하는 종목은 $(($maHit | ForEach-Object { $w = @($_.maLevels | Where-Object { $_ -and $_.buySignal })[0].window; "$($_.name)(${w}일선)" }) -join ', ')입니다."
+}
+if (-not $sig.Count) { $sig += "분할 매수 단계나 이평선 도달 매수 기준에 해당하는 종목은 없습니다." }
+Add-Brief "매수 신호" ($sig -join " ")
+$mood = @()
+if ($fearGreed) { $mood += "공포·탐욕지수는 $($fearGreed.score)로 $($fearGreed.ratingKo) 구간입니다." }
+$soonEnd = $nowKst.Date.AddDays(3).ToString("yyyy-MM-dd")
+$soon = @($scheduleItems | Where-Object { [string]$_.date -le $soonEnd -and [string]$_.end -ge $nowKst.Date.ToString("yyyy-MM-dd") } | Select-Object -First 3)
+if ($soon.Count) {
+    $dowKo = "일월화수목금토"
+    $soonTxt = @($soon | ForEach-Object {
+        $d = [datetime]::ParseExact([string]$_.date, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+        "$($d.Month)/$($d.Day)($($dowKo[[int]$d.DayOfWeek])) $($_.title)"
+    })
+    $mood += "3일 안 일정은 $($soonTxt -join ', ')입니다."
+}
+Add-Brief "심리·일정" ($mood -join " ")
+$briefJson = ConvertTo-Json -InputObject @($brief) -Depth 3 -Compress
+if (-not $briefJson -or $briefJson -eq "null") { $briefJson = "[]" }
+$briefJson = $briefJson.Replace("</", "<\/")
+
 $highlightsJson = ConvertTo-Json -InputObject @($pageHighlights) -Depth 3 -Compress
 if (-not $highlightsJson -or $highlightsJson -eq "null") { $highlightsJson = "[]" }
 $scheduleJson = ConvertTo-Json -InputObject @($scheduleItems) -Depth 3 -Compress
@@ -1706,7 +1830,7 @@ $stripJson = ConvertTo-JsonOrNull -InputObject @($marketStrip) -Depth 4
 $fetchedAt = $nowKst.ToString("yyyy-MM-ddTHH:mm:ss") + "+09:00"  # $nowKst's DateTimeKind is still Utc after the manual +9h shift, so "zzz" would report +00:00 — append the known-fixed KST offset literally instead.
 
 $template = Get-Content -Path (Join-Path $root "template.html") -Raw -Encoding UTF8
-$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson)
+$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson).Replace("__BRIEF_JSON__", $briefJson)
 
 $outPath = Join-Path $root "dashboard.html"
 Set-Content -Path $outPath -Value $output -Encoding UTF8
@@ -1864,6 +1988,8 @@ $rowsHtml = foreach ($s in $stocks) {
         $trendHtml = "<div style='font-size:11.5px;font-weight:600;color:$trendColor;margin-top:4px;'>$($trend.text)</div>"
     }
 
+    $commentHtml = if ($s.comment) { "<div style='font-size:12px;color:#3d3b37;line-height:1.55;margin-top:4px;'>$([System.Net.WebUtility]::HtmlEncode([string]$s.comment))</div>" } else { "" }
+
     $newsHtml = ""
     if ($s.news -and $s.news.Count -gt 0) {
         $newsLines = foreach ($n in ($s.news | Select-Object -First 2)) {
@@ -1894,6 +2020,7 @@ $rowsHtml = foreach ($s in $stocks) {
     <div style="font-weight:600;font-size:13px;color:#0b0b0b;">$($s.name)</div>
     <div style="font-size:11px;color:#898781;">$($s.ticker)</div>
     $trendHtml
+    $commentHtml
     $maHtml
     $dipHtml
     $alertHtml
@@ -1926,6 +2053,10 @@ $mailHlLines = if ($mailHighlights.Count) {
         "· <font color=$tagColor>[$($hlItem.tag)]</font> $([System.Net.WebUtility]::HtmlEncode([string]$hlItem.text))$hlNews"
     })
 } else { @("· 평소보다 크게 움직인 종목이나 가까운 실적 발표는 없습니다.") }
+$briefRows = @($brief | ForEach-Object {
+    "<tr><td valign=top nowrap style='padding:3px 10px 3px 0;font-size:12px;font-weight:700;color:#2a78d6;'>$([System.Net.WebUtility]::HtmlEncode([string]$_.label))</td><td style='padding:3px 0;font-size:12.5px;color:#0b0b0b;line-height:1.6;'>$([System.Net.WebUtility]::HtmlEncode([string]$_.text))</td></tr>"
+})
+$mailBriefHtml = if ($briefRows.Count) { "<div style='margin:0 0 12px;padding:12px 15px;background:#eef4fc;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>오늘의 브리핑</div><table cellpadding=0 cellspacing=0 style='border-collapse:collapse;'>$($briefRows -join '')</table></div>" } else { "" }
 $mailHlHtml = "<div style='margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>지금 주목할 점</div><div style='font-size:12.5px;color:#0b0b0b;line-height:1.65;'>$($mailHlLines -join '<br>')</div></div>"
 
 # 오늘의 매수 단계. 분할 매수 3, 2, 1단계와 이평선 도달(매수 기준) 종목을 한 상자에 모은다. 페이지에서는 카드와 표에
@@ -2118,6 +2249,7 @@ $emailHtml = @"
   <div style="margin-bottom:16px;">
     <a href="$dashboardUrl" style="display:inline-block;background:#2a78d6;color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 18px;border-radius:6px;">📊 대시보드 열기 →</a>
   </div>
+  $mailBriefHtml
   $mailHlHtml
   $ladderHtml
   $fgBlockHtml
@@ -2166,7 +2298,7 @@ if ($emailKb -gt 90) {
 $problems = New-Object System.Collections.Generic.List[string]
 
 $renderedHtml = Get-Content -Path $outPath -Raw -Encoding UTF8
-foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__", "__HIGHLIGHTS_JSON__", "__SCHEDULE_JSON__", "__STRIP_JSON__")) {
+foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__", "__HIGHLIGHTS_JSON__", "__SCHEDULE_JSON__", "__STRIP_JSON__", "__BRIEF_JSON__")) {
     if ($renderedHtml -like "*$token*") { $problems.Add("템플릿 치환 누락: $token") }
 }
 

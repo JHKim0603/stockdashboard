@@ -358,6 +358,24 @@
   .tp-chg.up { color: var(--rise); }
   .tp-chg.down { color: var(--fall); }
 
+  /* ---- 오늘의 브리핑(한눈 요약 맨 위), 종목 한 줄 해설(카드), 접는 설명 ---- */
+  .ov-brief { background: var(--accent-wash); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+  .ov-brief-title { font-size: 13px; font-weight: 700; color: var(--ink-primary); margin-bottom: 6px; }
+  .ov-brief-title span { font-size: 12px; font-weight: 400; color: var(--ink-muted); margin-left: 6px; }
+  .ov-brief dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 14px; row-gap: 4px; margin: 0; }
+  .ov-brief dt { font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .ov-brief dd { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-primary); }
+  @media screen and (max-width: 640px) {
+    .ov-brief dl { grid-template-columns: 1fr; row-gap: 0; }
+    .ov-brief dd { margin-bottom: 6px; }
+  }
+  .card-comment { font-size: 13.5px; line-height: 1.6; color: var(--ink-primary); border-left: 3px solid var(--accent); padding: 1px 0 1px 10px; }
+  .ov-more, .hl-more { margin-top: 4px; }
+  .ov-more summary, .hl-more summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--accent); width: fit-content; }
+  .ov-more summary:focus-visible, .hl-more summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ov-more p { margin: 6px 0 0; }
+  .hl-more ul { margin-top: 2px; }
+
   /* ---- 지금 주목할 점: 관련 기사 한 줄 ---- */
   .hl-news { font-size: 12.5px; line-height: 1.5; color: var(--ink-muted); margin: 0 0 4px; }
   .hl-news a { color: var(--ink-secondary); text-decoration: underline; text-decoration-color: var(--gridline); text-underline-offset: 2px; }
@@ -1287,6 +1305,7 @@
   const HIGHLIGHTS = __HIGHLIGHTS_JSON__;
   const SCHEDULE = __SCHEDULE_JSON__;
   const STRIP = __STRIP_JSON__;
+  const BRIEF = __BRIEF_JSON__;
   const RANGES = [
     { key: "1M", label: "1개월", days: 22 },
     { key: "3M", label: "3개월", days: 64 },
@@ -1482,6 +1501,14 @@
     }
 
     card.appendChild(priceRow);
+
+    // 한 줄 해설: 추세, 매수 신호, 아래로 가장 가까운 매수 기준선(생성 스크립트가 문장으로 만든다)
+    if (stock.comment) {
+      const cm = document.createElement("div");
+      cm.className = "card-comment";
+      cm.textContent = stock.comment;
+      card.appendChild(cm);
+    }
 
     card.appendChild(buildChartBlock(stock));
 
@@ -2389,7 +2416,8 @@
     block.appendChild(header);
 
     const trend = stock.maTrend;
-    if (trend) {
+    // 카드 위 한 줄 해설의 첫 문장이 추세라 겹치는 줄은 해설이 없을 때만 둔다.
+    if (trend && !stock.comment) {
       const trendEl = document.createElement("div");
       trendEl.className = "ma-trend" + (trend.tone ? " " + trend.tone : "");
       trendEl.textContent = trend.text;
@@ -2985,19 +3013,34 @@
         (meta ? '<span class="hl-src">(' + esc(meta) + ')</span>' : "") + '</div>';
     };
 
+    // 접는 부분의 열림 상태. 기간·정렬을 바꾸면 다시 그리므로 기억해 둔다.
+    let hlOpen = false, legendOpen = false;
+    const HL_SHOW = 5;
+    const hlItem = h => '<li data-sym="' + esc(h.symbol || "") + '"><span class="hl-tag' + (/^(매수 (기준|추천|적극추천)|추가 매수 추천)$/.test(h.tag) ? " buy" : "") + '">' +
+      esc(h.tag) + '</span>' + esc(h.text) + hlNews(h) + '</li>';
+    const briefHtml = () => {
+      const b = (BRIEF || []).filter(x => x && x.text);
+      if (!b.length) return "";
+      return '<div class="ov-brief"><div class="ov-brief-title">오늘의 브리핑<span>' + esc(fetchedAt.slice(5, 10).replace("-", "/")) + ' 기준</span></div><dl>' +
+        b.map(x => '<dt>' + esc(x.label) + '</dt><dd>' + esc(x.text) + '</dd>').join("") + '</dl></div>';
+    };
+
     function render() {
       const hl = HIGHLIGHTS || [];
-      host.innerHTML =
+      host.innerHTML = briefHtml() +
         '<div class="ov-top"><div class="ov-map"><div class="ov-head"><div class="ov-title">한눈 요약</div>' +
         '<div class="seg" role="group" aria-label="등락 기간">' +
         PERIODS.map(pd => '<button type="button" data-period="' + pd.key + '" class="' + (pd.key === period ? "on" : "") + '">' + pd.label + '</button>').join("") +
         '</div></div>' + heatmapHtml() + '</div>' +
         (hl.length ? '<div class="ov-today"><div class="ov-today-title">지금 주목할 점</div><ul>' +
-          hl.map(h => '<li data-sym="' + esc(h.symbol || "") + '"><span class="hl-tag' + (/^(매수 (기준|추천|적극추천)|추가 매수 추천)$/.test(h.tag) ? " buy" : "") + '">' + esc(h.tag) + '</span>' + esc(h.text) + hlNews(h) + '</li>').join("") +
-          '</ul></div>' : "") +
+          hl.slice(0, HL_SHOW).map(hlItem).join("") + '</ul>' +
+          (hl.length > HL_SHOW ? '<details class="hl-more"' + (hlOpen ? " open" : "") + '><summary>나머지 ' + (hl.length - HL_SHOW) + '건 더 보기</summary><ul>' +
+            hl.slice(HL_SHOW).map(hlItem).join("") + '</ul></details>' : "") +
+          '</div>' : "") +
         '</div>' +
         '<div class="ov-legend"><b class="up">빨강</b>은 상승, <b class="down">파랑</b>은 하락입니다. ' +
-        '칸 배경이 진할수록 그 종목의 평소 등락 폭보다 크게 움직였습니다. 머리글을 누르면 정렬됩니다. ' +
+        '칸 배경이 진할수록 그 종목의 평소 등락 폭보다 크게 움직였습니다.' +
+        '<details class="ov-more"' + (legendOpen ? " open" : "") + '><summary>표시 읽는 법</summary><p>머리글을 누르면 정렬됩니다. ' +
         '◎는 주가가 위에서 내려와 이평선에 닿은 종목으로, 이평선 도달 매수 기준에 해당합니다. ' +
         '이평선 칸의 막대는 왼쪽 끝이 52주 최저, 오른쪽 끝이 최고입니다. <span class="lg-dot"></span>점은 현재가이고, 세로선은 ' +
         '<span class="lg-ma" style="background:var(--ma1)"></span>' + MA_SHORT + '일선, <span class="lg-ma" style="background:var(--ma2)"></span>' + MA_MID +
@@ -3010,10 +3053,15 @@
           const parts = r.defSteps.slice(0, 3).map((s, i) => (i ? "" : "52주 고점보다 ") + s + "% 낮" +
             (r.maSteps && r.maSteps[i] ? "거나 " + r.maSteps[i] + "일선에 닿으면 " : "으면 ") + names[i]);
           return ' ▼는 분할 매수 단계입니다. ' + parts.join(", ") + '입니다.';
-        })() + '</div>' +
-        '<div class="ov-scroll">' + tableHtml() + '</div>' +
-        '<div class="ov-note">시장 대비는 최근 1개월 수익률에서 국내 종목은 코스피, 미국 종목은 나스닥의 수익률을 뺀 값입니다. 타일이나 행을 누르면 해당 카드로 이동합니다.</div>';
+        })() +
+        ' 시장 대비는 최근 1개월 수익률에서 국내 종목은 코스피, 미국 종목은 나스닥의 수익률을 뺀 값입니다. 타일이나 행을 누르면 해당 카드로 이동합니다.</p></details></div>' +
+        '<div class="ov-scroll">' + tableHtml() + '</div>';
     }
+    // details 의 toggle 은 거품이 일지 않아 잡는 단계에서 듣는다.
+    host.addEventListener("toggle", e => {
+      if (e.target.classList.contains("hl-more")) hlOpen = e.target.open;
+      else if (e.target.classList.contains("ov-more")) legendOpen = e.target.open;
+    }, true);
 
     host.addEventListener("click", e => {
       if (e.target.closest("a[href]")) return;  // 관련 기사 링크는 카드로 이동하지 않고 기사로
