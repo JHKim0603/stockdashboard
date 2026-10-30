@@ -22,6 +22,8 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   workflow so each run doesn't re-translate (and hit 429s) from an empty cache.
 - `earnings-cache.json` — next earnings dates as fetched by the day's (KST) first run; later runs
   that day reuse them instead of asking Nasdaq again. Committed back by the workflow.
+- `target-cache.json` — 증권사 목표주가 평균의 날짜별 기록(종목마다 한 줄, 400일치). 전 기록과 비교해 바뀐 날을 알리는 데
+  쓰므로 workflow 가 다른 캐시와 함께 커밋합니다. 로컬 실행 뒤에는 지우거나 `git checkout` 합니다.
 - `run.bat` — double-click launcher (bypasses PowerShell execution-policy prompts).
 - `dashboard.html` — generated output, opened automatically after each run. Not tracked in git.
 - `email-summary.html` / `email-subject.txt` — generated daily email body/subject. Written every run for local
@@ -71,10 +73,30 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
     당일 양봉과 음봉, 공포·탐욕지수(10 미만, 45 미만, 그 이상)로 12칸 금액표를 만들어 '200일선 아래, 음봉, 공포'일 때 가장 많이
     삽니다. 같은 생각(빠질수록, 무서울수록 더 산다)이며, 이 대시보드는 그중 가격 기준만 단계로 보여 주고 공포·탐욕지수는 위쪽에 따로 둡니다.
   - 본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다.
+- **맨 위 시장 띠 (2026-10-30, 토스증권·구글 금융 벤치마킹)**: KOSPI, KOSDAQ, 나스닥, S&P 500, 필라델피아 반도체, VIX,
+  원/달러 환율, 비트코인을 한 줄로 보여 줍니다. 값, 직전 거래일 대비 등락, 최근 1개월 작은 그래프입니다. 관심 종목에 있는 것은
+  그 데이터를 쓰고 없는 것(KOSDAQ, 필라델피아 반도체, VIX)만 3개월치를 따로 받습니다. 누르면 카드로 이동하고 환율은 환율 창을
+  엽니다. 목록은 스크립트의 `$stripDefs` 에서 바꿉니다.
+- **관련 기사 한 줄 (2026-10-30, Perplexity·구글 금융의 시장 요약 벤치마킹)**: 지금 주목할 점에서 종목마다 맨 위 줄 아래에
+  그 종목의 최근 3일 안 기사 제목을 하나 붙여 "왜 움직였나"를 같이 보여 줍니다. 이미 받는 뉴스를 쓰므로 AI 를 부르지 않습니다.
+  여러 종목을 묶은 줄과 실적 일정 줄에는 붙이지 않습니다. 메일의 지금 주목할 점에도 같은 줄이 붙습니다.
+- **52주 범위 안의 위치 (2026-10-30)**: 카드 차트 아래 막대의 왼쪽 끝이 52주 최저, 오른쪽 끝이 최고이고 점이 현재가입니다.
+  위 눈금은 20·60·180일선(차트 선과 같은 색), 아래 점선 눈금은 분할 매수 단계 기준(52주 고점 대비 −10·−20·−30%, 종목별
+  DipSteps 를 따름)입니다. 가까운 눈금은 이름을 하나로 묶습니다. 한눈 요약 표의 이평선 칸에는 같은 막대를 작게 넣었습니다.
+  카드 아래 '52주 범위' 문구는 이 막대 양 끝으로 옮겼습니다.
+- **수익률 비교 (2026-10-30, Koyfin 벤치마킹)**: 고른 종목을 기간 시작일 종가 0%로 맞춰 한 그래프에 겹쳐 봅니다. 기간은
+  1개월·3개월·6개월·연초 대비·1년이고, 시작일 계산이 기간별 표와 같아 끝 값이 표와 같습니다. 시장 지수는 회색 점선, 종목은
+  6색(보라, 주황, 청록, 노랑, 분홍, 초록. 색약 검사를 통과한 순서이고 상승 빨강·하락 파랑과 헷갈리지 않게 두 색은 뺐습니다)으로
+  한 번에 6개까지입니다. 색은 고를 때 빈 자리를 받아 다른 종목을 끄고 켜도 바뀌지 않습니다. 고른 종목과 기간은 그 브라우저에
+  기억합니다(`localStorage`). 마우스를 올리거나 누르면 그날 모든 선의 값이, 방향키로 날짜를 옮길 수 있습니다.
+- **목표주가 변화 (2026-10-30, 토스증권 '한 줄 요약' 벤치마킹)**: 증권사 목표주가 평균을 날마다 `target-cache.json` 에 적고,
+  전 기록보다 1% 넘게 바뀌면 그날 지금 주목할 점에 올립니다. 카드의 목표주가 옆에는 2주 안에 바뀐 날과 폭을 적습니다
+  (예: `10/30 5.4% 상향`). 기록이 60일 넘게 쌓이면 '기록을 모은 N일 중 가장 높습니다'도 붙습니다. 기록은 첫 실행부터 쌓이므로
+  첫날에는 비교할 값이 없습니다.
 - **다가오는 일정 (120일)**: 미국 종목 실적 발표일(Nasdaq/Zacks)과 `market-calendar.json` 의 시장 일정(FOMC, 미국 CPI,
   한국은행 금통위, 미국·한국 증시 휴장일)을 날짜순 한 목록으로 보여 줍니다. **`market-calendar.json` 은 매년 초에 그해 일정을
   더해야 합니다**(2027년 한국 증시 설 연휴는 한국거래소 발표 뒤 추가).
-- **카드 구역과 바로가기**: 카드를 분야별 구역으로 나누고, 위에 [한눈 요약]·[일정]·분야별 바로가기가 따라옵니다.
+- **카드 구역과 바로가기**: 카드를 분야별 구역으로 나누고, 위에 [한눈 요약]·[수익률 비교]·[일정]·분야별 바로가기가 따라옵니다.
 - **차트 표시**: 카드 차트에 화면 기간 안의 20/60일선 교차 지점을 세로 점선(골든 빨강, 데드 파랑)으로, 알림가를 주황 가로선으로
   그립니다(마우스를 올리면 날짜와 값).
 - **색**: 가격 방향은 국내 증권 앱처럼 **상승 빨강, 하락 파랑**입니다. `template.html` 맨 위 색 정의의 `--rise`/`--fall` 한곳에서
@@ -82,7 +104,7 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
 - **글자와 문구**: 화면 글자는 12px 이상입니다. 화면·메일 문구는 사내 문서 문체(-습니다, 한 문장에 한 내용, 줄표·가운뎃점 나열
   없음)로 씁니다. 이동평균 추세 표시는 "골든크로스, 상승 전환", "정배열, 상승 추세", "단기 하락"처럼 짧게 적습니다.
 - **화면 크기**: 1800px 이상에서는 페이지 최대 폭을 1,760px(2,300px 이상은 2,160px)로 넓힙니다.
-- **Per card:** price and change, 1M/3M/6M/1Y chart with 20/60/180일 moving averages, 52주 범위,
+- **Per card:** price and change, 1M/3M/6M/1Y chart with 20/60/180일 moving averages, 52주 범위 안의 위치 막대,
   거래량 with `평균의 N배` (vs the prior 20 trading days' average, highlighted at 2× and over),
   target price, next earnings (US listings), alert-level flag, and the 최근 이슈 news list.
 - **News tags:** `[호재]` / `[악재]` come from headline keywords only (not the article body).

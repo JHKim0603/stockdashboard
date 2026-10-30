@@ -1316,6 +1316,73 @@ if ($stocks.Count -lt $tickers.Count) {
     if ($env:CI) { Write-Host "::warning::$missing of $($tickers.Count) tickers failed to fetch - dashboard published without them." }
 }
 
+# --- 맨 위 시장 띠 ---------------------------------------------------------------------------
+# 토스증권·구글 금융처럼 지수·환율·코인을 페이지 맨 위에 한 줄로 먼저 보여 준다. 관심 종목에 이미 있는 것은 그 값을
+# 쓰고, 없는 것(코스닥, 필라델피아 반도체, VIX)만 3개월치를 따로 받는다. 따로 받은 것은 카드를 만들지 않는다.
+# dp 는 소수 자릿수, prefix·suffix 는 값 앞뒤에 붙는 단위다.
+$stripDefs = @(
+    @{ sym = "^KS11";   name = "KOSPI";             dp = 2 }
+    @{ sym = "^KQ11";   name = "KOSDAQ";            dp = 2 }
+    @{ sym = "^IXIC";   name = "나스닥";            dp = 2 }
+    @{ sym = "^GSPC";   name = "S&P 500";           dp = 2 }
+    @{ sym = "^SOX";    name = "필라델피아 반도체"; dp = 2 }
+    @{ sym = "^VIX";    name = "VIX(변동성)";       dp = 2 }
+    @{ sym = "KRW=X";   name = "원/달러 환율";      dp = 2; suffix = "원" }
+    @{ sym = "BTC-KRW"; name = "비트코인";          dp = 0; prefix = "₩" }
+)
+function Get-StripSeries {
+    param($sym)
+    try {
+        $r = (Invoke-RestMethod -Uri "https://query1.finance.yahoo.com/v8/finance/chart/$([uri]::EscapeDataString($sym))?interval=1d&range=3mo" -Headers $headers).chart.result[0]
+        $off = [TimeSpan]::FromSeconds([int]$r.meta.gmtoffset)
+        $cl = $r.indicators.quote[0].close
+        $ts = $r.timestamp
+        $pairs = @(for ($i = 0; $i -lt $cl.Count; $i++) {
+            if ($null -ne $cl[$i]) {
+                [PSCustomObject]@{ Date = [DateTimeOffset]::FromUnixTimeSeconds($ts[$i]).ToOffset($off).ToString("yyyy-MM-dd"); Close = [math]::Round([double]$cl[$i], 2) }
+            }
+        })
+        # 일봉이 아직 오늘 봉을 못 받았으면 meta 값을 한 점 덧붙인다(Get-StockSnapshot 과 같은 이유).
+        if ($r.meta.regularMarketPrice -and $r.meta.regularMarketTime) {
+            $md = [DateTimeOffset]::FromUnixTimeSeconds($r.meta.regularMarketTime).ToOffset($off).ToString("yyyy-MM-dd")
+            if ($pairs.Count -eq 0 -or $md -gt $pairs[-1].Date) { $pairs += [PSCustomObject]@{ Date = $md; Close = [math]::Round([double]$r.meta.regularMarketPrice, 2) } }
+        }
+        [PSCustomObject]@{ dates = @($pairs.Date); series = @($pairs.Close) }
+    } catch {
+        Write-Warning "시장 띠 '$sym' 을 받지 못했습니다: $($_.Exception.Message)"
+        $null
+    }
+}
+$marketStrip = @(foreach ($d in $stripDefs) {
+    $inWatch = @($stocks | Where-Object { $_.symbol -eq $d.sym })[0]
+    $src = if ($inWatch) { [PSCustomObject]@{ dates = $inWatch.dates; series = $inWatch.series } }
+        elseif ($d.sym -eq "KRW=X") { $usdKrwSeries }
+        else { Get-StripSeries $d.sym }
+    if (-not $src -or @($src.series).Count -lt 2) { continue }
+    $sr = @($src.series | ForEach-Object { [double]$_ })
+    $ds = @($src.dates)
+    $n = $sr.Count
+    # 작은 그래프는 최근 1개월. 코인은 주말에도 거래하므로 개수가 아니라 날짜로 자른다.
+    $cut = [datetime]::ParseExact([string]$ds[-1], "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture).AddMonths(-1).ToString("yyyy-MM-dd")
+    $k = $n - 1
+    while ($k -gt 0 -and [string]$ds[$k - 1] -ge $cut) { $k-- }
+    $k = [math]::Max(0, $k - 1)
+    [PSCustomObject]@{
+        symbol = $d.sym
+        name   = $d.name
+        dp     = [int]$d.dp
+        prefix = [string]$d.prefix
+        suffix = [string]$d.suffix
+        last   = $sr[$n - 1]
+        chg    = [math]::Round($sr[$n - 1] - $sr[$n - 2], 2)
+        d1     = [math]::Round(($sr[$n - 1] / $sr[$n - 2] - 1) * 100, 2)
+        date   = [string]$ds[-1]
+        spark  = @($sr[$k..($n - 1)])
+        card   = [bool]$inWatch
+    }
+})
+Write-Host "시장 띠 $($marketStrip.Count)/$($stripDefs.Count)개"
+
 # ConvertTo-Json on $null returns $null (not the string "null"), and String.Replace() coerces a
 # $null replacement to "" — which would emit `const fearGreed = ;` into the page, a hard
 # SyntaxError that stops the whole script block and renders a completely blank dashboard.
@@ -1399,6 +1466,58 @@ foreach ($st in $stocks) {
     }
     $st | Add-Member -NotePropertyName relM1 -NotePropertyValue $rel -Force
     $st | Add-Member -NotePropertyName relBase -NotePropertyValue $relBase -Force
+}
+
+# 목표주가 변화. 토스증권의 '한 줄 요약'처럼 증권사 목표주가 평균이 바뀐 날을 알린다. 네이버는 그날 평균만 주므로
+# 날마다 target-cache.json 에 적어 두고(봇이 커밋) 전 기록과 비교한다. 같은 날 여러 번 돌면 그날 값만 고쳐 쓴다.
+# 1% 이상 바뀐 가장 최근 날을 targetChange 로 남기고, 그날이 오늘이면 지금 주목할 점에 올린다. 기록은 400일치만 둔다.
+$targetCachePath = Join-Path $root "target-cache.json"
+$targetCacheOriginal = if (Test-Path $targetCachePath) { [System.IO.File]::ReadAllText($targetCachePath) } else { "" }
+$targetCache = @{}
+if ($targetCacheOriginal) {
+    try {
+        ($targetCacheOriginal | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $targetCache[$_.Name] = @($_.Value) }
+    } catch { Write-Warning "target-cache.json 을 읽지 못해 새로 기록합니다: $($_.Exception.Message)" }
+}
+foreach ($st in $stocks) {
+    $tp = if ($st.consensus -and $st.consensus.targetPrice) { [double]$st.consensus.targetPrice } else { 0 }
+    if ($tp -le 0) { continue }
+    $hist = @(@($targetCache[$st.symbol]) | Where-Object { $_ -and $_.d -and [string]$_.d -ne $todayKstStr })
+    $hist += [PSCustomObject]@{ d = $todayKstStr; v = $tp }
+    $hist = @($hist | Select-Object -Last 400)
+    $targetCache[$st.symbol] = $hist
+    $chg = $null
+    for ($j = $hist.Count - 1; $j -ge 1; $j--) {
+        $from = [double]$hist[$j - 1].v
+        if ($from -le 0) { continue }
+        $pctT = ([double]$hist[$j].v / $from - 1) * 100
+        if ([math]::Abs($pctT) -ge 1) {
+            $older = @($hist[0..($j - 1)] | ForEach-Object { [double]$_.v })
+            $chg = [PSCustomObject]@{
+                date = [string]$hist[$j].d
+                from = $from
+                to   = [double]$hist[$j].v
+                pct  = [math]::Round($pctT, 1)
+                # 기록이 60일 넘게 쌓인 뒤에만 '가장 높은 값'을 말한다. 기록 첫 주에는 무엇이든 최고가 된다.
+                recordDays = $hist.Count
+                isHigh = [bool]($pctT -gt 0 -and $hist.Count -ge 60 -and [double]$hist[$j].v -gt ($older | Measure-Object -Maximum).Maximum)
+            }
+            break
+        }
+    }
+    # 카드에는 2주 안에 바뀐 것만 적는다.
+    if ($chg -and $chg.date -lt $nowKst.Date.AddDays(-14).ToString("yyyy-MM-dd")) { $chg = $null }
+    $st | Add-Member -NotePropertyName targetChange -NotePropertyValue $chg -Force
+}
+# 관심종목에서 빠진 종목은 버리고, 내용이 같으면 쓰지 않는다. 종목마다 한 줄로 적어 파일이 길어지지 않게 한다.
+$tcLines = @(foreach ($k in ($targetCache.Keys | Sort-Object)) {
+    if (@($tickers | ForEach-Object { $_.Symbol }) -notcontains $k) { continue }
+    $arr = @($targetCache[$k] | ForEach-Object { [PSCustomObject]@{ d = [string]$_.d; v = [double]$_.v } })
+    "  $(ConvertTo-Json -InputObject ([string]$k) -Compress): $(ConvertTo-Json -InputObject $arr -Compress)"
+})
+$tcJson = "{`n" + ($tcLines -join ",`n") + "`n}`n"
+if ($tcLines.Count -and $tcJson -ne $targetCacheOriginal) {
+    [System.IO.File]::WriteAllText($targetCachePath, $tcJson, (New-Object System.Text.UTF8Encoding $false))
 }
 
 # 받침 유무로 조사를 고른다. 영문·숫자로 끝나면 읽는 소리로 판단한다.
@@ -1493,6 +1612,12 @@ foreach ($st in $stocks) {
         $prio = switch ([int]$dip.level) { 3 { 118 } 2 { 108 } default { 92 } }
         Add-Highlight $dip.label "$topic 오늘 $how $($dip.label) 구간에 들어왔습니다." $prio $st.symbol
     }
+    $tc = $st.targetChange
+    if ($tc -and $tc.date -eq $todayKstStr) {
+        $tcWord = if ($tc.pct -gt 0) { "올랐습니다" } else { "내렸습니다" }
+        $tcHigh = if ($tc.isHigh) { " 기록을 모은 $($tc.recordDays)일 중 가장 높습니다." } else { "" }
+        Add-Highlight "목표주가" "$($nm) 증권사 목표주가 평균이 $([math]::Abs([double]$tc.pct).ToString('0.0'))% ${tcWord}($($st.currency)$(Format-Price $tc.from $st.currency)에서 $($st.currency)$(Format-Price $tc.to $st.currency)).$tcHigh" (72 + [math]::Min(10, [math]::Abs([double]$tc.pct))) $st.symbol
+    }
     if ($null -ne $st.relM1 -and [math]::Abs([double]$st.relM1) -ge 15) {
         $relWord = if ($st.relM1 -ge 0) { "강했습니다" } else { "약했습니다" }
         Add-Highlight "시장 대비" "$topic 최근 1개월 $($st.relBase)보다 $([math]::Abs([double]$st.relM1).ToString('0.0'))%p $relWord." (40 + [math]::Abs([double]$st.relM1) / 10) $st.symbol
@@ -1512,6 +1637,21 @@ foreach ($lvl in 3, 2) {
     } else {
         $items = @($grp | ForEach-Object { "$($_.name)($($_.dip.why))" })
         Add-Highlight $grpLabel "$($items -join ', ')$(Get-Josa $items[-1] '이' '가') $grpLabel 구간입니다." $prioGrp $grp[0].symbol "dipGroup"
+    }
+}
+# 왜 움직였나. Perplexity·구글 금융의 시장 요약처럼 숫자 옆에 이유를 둔다. 종목마다 가장 위에 오는 한 줄에만
+# 그 종목의 최근 3일 안 기사 제목을 하나 붙인다. 이미 받아 둔 뉴스(번역 끝난 제목)를 쓰므로 AI 를 부르지 않는다.
+# 여러 종목을 묶은 줄(dipGroup)과 일정을 알리는 실적 줄에는 붙이지 않는다.
+$newsCut = $nowKst.Date.AddDays(-3).ToString("yyyy-MM-dd")
+$newsSeen = @{}
+foreach ($h in @($pageHighlights | Sort-Object priority -Descending)) {
+    if (-not $h.symbol -or $h.kind -eq "dipGroup" -or $h.tag -eq "실적" -or $newsSeen.ContainsKey($h.symbol)) { continue }
+    $newsSeen[$h.symbol] = $true
+    $stH = @($stocks | Where-Object { $_.symbol -eq $h.symbol })[0]
+    if (-not $stH) { continue }
+    $nw = @($stH.news | Where-Object { $_ -and $_.title -and [string]$_.date -ge $newsCut })[0]
+    if ($nw) {
+        $h | Add-Member -NotePropertyName news -NotePropertyValue ([PSCustomObject]@{ title = [string]$nw.title; link = [string]$nw.link; source = [string]$nw.source; date = [string]$nw.date }) -Force
     }
 }
 # 메일은 묶음 줄을 빼고 다시 고르므로 자르기 전 목록을 남겨 둔다.
@@ -1562,10 +1702,11 @@ $stocksJson = ConvertTo-JsonOrNull -InputObject @($stocks) -Depth 8
 $usdKrwJson = ConvertTo-JsonOrNull -InputObject $usdKrw
 $usdKrwSeriesJson = ConvertTo-JsonOrNull -InputObject $usdKrwSeries -Depth 4
 $fearGreedJson = ConvertTo-JsonOrNull -InputObject $fearGreed
+$stripJson = ConvertTo-JsonOrNull -InputObject @($marketStrip) -Depth 4
 $fetchedAt = $nowKst.ToString("yyyy-MM-ddTHH:mm:ss") + "+09:00"  # $nowKst's DateTimeKind is still Utc after the manual +9h shift, so "zzz" would report +00:00 — append the known-fixed KST offset literally instead.
 
 $template = Get-Content -Path (Join-Path $root "template.html") -Raw -Encoding UTF8
-$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson)
+$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson)
 
 $outPath = Join-Path $root "dashboard.html"
 Set-Content -Path $outPath -Value $output -Encoding UTF8
@@ -1774,7 +1915,15 @@ $mailHighlights = @($allHighlights | Where-Object { $_.kind -ne "dipGroup" } | S
 $mailHlLines = if ($mailHighlights.Count) {
     @($mailHighlights | ForEach-Object {
         $tagColor = if ($_.tag -match '^(매수 (기준|추천|적극추천)|추가 매수 추천)$') { "#2a78d6" } else { "#6e6c66" }
-        "· <font color=$tagColor>[$($_.tag)]</font> $([System.Net.WebUtility]::HtmlEncode([string]$_.text))"
+        $hlItem = $_
+        $hlNews = ""
+        if ($hlItem.news) {
+            $nd = [string]$hlItem.news.date
+            $ndTxt = if ($nd -match '^\d{4}-(\d{2})-(\d{2})$') { "$([int]$matches[1])/$([int]$matches[2])" } else { "" }
+            $nMeta = (@([string]$hlItem.news.source, $ndTxt) | Where-Object { $_ }) -join ", "
+            $hlNews = "<br>&nbsp;&nbsp;&nbsp;<font size=2 color=#6e6c66>관련 기사: <a href='$([System.Net.WebUtility]::HtmlEncode([string]$hlItem.news.link))' style='color:#52514e;'>$([System.Net.WebUtility]::HtmlEncode([string]$hlItem.news.title))</a> ($([System.Net.WebUtility]::HtmlEncode($nMeta)))</font>"
+        }
+        "· <font color=$tagColor>[$($hlItem.tag)]</font> $([System.Net.WebUtility]::HtmlEncode([string]$hlItem.text))$hlNews"
     })
 } else { @("· 평소보다 크게 움직인 종목이나 가까운 실적 발표는 없습니다.") }
 $mailHlHtml = "<div style='margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>지금 주목할 점</div><div style='font-size:12.5px;color:#0b0b0b;line-height:1.65;'>$($mailHlLines -join '<br>')</div></div>"
@@ -2017,7 +2166,7 @@ if ($emailKb -gt 90) {
 $problems = New-Object System.Collections.Generic.List[string]
 
 $renderedHtml = Get-Content -Path $outPath -Raw -Encoding UTF8
-foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__", "__HIGHLIGHTS_JSON__", "__SCHEDULE_JSON__")) {
+foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__", "__HIGHLIGHTS_JSON__", "__SCHEDULE_JSON__", "__STRIP_JSON__")) {
     if ($renderedHtml -like "*$token*") { $problems.Add("템플릿 치환 누락: $token") }
 }
 
