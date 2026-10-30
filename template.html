@@ -717,6 +717,12 @@
   }
   .range-toggle button:hover { color: var(--ink-secondary); }
   .range-toggle button.active { color: var(--accent); background: var(--accent-wash); }
+  /* 카드 차트 '시장과 비교'(같은 출발점에 맞춘 지수 회색 점선) */
+  .range-toggle button.mkt-toggle { margin-left: 6px; border: 1px dashed var(--ink-muted); }
+  .range-toggle button.mkt-toggle.active { border-style: solid; border-color: var(--accent); }
+  .spark-tooltip .m { display: block; font-size: 12px; color: var(--ink-muted); font-weight: 400; }
+  .cmp-date { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-secondary); margin: 0 0 8px; }
+  .cmp-date input { font: inherit; font-size: 13px; color: var(--ink-primary); background: var(--surface-raised); border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px; }
   .range-toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   .ma-trend { font-size: 12.5px; line-height: 1.5; color: var(--ink-secondary); }
@@ -2402,7 +2408,7 @@
     function render() {
       slot.innerHTML = "";
       slot.appendChild(buildSparkline(stock, current));
-      toggle.querySelectorAll("button").forEach(b => {
+      toggle.querySelectorAll("button[data-range]").forEach(b => {
         b.classList.toggle("active", b.dataset.range === current);
       });
     }
@@ -2416,6 +2422,22 @@
       toggle.appendChild(btn);
     });
 
+    if (benchOf(stock)) {
+      const mb = document.createElement("button");
+      mb.type = "button";
+      mb.className = "mkt-toggle";
+      mb.textContent = "시장과 비교";
+      mb.title = (stock.kind === "kr" ? "KOSPI" : "나스닥") + "를 같은 출발점에 맞춰 회색 점선으로 겹쳐 봅니다. 모든 카드에 함께 적용됩니다.";
+      const sync = () => { mb.classList.toggle("active", cardMarketOn); mb.setAttribute("aria-pressed", String(cardMarketOn)); };
+      mb.addEventListener("click", () => {
+        cardMarketOn = !cardMarketOn;
+        try { localStorage.setItem(MKT_KEY, cardMarketOn ? "1" : "0"); } catch (e) { /* 기억 못 해도 화면은 그대로 */ }
+        document.dispatchEvent(new CustomEvent("card-market-toggle"));
+      });
+      document.addEventListener("card-market-toggle", () => { sync(); render(); });
+      sync();
+      toggle.appendChild(mb);
+    }
     header.appendChild(legend);
     header.appendChild(toggle);
     block.appendChild(header);
@@ -2487,9 +2509,37 @@
     };
   }
 
+  // 카드 차트의 '시장과 비교'. 국내 종목은 KOSPI, 미국 종목은 나스닥을 그 기간 첫날 종목 가격에 맞춰(같은 출발점) 회색 점선으로
+  // 겹친다. 점선보다 위에 있으면 시장보다 잘 간 것이다. 켜고 끄는 상태는 모든 카드가 함께 쓰고 그 브라우저에 기억한다.
+  const MKT_KEY = "stock-card-market";
+  let cardMarketOn = (function () { try { return localStorage.getItem(MKT_KEY) === "1"; } catch (e) { return false; } })();
+  const benchOf = st => {
+    const sym = st.kind === "kr" ? "^KS11" : st.kind === "us" ? "^IXIC" : null;
+    return sym ? (stocks.find(x => x.symbol === sym) || null) : null;
+  };
+  // 종목의 날짜마다 그날(또는 그 전 마지막) 지수 종가
+  function alignBench(bench, dates) {
+    const out = [];
+    let j = 0;
+    dates.forEach(d => {
+      while (j + 1 < bench.dates.length && bench.dates[j + 1] <= d) j++;
+      out.push(bench.dates[j] <= d ? bench.series[j] : null);
+    });
+    return out;
+  }
+
   function buildSparkline(stock, rangeKey) {
     const { series: data, dates, ma20, ma60, ma180 } = sliceForRange(stock, rangeKey);
     const ccy = stock.currency;
+    let mkt = null;
+    const bench = cardMarketOn ? benchOf(stock) : null;
+    if (bench && data.length > 1) {
+      const raw = alignBench(bench, dates);
+      if (raw[0]) {
+        mkt = { name: bench.name, raw, vals: raw.map(v => v === null ? null : v / raw[0] * data[0]),
+          pct: raw[raw.length - 1] ? (raw[raw.length - 1] / raw[0] - 1) * 100 : null };
+      }
+    }
 
     // Axis labels are plain HTML (not SVG <text>) on purpose: the SVG below uses
     // preserveAspectRatio="none" so it can stretch to fill the card width, and that
@@ -2512,7 +2562,7 @@
 
     const W = 300, H = 64;
     const pad = 7;
-    const maValues = [...ma20, ...ma60, ...ma180].filter(v => v !== null && v !== undefined);
+    const maValues = [...ma20, ...ma60, ...ma180, ...(mkt ? mkt.vals : [])].filter(v => v !== null && v !== undefined);
     const min = Math.min(data.length ? Math.min(...data) : Infinity, ...(maValues.length ? maValues : [Infinity]));
     const max = Math.max(data.length ? Math.max(...data) : -Infinity, ...(maValues.length ? maValues : [-Infinity]));
     const mid = (min + max) / 2;
@@ -2630,6 +2680,16 @@
     line.setAttribute("stroke-linecap", "round");
     line.setAttribute("stroke-linejoin", "round");
     line.setAttribute("vector-effect", "non-scaling-stroke");
+    if (mkt) {
+      const mp = document.createElementNS(svgNS, "path");
+      mp.setAttribute("d", buildMAPath(mkt.vals, x, y));
+      mp.setAttribute("fill", "none");
+      mp.setAttribute("stroke", "var(--ink-muted)");
+      mp.setAttribute("stroke-width", "1.5");
+      mp.setAttribute("stroke-dasharray", "4,3");
+      mp.setAttribute("vector-effect", "non-scaling-stroke");
+      svg.appendChild(mp);
+    }
     svg.appendChild(line);
 
     const haloR = 6.5, dotR = 3;
@@ -2680,7 +2740,9 @@
       crossDot.setAttribute("cx", px.toFixed(1));
       crossDot.setAttribute("cy", py.toFixed(1));
       crossDot.setAttribute("opacity", "1");
-      tooltip.innerHTML = '<span class="d">' + dates[idx] + '</span>' + ccy + fmtNum(data[idx], ccy);
+      tooltip.innerHTML = '<span class="d">' + dates[idx] + '</span>' + ccy + fmtNum(data[idx], ccy) +
+        (mkt && mkt.raw[idx] ? '<span class="m">시작일보다 ' + esc(stock.name) + ' ' + fmtPct((data[idx] / data[0] - 1) * 100) + ', ' +
+          esc(mkt.name) + ' ' + fmtPct((mkt.raw[idx] / mkt.raw[0] - 1) * 100) + '</span>' : "");
       tooltip.style.left = ((px / W) * 100) + "%";
       tooltip.classList.add("visible");
     });
@@ -2690,13 +2752,18 @@
       tooltip.classList.remove("visible");
     });
 
-    if (crossMarks || alertMarks) {
+    if (crossMarks || alertMarks || mkt) {
       const cap = document.createElement("div");
       cap.className = "chart-marks";
       const parts = [];
       if (crossMarks) parts.push("세로 점선은 20일선과 60일선이 엇갈린 날");
       if (alertMarks) parts.push("주황 가로선은 알림가");
-      cap.textContent = parts.join(", ") + "입니다.";
+      const sentences = parts.length ? [parts.join(", ") + "입니다."] : [];
+      if (mkt && mkt.pct !== null) {
+        const own = (data[n - 1] / data[0] - 1) * 100;
+        sentences.push("회색 점선은 같은 출발점에서 본 " + mkt.name + "입니다(이 기간 " + stock.name + " " + fmtPct(own) + ", " + mkt.name + " " + fmtPct(mkt.pct) + ").");
+      }
+      cap.textContent = sentences.join(" ");
       chartWrap.appendChild(cap);
     }
     return chartWrap;
@@ -3126,8 +3193,13 @@
     const MAXC = 6;
     const PER = [
       { key: "1M", label: "1개월", days: 30 }, { key: "3M", label: "3개월", days: 91 }, { key: "6M", label: "6개월", days: 182 },
-      { key: "YTD", label: "연초 대비" }, { key: "1Y", label: "1년", days: 365 }
+      { key: "YTD", label: "연초 대비" }, { key: "1Y", label: "1년", days: 365 }, { key: "2Y", label: "2년", days: 730 },
+      { key: "CUSTOM", label: "직접" }
     ];
+    // [직접]: 시작일을 고른다(산 날짜부터 얼마나 올랐는지 볼 때). 고를 수 있는 범위는 받아 둔 자료(약 2년) 안이다.
+    const allDates = [].concat(...pool.map(st => [st.dates[0], st.dates[st.dates.length - 1]])).sort();
+    const minDate = allDates[0], maxDate = allDates[allDates.length - 1];
+    let customStart = null;
     const STORE = "stock-compare-v1";
     const idxList = pool.filter(st => st.kind === "index");
     const DASHES = ["7 4", "2 3", "10 3 2 3"];
@@ -3148,6 +3220,7 @@
         });
         (saved.idx || []).forEach(sym => { if (has(sym)) onIdx[sym] = true; });
         if (PER.some(pd => pd.key === saved.period)) period = saved.period;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(saved.customStart || "")) customStart = saved.customStart;
       }
       if (!Object.keys(color).length && !Object.keys(onIdx).length) {
         pool.filter(st => st.kind === "kr" || st.kind === "us").slice(0, 4).forEach((st, k) => { color[st.symbol] = k + 1; });
@@ -3155,10 +3228,12 @@
       }
     })();
     const save = () => {
-      try { localStorage.setItem(STORE, JSON.stringify({ color, idx: Object.keys(onIdx), period })); } catch (e) { /* 저장 못 해도 화면은 그대로 */ }
+      try { localStorage.setItem(STORE, JSON.stringify({ color, idx: Object.keys(onIdx), period, customStart })); } catch (e) { /* 저장 못 해도 화면은 그대로 */ }
     };
+    const defaultCustom = () => { const d = new Date(maxDate + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - 91); return d.toISOString().slice(0, 10); };
     const cutOf = lastIso => {
       const pd = PER.find(x => x.key === period);
+      if (pd.key === "CUSTOM") return customStart || defaultCustom();
       const d = new Date(lastIso + "T00:00:00Z");
       if (pd.key === "YTD") return (d.getUTCFullYear() - 1) + "-12-31";
       d.setUTCDate(d.getUTCDate() - pd.days);
@@ -3173,6 +3248,8 @@
       if (!base) return null;
       const pts = [];
       for (let i = k; i < ds.length; i++) pts.push({ d: ds[i], t: Date.parse(ds[i] + "T00:00:00Z"), v: (sr[i] / base - 1) * 100 });
+      // 자료가 시작일보다 늦게 시작하면(샌디스크처럼 상장이 늦은 종목) 첫 자료일을 0%로 맞췄다는 표시를 붙인다.
+      pts.short = Date.parse(ds[0] + "T00:00:00Z") - Date.parse(cut + "T00:00:00Z") > 10 * 86400000;
       return pts.length >= 2 ? pts : null;
     }
     const niceStep = raw => {
@@ -3195,7 +3272,8 @@
         : isIdx ? '<svg class="cmp-key" width="16" height="8" aria-hidden="true"><line x1="0" x2="16" y1="4" y2="4" style="stroke:var(--ink-muted)" stroke-width="2" stroke-dasharray="' + dashOf(st) + '"/></svg>'
         : '<span class="cmp-key line" style="background:var(--cmp-' + color[st.symbol] + ')"></span>';
       return '<button type="button" class="cmp-chip' + (on ? " on" : "") + '" data-sym="' + esc(st.symbol) + '" aria-pressed="' + on + '">' + key +
-        '<span>' + esc(st.name) + '</span>' + (v !== null ? '<span class="cmp-v ' + dirCls(v) + '">' + fmtPct(v) + '</span>' : "") + '</button>';
+        '<span' + (pts && pts.short ? ' title="자료가 시작일보다 짧아 첫 자료일(' + esc(pts[0].d) + ')을 0%로 맞췄습니다"' : "") + '>' + esc(st.name) + (pts && pts.short ? "*" : "") + '</span>' +
+        (v !== null ? '<span class="cmp-v ' + dirCls(v) + '">' + fmtPct(v) + '</span>' : "") + '</button>';
     }
 
     let plot = null;
@@ -3281,7 +3359,7 @@
           if (o.l.isIdx) key.setAttribute("stroke-dasharray", dashOf(o.l.st));
           svg.appendChild(key);
           const tx = el("text", { x: lx + 17, y: (o.y + 4).toFixed(1), class: "cmp-end" });
-          tx.textContent = o.l.st.name + " " + fmtPct(o.l.pts[o.l.pts.length - 1].v);
+          tx.textContent = o.l.st.name + (o.l.pts.short ? "*" : "") + " " + fmtPct(o.l.pts[o.l.pts.length - 1].v);
           svg.appendChild(tx);
         });
       }
@@ -3355,16 +3433,27 @@
         '<div class="cmp-head"><div class="ov-title">수익률 비교</div><div class="seg" role="group" aria-label="비교 기간">' +
         PER.map(pd => '<button type="button" data-cmp-period="' + pd.key + '" class="' + (pd.key === period ? "on" : "") + '">' + pd.label + '</button>').join("") +
         '</div></div>' +
+        (period === "CUSTOM" ? '<label class="cmp-date">시작일 <input type="date" min="' + esc(minDate) + '" max="' + esc(maxDate) + '" value="' + esc(customStart || defaultCustom()) + '"></label>' : "") +
         '<div class="cmp-chips">' + pool.filter(st => st.kind !== "index").map(chip).join("") + '</div>' +
         (idxList.length ? '<div class="cmp-chips"><span class="cmp-chips-label">시장 지수</span>' + idxList.map(chip).join("") + '</div>' : "") +
         (msg ? '<div class="cmp-msg">' + esc(msg) + '</div>' : "") +
         '<div class="cmp-plot"></div>' +
         '<div class="ov-note">기간 시작일의 종가를 0%로 맞춘 수익률입니다. 회색 점선은 시장 지수이고, 종목은 한 번에 6개까지 함께 볼 수 있습니다. ' +
-        '이름을 누르면 켜고 끕니다. 그래프를 누르거나 마우스를 올리면 날짜별 값이 나옵니다.</div>';
+        '이름을 누르면 켜고 끕니다. [직접]을 누르면 시작일을 고를 수 있어 산 날짜부터의 수익률을 볼 수 있습니다. ' +
+        '이름 뒤 *는 자료가 시작일보다 짧아 첫 자료일을 0%로 맞춘 종목입니다. 그래프를 누르거나 마우스를 올리면 날짜별 값이 나옵니다.</div>';
       plot = host.querySelector(".cmp-plot");
       drawChart();
     }
 
+    host.addEventListener("change", e => {
+      const inp = e.target.closest(".cmp-date input");
+      if (!inp || !/^\d{4}-\d{2}-\d{2}$/.test(inp.value)) return;
+      customStart = inp.value < minDate ? minDate : inp.value > maxDate ? maxDate : inp.value;
+      save();
+      render();
+      const again = host.querySelector(".cmp-date input");
+      if (again) again.focus();
+    });
     host.addEventListener("click", e => {
       const pb = e.target.closest("[data-cmp-period]");
       if (pb) { period = pb.dataset.cmpPeriod; msg = ""; save(); render(); return; }
