@@ -576,12 +576,17 @@
   .ma-levels .lv { display: inline-block; white-space: nowrap; margin-right: 10px; font-variant-numeric: tabular-nums; }
   .ma-levels .lv.touch { color: var(--accent); font-weight: 700; }
   .ma-levels .lv.near { color: var(--accent); }
+  .ma-levels .lv.ref { color: var(--ink-secondary); font-weight: 600; }
+  /* 과거 10년 검증 성적(신호 아래 한 줄) */
+  .sig-stat { font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
+  .sig-stat b { color: var(--ink-secondary); font-weight: 650; }
+  .ov-ma.ref { color: var(--ink-secondary); }
   .ov-ma { font-size: 12.5px; color: var(--ink-muted); }
   .ov-ma.near { color: var(--accent); font-weight: 600; }
   .ov-ma.touch { display: inline-block; color: #fff; background: var(--accent); font-weight: 700; padding: 1px 8px; border-radius: 10px; }
   .hm-ma { font-size: 12px; font-weight: 700; color: var(--accent); }
   .hl-tag.buy { color: #fff; background: var(--accent); padding: 0 6px; border-radius: 4px; }
-  /* 분할 매수 단계: dip1 매수 추천, dip2 추가 매수 추천, dip3 매수 적극추천 */
+  /* 분할 매수 단계: dip1~dip3 = 분할 1~3단계 */
   .cross-badge.dip1 { color: var(--accent); background: var(--accent-wash); }
   .cross-badge.dip2 { color: var(--accent); background: var(--accent-wash); border: 1px solid var(--accent); padding: 3px 8px; }
   .cross-badge.dip3 { color: #fff; background: var(--accent); box-shadow: 0 0 0 2px var(--accent-wash); }
@@ -1478,7 +1483,7 @@
       const mb = document.createElement("div");
       mb.className = "cross-badge ma";
       mb.textContent = "◎ " + maHits.map(l => l.window + "일선").join("·") + " 도달";
-      mb.title = "주가가 위에서 내려와 이평선에 닿았습니다. 이평선 도달 매수 기준에 해당합니다.";
+      mb.title = "52주 고점보다 " + (stock.ddNow || 0).toFixed(1) + "% 내려온 상태에서 주가가 위에서 내려와 이평선에 닿았습니다. 이평선 도달 매수 기준에 해당합니다.";
       priceRow.appendChild(mb);
     }
 
@@ -2431,14 +2436,25 @@
       lvEl.append("이평선과의 거리: ");
       lvs.forEach(l => {
         const sp = document.createElement("span");
-        sp.className = "lv" + (l.buySignal ? " touch" : l.state === "near" ? " near" : "");
+        sp.className = "lv" + (l.buySignal ? " touch" : l.refSignal ? " ref" : l.state === "near" ? " near" : "");
         sp.textContent = l.window + "일선 " + (l.gapPct > 0 ? "+" : l.gapPct < 0 ? "−" : "") + Math.abs(l.gapPct).toFixed(1) + "%" +
-          (l.buySignal ? (l.intraday ? "(장중 도달)" : "(도달)") : l.state === "touch" ? "(아래에서 닿음)" : "");
+          (l.buySignal ? (l.intraday ? "(장중 도달)" : "(도달)") : l.refSignal ? "(도달, 참고)" : l.state === "touch" ? "(아래에서 닿음)" : "");
         sp.title = l.window + "일선 " + stock.currency + fmtNum(l.value, stock.currency) + (l.slopeUp ? ", 오르는 중" : ", 내려가는 중");
         lvEl.appendChild(sp);
       });
       block.appendChild(lvEl);
     }
+    // 과거 10년 검증 성적: 지금 켜진 신호가 그 분야에서 과거에 어땠는지(생성 스크립트가 backtest-stats.json 에서 붙인다)
+    const statLine = st => {
+      const el = document.createElement("div");
+      el.className = "sig-stat";
+      const b = document.createElement("b");
+      b.textContent = "과거 성적 ";
+      el.append(b, st.text);
+      el.title = st.group + ", " + st.since + "부터의 일별 시세로 같은 규칙을 다시 돌린 결과입니다. 신호가 새로 켜진 날 종가에 샀다고 보고 1년 뒤 종가와 비교했습니다. 과거 결과가 앞으로를 보장하지는 않습니다.";
+      return el;
+    };
+    if (stock.signalStats && stock.signalStats.ma) block.appendChild(statLine(stock.signalStats.ma));
     // 분할 매수 단계의 근거: 52주 고점 대비 하락률(어느 단계 기준을 넘었는지)과 120·200일선과의 거리
     const dip = stock.dip;
     if (dip && dip.level >= 1) {
@@ -2446,6 +2462,7 @@
       dl.className = "dip-line dip" + dip.level;
       dl.textContent = (dip.level >= 2 ? "▼ " : "") + dip.label + ": " + dip.detail;
       block.appendChild(dl);
+      if (stock.signalStats && stock.signalStats.dip) block.appendChild(statLine(stock.signalStats.dip));
     }
 
     block.appendChild(slot);
@@ -2728,7 +2745,10 @@
     const hit = lv.filter(l => l.buySignal);
     if (hit.length) return { cls: "touch", text: "◎ " + hit.map(l => l.window + "일선").join("·") + " 도달", hit };
     if (dipSum) return dipSum;
-    const near = lv.filter(l => l.state === "near").sort((a, b) => a.gapPct - b.gapPct)[0];
+    // 고점 근처에서 닿은 경우(참고)와, 닿으면 매수 기준이 되는 경우의 '매수 대기'(고점보다 충분히 내려온 상태)
+    const ref = lv.filter(l => l.refSignal);
+    if (ref.length) return { cls: "ref", text: ref.map(l => l.window + "일선").join("·") + " 도달(참고)" };
+    const near = (st.ddNow || 0) >= (st.maMinDd || 0) ? lv.filter(l => l.state === "near").sort((a, b) => a.gapPct - b.gapPct)[0] : null;
     if (near) return { cls: "near", text: near.window + "일선까지 " + near.gapPct.toFixed(1) + "%" };
     const closest = lv.slice().sort((a, b) => Math.abs(a.gapPct) - Math.abs(b.gapPct))[0];
     return { cls: "", text: closest.window + "일선 " + (closest.gapPct > 0 ? "+" : "−") + Math.abs(closest.gapPct).toFixed(1) + "%" };
@@ -3016,7 +3036,7 @@
     // 접는 부분의 열림 상태. 기간·정렬을 바꾸면 다시 그리므로 기억해 둔다.
     let hlOpen = false, legendOpen = false;
     const HL_SHOW = 5;
-    const hlItem = h => '<li data-sym="' + esc(h.symbol || "") + '"><span class="hl-tag' + (/^(매수 (기준|추천|적극추천)|추가 매수 추천)$/.test(h.tag) ? " buy" : "") + '">' +
+    const hlItem = h => '<li data-sym="' + esc(h.symbol || "") + '"><span class="hl-tag' + (/^(매수 기준|분할 [123]단계)$/.test(h.tag) ? " buy" : "") + '">' +
       esc(h.tag) + '</span>' + esc(h.text) + hlNews(h) + '</li>';
     const briefHtml = () => {
       const b = (BRIEF || []).filter(x => x && x.text);
@@ -3041,7 +3061,8 @@
         '<div class="ov-legend"><b class="up">빨강</b>은 상승, <b class="down">파랑</b>은 하락입니다. ' +
         '칸 배경이 진할수록 그 종목의 평소 등락 폭보다 크게 움직였습니다.' +
         '<details class="ov-more"' + (legendOpen ? " open" : "") + '><summary>표시 읽는 법</summary><p>머리글을 누르면 정렬됩니다. ' +
-        '◎는 주가가 위에서 내려와 이평선에 닿은 종목으로, 이평선 도달 매수 기준에 해당합니다. ' +
+        '◎는 52주 고점보다 ' + ((stocks[0] && stocks[0].maMinDd) || 20) + '% 넘게 내려온 상태에서 주가가 위에서 내려와 이평선에 닿은 종목입니다(이평선 도달 매수 기준). ' +
+        '고점 근처에서 닿은 경우는 \'도달(참고)\'로만 적습니다. ' +
         '이평선 칸의 막대는 왼쪽 끝이 52주 최저, 오른쪽 끝이 최고입니다. <span class="lg-dot"></span>점은 현재가이고, 세로선은 ' +
         '<span class="lg-ma" style="background:var(--ma1)"></span>' + MA_SHORT + '일선, <span class="lg-ma" style="background:var(--ma2)"></span>' + MA_MID +
         '일선, <span class="lg-ma" style="background:var(--ma3)"></span>' + MA_LONG + '일선입니다.' +
@@ -3049,10 +3070,13 @@
           // 분할 매수 단계의 기본 기준(buy-rules.json). 종목별로 DipSteps 를 정한 종목은 카드에 그 종목의 기준이 적힙니다.
           const r = (stocks.find(st => st.dip && st.dip.defSteps && st.dip.defSteps.length) || {}).dip;
           if (!r) return "";
-          const names = ["매수 추천", "추가 매수 추천", "매수 적극추천"];
           const parts = r.defSteps.slice(0, 3).map((s, i) => (i ? "" : "52주 고점보다 ") + s + "% 낮" +
-            (r.maSteps && r.maSteps[i] ? "거나 " + r.maSteps[i] + "일선에 닿으면 " : "으면 ") + names[i]);
-          return ' ▼는 분할 매수 단계입니다. ' + parts.join(", ") + '입니다.';
+            (r.maSteps && r.maSteps[i] ? "거나 " + r.maSteps[i] + "일선에 닿으면 " : "으면 ") + (i + 1) + "단계");
+          const coin = stocks.find(st => st.kind === "crypto" && st.dip && st.dip.steps && st.dip.steps.join() !== r.defSteps.join());
+          return ' ▼는 분할 매수 단계입니다. ' + parts.join(", ") + '입니다. 지수는 고점 대비 하락만 봅니다.' +
+            (coin ? ' 코인은 ' + coin.dip.steps.slice(0, 3).join("%, ") + '% 기준입니다.' : '') +
+            ' 카드의 \'과거 성적\'은 같은 규칙을 지난 10년 시세에 적용했을 때 그 분야(지수, 개별 종목, 레버리지 ETF, 코인)의 결과입니다.' +
+            ' 지수와 대형주의 3단계, 이평선 매수 기준은 아무 날이나 산 것보다 나았고, 1·2단계와 코인 신호는 비슷했습니다.';
         })() +
         ' 시장 대비는 최근 1개월 수익률에서 국내 종목은 코스피, 미국 종목은 나스닥의 수익률을 뺀 값입니다. 타일이나 행을 누르면 해당 카드로 이동합니다.</p></details></div>' +
         '<div class="ov-scroll">' + tableHtml() + '</div>';

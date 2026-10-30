@@ -70,6 +70,11 @@ function Resolve-TickerConfig {
     $buyMa = if ($raw.BuyMA) { @($raw.BuyMA | ForEach-Object { [int]$_ }) } else { $null }
     # 분할 매수 단계의 고점 대비 하락 기준(%)을 종목별로 바꾸려면 "DipSteps": [20, 40, 60] 처럼 적는다.
     $dipSteps = if ($raw.DipSteps) { @($raw.DipSteps | ForEach-Object { [double]$_ }) } else { $null }
+    # 분할 매수 단계의 이평선(기본 120·200일선, 지수는 없음)을 종목별로 바꾸려면 "DipMA": [] 처럼 적는다. 빈 목록이면 이평선 단계 없음.
+    # 빈 목록과 '안 적음'을 구분해야 해서 적었는지를 따로 남긴다.
+    $hasDipMa = $null -ne $raw.PSObject.Properties["DipMA"]
+    $dipMa = @()
+    if ($hasDipMa) { $dipMa = @($raw.DipMA | ForEach-Object { [int]$_ }) }
 
     $alertBelow = if ($null -ne $raw.AlertBelow) { [double]$raw.AlertBelow } else { $null }
     $alertAbove = if ($null -ne $raw.AlertAbove) { [double]$raw.AlertAbove } else { $null }
@@ -90,6 +95,8 @@ function Resolve-TickerConfig {
         IsDomestic  = $isDomestic
         BuyMA       = $buyMa
         DipSteps    = $dipSteps
+        HasDipMA    = $hasDipMa
+        DipMA       = $dipMa
         # 메일 가격 링크를 직접 정할 때(NYSE Arca 상장 ETF 처럼 아래 자동 규칙이 맞히지 못하는 경우).
         PageUrl     = $raw.PageUrl
     }
@@ -98,9 +105,12 @@ function Resolve-TickerConfig {
 $watchlistRaw = Get-Content -Path (Join-Path $root "watchlist.json") -Raw -Encoding UTF8 | ConvertFrom-Json
 # 이평선 도달 매수 기준. 사용자가 이평선에 닿았을 때 사는 방식이라, 종목·지수마다 이평선과의 거리를 매일 재서
 # 닿으면 '매수 기준 도달', 가까우면 '매수 대기'로 알린다. 기준값은 buy-rules.json 에서 바꾼다.
-$buyRules = [PSCustomObject]@{ maWindows = @(20, 60, 180); touchPct = 1.0; nearPct = 3.0; fromAboveOnly = $true
-    # 분할 매수 단계(Get-DipSignal). 52주 고점 대비 하락률과 장기 이평선(120·200일선) 도달로 1~3단계를 정한다.
-    dip = [PSCustomObject]@{ drawdownSteps = @(10.0, 20.0, 30.0); maSteps = @(120, 200) } }
+# maMinDrawdownPct: 이평선에 닿아도 52주 고점보다 이만큼(%) 넘게 내려온 상태일 때만 '매수 기준'으로 표시한다(그 밖은 '참고').
+# 2026-10-30 과거 10년 검증(backtest/README.md)에서 고점 근처에서 닿은 경우는 아무 날이나 산 것과 결과가 같았다.
+$buyRules = [PSCustomObject]@{ maWindows = @(20, 60, 180); touchPct = 1.0; nearPct = 3.0; fromAboveOnly = $true; maMinDrawdownPct = 20.0
+    # 분할 매수 단계(Get-DipSignal). 52주 고점 대비 하락률과 장기 이평선(120·200일선) 도달로 1~3단계를 정한다. 지수는 이평선 단계를
+    # 쓰지 않는다(indexMaSteps, 같은 검증에서 지수는 120·200일선 단계를 빼야 신호가 덜 켜지고 결과도 나았다).
+    dip = [PSCustomObject]@{ drawdownSteps = @(10.0, 20.0, 30.0); maSteps = @(120, 200); indexMaSteps = @() } }
 $buyRulesPath = Join-Path $root "buy-rules.json"
 if (Test-Path $buyRulesPath) {
     try {
@@ -109,9 +119,11 @@ if (Test-Path $buyRulesPath) {
         if ($null -ne $br.touchPct) { $buyRules.touchPct = [double]$br.touchPct }
         if ($null -ne $br.nearPct) { $buyRules.nearPct = [double]$br.nearPct }
         if ($null -ne $br.fromAboveOnly) { $buyRules.fromAboveOnly = [bool]$br.fromAboveOnly }
+        if ($null -ne $br.maMinDrawdownPct) { $buyRules.maMinDrawdownPct = [double]$br.maMinDrawdownPct }
         if ($br.dip) {
             if ($br.dip.drawdownSteps) { $buyRules.dip.drawdownSteps = @($br.dip.drawdownSteps | ForEach-Object { [double]$_ }) }
             if ($br.dip.maSteps) { $buyRules.dip.maSteps = @($br.dip.maSteps | ForEach-Object { [int]$_ }) }
+            if ($null -ne $br.dip.PSObject.Properties["indexMaSteps"]) { $buyRules.dip.indexMaSteps = @($br.dip.indexMaSteps | ForEach-Object { [int]$_ }) }
         }
     } catch { Write-Warning "buy-rules.json 을 읽지 못해 기본값(20·60·180일선, 1%, 3%)을 씁니다: $($_.Exception.Message)" }
 }
@@ -839,6 +851,11 @@ function Get-StockSnapshot {
         $market = $meta.currency
     }
 
+    # 52주 고점 대비 하락률(%). 이평선 도달을 '매수 기준'으로 볼지 '참고'로 볼지 가른다.
+    $ddNow = [math]::Max(0.0, -$pctFromHigh)
+    # 분할 매수 단계의 이평선. 종목에 DipMA 를 적었으면 그것(빈 목록이면 없음), 지수는 indexMaSteps, 나머지는 maSteps.
+    $dipMaSteps = if ($cfg.HasDipMA) { $cfg.DipMA } elseif ($cfg.IsIndex) { $buyRules.dip.indexMaSteps } else { $buyRules.dip.maSteps }
+
     $newsQuery = if ($cfg.NewsQuery) { $cfg.NewsQuery } else { $name }
     $news = Get-NewsHeadlines -query $newsQuery -lang $cfg.NewsLang
     $finance = Get-FinanceSnapshot -mode $cfg.FinanceMode -code $cfg.FinanceCode
@@ -867,8 +884,10 @@ function Get-StockSnapshot {
         # 메일과 페이지가 같은 종목을 두고 다른 말을 하게 되는 구조였다.
         cross     = Get-CrossSignal -series $fullSeries
         maTrend   = Get-MaTrendComment -series $fullSeries
-        maLevels  = Get-MaLevels -series $fullSeries -lows $fullLows -windows $(if ($cfg.BuyMA) { $cfg.BuyMA } else { $buyRules.maWindows })
-        dip       = Get-DipSignal -series $fullSeries -lows $fullLows -high $rangeHigh -steps $(if ($cfg.DipSteps) { $cfg.DipSteps } else { $buyRules.dip.drawdownSteps })
+        maLevels  = Get-MaLevels -series $fullSeries -lows $fullLows -windows $(if ($cfg.BuyMA) { $cfg.BuyMA } else { $buyRules.maWindows }) -ddNow $ddNow
+        ddNow     = [math]::Round($ddNow, 1)
+        maMinDd   = [double]$buyRules.maMinDrawdownPct
+        dip       = Get-DipSignal -series $fullSeries -lows $fullLows -high $rangeHigh -steps $(if ($cfg.DipSteps) { $cfg.DipSteps } else { $buyRules.dip.drawdownSteps }) -maSteps $dipMaSteps
         summary   = $summary
         news      = $news
         finance   = $finance
@@ -948,8 +967,9 @@ function Get-MaTrendComment {
 function Get-MaLevels {
     # 이평선마다 지금 주가의 위치. 닿음(touch): 그날 저가가 이평선 위 touchPct% 안까지 내려왔고 종가가 이평선 아래
     # touchPct% 보다 높게 끝남. 근접(near): 종가가 이평선 위 nearPct% 안. 아래(below): 종가가 이평선 아래 touchPct% 밖.
-    # fromAbove: 5거래일 전 종가가 이평선 위에 있었음(위에서 내려와 닿은 눌림목). buySignal: 닿음이면서(설정에 따라) 위에서 내려옴.
-    param($series, $lows, $windows)
+    # fromAbove: 5거래일 전 종가가 이평선 위에 있었음(위에서 내려와 닿은 눌림목). 위에서 내려와 닿았을 때 52주 고점보다
+    # maMinDrawdownPct% 넘게 내려온 상태면 buySignal(매수 기준), 아니면 refSignal(참고).
+    param($series, $lows, $windows, $ddNow = 0)
     $n = @($series).Count
     $i = $n - 1
     $t = [double]$buyRules.touchPct / 100
@@ -971,7 +991,8 @@ function Get-MaLevels {
         $fromAbove = ($null -ne $ma[$k5]) -and ([double]$series[$k5] -gt [double]$ma[$k5] * (1 + $t))
         $slopeUp = ($null -ne $ma[$k5]) -and ($m -gt [double]$ma[$k5])
         $state = if ($touch) { "touch" } elseif ($close -lt $m * (1 - $t)) { "below" } elseif ($gap -le [double]$buyRules.nearPct) { "near" } else { "above" }
-        $signal = $touch -and ($fromAbove -or -not $buyRules.fromAboveOnly)
+        $touchSignal = $touch -and ($fromAbove -or -not $buyRules.fromAboveOnly)
+        $signal = $touchSignal -and ([double]$ddNow -ge [double]$buyRules.maMinDrawdownPct)
         [PSCustomObject]@{
             window     = [int]$w
             value      = [math]::Round($m, 2)
@@ -980,6 +1001,7 @@ function Get-MaLevels {
             fromAbove  = [bool]$fromAbove
             slopeUp    = [bool]$slopeUp
             buySignal  = [bool]$signal
+            refSignal  = [bool]($touchSignal -and -not $signal)
             firstTouch = [bool]($signal -and -not $touchPrev)
             # 장중 저가로만 닿고 종가는 이평선 위로 멀리(touchPct 밖) 끝난 경우
             intraday   = [bool]($touch -and $gap -gt [double]$buyRules.touchPct)
@@ -990,9 +1012,11 @@ function Get-MaLevels {
 function Get-DipSignal {
     # 분할 매수 단계. "120일선에 닿으면 사고 200일선에 닿으면 더 산다. 고점 대비 -10%, -20%, -30%마다 더 줍는다"는
     # QLD 적립식 매수법을 종목마다 그대로 적용한다. 두 기준 중 높은 쪽이 그날의 단계다.
-    #   1 매수 추천: 52주 고점보다 steps[0]% 이상 낮거나 maSteps[0]일선에 닿음
-    #   2 추가 매수 추천: steps[1]% 이상 낮거나 maSteps[1]일선에 닿음
-    #   3 매수 적극추천: steps[2]% 이상 낮음
+    #   분할 1단계: 52주 고점보다 steps[0]% 이상 낮거나 maSteps[0]일선에 닿음
+    #   분할 2단계: steps[1]% 이상 낮거나 maSteps[1]일선에 닿음
+    #   분할 3단계: steps[2]% 이상 낮음
+    # 이름은 2026-10-30 에 '매수 추천·추가 매수 추천·매수 적극추천'에서 바꿨다. 과거 10년 검증에서 1·2단계는 아무 날이나 산 것과
+    # 결과가 비슷했고 3단계만 지수와 대형주에서 나아서, 근거보다 강하게 들리는 '추천'을 뺐다. 성적은 신호 옆에 따로 적는다.
     # '닿음'은 이평선 도달 매수 기준과 같은 touchPct 를 쓴다. 그날 저가가 선 위 touchPct% 안까지 내려왔거나 선 아래에 있으면
     # 닿은 것으로 본다. 고점은 페이지의 '52주 고점보다 N% 낮고' 문장과 같은 값(야후 52주 고가)이다.
     #
@@ -1000,13 +1024,13 @@ function Get-DipSignal {
     # 오른 날만 싣는다. 2026-10-29 에 5년치로 돌려 보니 3단계가 켜진 날이 S&P 500 은 0%, 나스닥은 3% 였지만 샌디스크는 31%,
     # 이더리움은 54% 였다. 기준 숫자가 2배 레버리지 QLD 에서 나온 것이라 변동성이 큰 종목일수록 자주 켜진다. 그런 종목은
     # watchlist.json 에 "DipSteps": [20, 40, 60] 처럼 단계를 넓게 적는다.
-    param($series, $lows, $high, $steps)
+    param($series, $lows, $high, $steps, $maSteps)
     $s = [double[]]@($series)
     $lw = [double[]]@($lows)
     $n = $s.Length
     if ($n -lt 2 -or $lw.Length -ne $n -or -not $high -or [double]$high -le 0) { return $null }
     $st = @(@($steps | ForEach-Object { [double]$_ }) | Sort-Object)
-    $maW = @($buyRules.dip.maSteps | ForEach-Object { [int]$_ })
+    $maW = @($maSteps | Where-Object { $null -ne $_ } | ForEach-Object { [int]$_ })
     $t = [double]$buyRules.touchPct / 100
     $hi = [double]$high
     $mas = @{}
@@ -1051,7 +1075,7 @@ function Get-DipSignal {
 
     [PSCustomObject]@{
         level      = $level
-        label      = $(switch ($level) { 3 { "매수 적극추천" } 2 { "추가 매수 추천" } 1 { "매수 추천" } default { $null } })
+        label      = $(switch ($level) { 3 { "분할 3단계" } 2 { "분할 2단계" } 1 { "분할 1단계" } default { $null } })
         # 단계가 오늘 오른 날. 지금 주목할 점에 한 줄씩 올리고, 2단계 이상이면 메일 제목에도 싣는다.
         firstDay   = [bool]($level -ge 1 -and $prev.level -lt $level)
         dd         = $ddVal
@@ -1564,11 +1588,22 @@ function Get-StockComment {
     } elseif ($hit.Count) {
         $out += "$($hit[0].window)일선에 닿아 이평선 도달 매수 기준에 해당합니다."
     }
+    $refHit = @($st.maLevels | Where-Object { $_ -and $_.refSignal })
+    if (-not $hit.Count -and $refHit.Count) {
+        $out += "$($refHit[0].window)일선에 닿았지만 52주 고점보다 $(([double]$st.ddNow).ToString('0.0'))%만 낮아 참고로만 봅니다."
+    }
     # 아래로 가장 가까운 매수 기준선. 이평선(20·60·180, 분할 매수의 120·200)과 분할 매수 하락 기준을 모아 현재가 바로 아래 값을 고른다.
     $cands = New-Object System.Collections.ArrayList
-    foreach ($l in @($st.maLevels | Where-Object { $_ })) { [void]$cands.Add([PSCustomObject]@{ name = "$($l.window)일선"; v = [double]$l.value; note = "" }) }
+    # 이평선은 그 값까지 내려가면 52주 고점보다 maMinDrawdownPct% 넘게 낮아지는 경우만 매수 기준선이다(아니면 '참고' 도달이 된다).
+    $maCap = if ($st.rangeHigh) { [double]$st.rangeHigh * (1 - [double]$buyRules.maMinDrawdownPct / 100) } else { [double]::MaxValue }
+    foreach ($l in @($st.maLevels | Where-Object { $_ -and [double]$_.value -le $maCap })) { [void]$cands.Add([PSCustomObject]@{ name = "$($l.window)일선"; v = [double]$l.value; note = "" }) }
     if ($dip) {
+        # 분할 매수 기준선은 지금 단계보다 높은 단계의 것만 '다음' 기준선이다(이미 지나온 낮은 단계 기준선은 뺀다).
+        $lvlNow = [int]$dip.level
+        $kMa = 0
         foreach ($w in @($dip.maSteps)) {
+            $kMa++
+            if ($kMa -le $lvlNow) { continue }
             if (@($cands | Where-Object { $_.name -eq "${w}일선" }).Count) { continue }
             $ma = Get-MovingAverage -series $series -window ([int]$w)
             if ($null -ne $ma[-1]) { [void]$cands.Add([PSCustomObject]@{ name = "${w}일선"; v = [double]$ma[-1]; note = "" }) }
@@ -1577,6 +1612,7 @@ function Get-StockComment {
             $k = 0
             foreach ($stp in @($dip.steps | Select-Object -First 3)) {
                 $k++
+                if ($k -le $lvlNow) { continue }
                 [void]$cands.Add([PSCustomObject]@{ name = "분할 매수 ${k}단계 기준"; v = [double]$st.rangeHigh * (1 - [double]$stp / 100); note = "고점 대비 −$(([double]$stp).ToString('0.#'))%, " })
             }
         }
@@ -1595,6 +1631,47 @@ function Get-StockComment {
 }
 foreach ($st in $stocks) {
     $st | Add-Member -NotePropertyName comment -NotePropertyValue (Get-StockComment $st) -Force
+}
+
+# 과거 검증 성적(backtest-stats.json, backtest/backtest.py 가 만든다). 지금 켜진 신호마다 그 분야(지수, 개별 종목, 레버리지 ETF,
+# 코인)의 과거 10년 성적을 붙인다: 이 신호 뒤 1년이 지나 몇 번 중 몇 번 올랐는지와 아무 날이나 샀을 때의 오른 비율. 5건 미만이면
+# 우연일 수 있어 붙이지 않는다. 규칙을 바꾸면 backtest.py 를 다시 돌려 이 파일을 새로 만든다.
+$btStats = $null
+$btPath = Join-Path $root "backtest-stats.json"
+if (Test-Path $btPath) {
+    try { $btStats = Get-Content -Path $btPath -Raw -Encoding UTF8 | ConvertFrom-Json }
+    catch { Write-Warning "backtest-stats.json 을 읽지 못해 과거 성적 없이 만듭니다: $($_.Exception.Message)" }
+}
+function Get-StatGroup {
+    param($st)
+    if ($st.kind -eq "index") { "지수" } elseif ($st.kind -eq "crypto") { "코인" } elseif ($st.group -eq "레버리지 ETF") { "레버리지 ETF" } else { "개별 종목" }
+}
+function Get-SignalStat {
+    param($st, [string]$signal)
+    if (-not $btStats -or -not $btStats.groups) { return $null }
+    $g = Get-StatGroup $st
+    $go = $btStats.groups.$g
+    if (-not $go) { return $null }
+    $x = $go.$signal
+    if (-not $x -or [int]$x.n -lt 5) { return $null }
+    $mae = if ($null -ne $x.mae3) { [math]::Abs([double]$x.mae3).ToString("0.0") } else { $null }
+    [PSCustomObject]@{
+        group = $g; signal = $signal; n = [int]$x.n; up = [int]$x.up; hit = [int]$x.hit; baseHit = [int]$x.baseHit; pct1y = [int]$x.pct1y
+        since = [string]$btStats.since
+        # 카드·메일: 두 문장. 주목할 점: 한 문장(short).
+        text  = "과거 10년 $($g)에서는 이 신호 뒤 1년이 지나 $($x.n)번 중 $($x.up)번 올랐습니다(아무 날이나 샀을 때 $($x.baseHit)%)." +
+                $(if ($mae) { " 산 뒤 3개월 안에 중간값 $mae% 더 내려갔습니다." } else { "" })
+        short = "과거 10년 1년 뒤 오른 비율은 $($x.hit)%였습니다(평소 $($x.baseHit)%)."
+    }
+}
+foreach ($st in $stocks) {
+    $dipStat = $null
+    if ($st.dip -and [int]$st.dip.level -ge 1) { $dipStat = Get-SignalStat $st "분할 $($st.dip.level)단계" }
+    $lvAll = @($st.maLevels | Where-Object { $_ })
+    $maStat = $null
+    if (@($lvAll | Where-Object { $_.buySignal }).Count) { $maStat = Get-SignalStat $st "이평선 매수 기준" }
+    elseif (@($lvAll | Where-Object { $_.refSignal }).Count) { $maStat = Get-SignalStat $st "이평선 참고" }
+    $st | Add-Member -NotePropertyName signalStats -NotePropertyValue ([PSCustomObject]@{ dip = $dipStat; ma = $maStat }) -Force
 }
 
 # 지금 주목할 점(페이지 맨 위, 메일 맨 위). 실적 발표 임박, 52주 신고가·신저가, 이동평균 교차, 거래량 급증,
@@ -1656,8 +1733,15 @@ foreach ($st in $stocks) {
         $priceTxt = "$($st.currency)$(Format-Price $first.value $st.currency)"
         $slopeTxt = if ($first.slopeUp) { "오르는 중인" } else { "내려가는 중인" }
         $hitTxt = if ($first.intraday) { "장중 $slopeTxt $names($priceTxt)까지 내려왔다가 $(([double]$first.gapPct).ToString('0.0'))% 위에서 마감했습니다" } else { "$slopeTxt $names($priceTxt)에 닿았습니다" }
-        Add-Highlight "매수 기준" "$topic $hitTxt. 이평선 도달 매수 기준에 해당합니다." (105 + $(if ($first.firstTouch) { 3 } else { 0 })) $st.symbol
-    } else {
+        $stTxt = if ($st.signalStats.ma) { " $($st.signalStats.ma.short)" } else { "" }
+        Add-Highlight "매수 기준" "$topic $hitTxt. 이평선 도달 매수 기준에 해당합니다.$stTxt" (105 + $(if ($first.firstTouch) { 3 } else { 0 })) $st.symbol
+    } elseif (@($lv | Where-Object { $_.refSignal }).Count) {
+        # 고점 근처에서 닿은 경우. 과거 검증에서 아무 날이나 산 것과 결과가 같아 낮은 순위로만 올린다.
+        $ref = @($lv | Where-Object { $_.refSignal })[0]
+        $stTxt = if ($st.signalStats.ma) { " $($st.signalStats.ma.short)" } else { "" }
+        Add-Highlight "이평선 참고" "$topic $($ref.window)일선에 닿았습니다. 52주 고점보다 $(([double]$st.ddNow).ToString('0.0'))%만 낮아 참고로만 표시합니다.$stTxt" 46 $st.symbol
+    } elseif ([double]$st.ddNow -ge [double]$buyRules.maMinDrawdownPct) {
+        # 매수 대기는 닿으면 '매수 기준'이 되는 경우(고점보다 충분히 내려온 상태)만 알린다.
         $near = @($lv | Where-Object { $_.state -eq "near" } | Sort-Object gapPct | Select-Object -First 1)
         if ($near.Count) {
             Add-Highlight "매수 대기" "$topic $($near[0].window)일선까지 $(([double]$near[0].gapPct).ToString('0.0'))% 남았습니다." (62 - [double]$near[0].gapPct) $st.symbol
@@ -1670,7 +1754,8 @@ foreach ($st in $stocks) {
         $how = if ($dip.byDrawdown -and $dip.byMa) { "$ddPart 내려오고 $($dip.byMa)일선에 닿아" }
             elseif ($dip.byMa) { "$($dip.byMa)일선에 닿아" } else { "$ddPart 내려와" }
         $prio = switch ([int]$dip.level) { 3 { 118 } 2 { 108 } default { 92 } }
-        Add-Highlight $dip.label "$topic 오늘 $how $($dip.label) 구간에 들어왔습니다." $prio $st.symbol
+        $stTxt = if ($st.signalStats.dip) { " $($st.signalStats.dip.short)" } else { "" }
+        Add-Highlight $dip.label "$topic 오늘 $how $($dip.label) 구간에 들어왔습니다.$stTxt" $prio $st.symbol
     }
     $tc = $st.targetChange
     if ($tc -and $tc.date -eq $todayKstStr) {
@@ -1786,9 +1871,9 @@ $lv3 = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq 3 })
 $lv2 = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq 2 })
 $lv1 = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq 1 })
 $cnt = @()
-if ($lv3.Count) { $cnt += "매수 적극추천 $($lv3.Count)개" }
-if ($lv2.Count) { $cnt += "추가 매수 추천 $($lv2.Count)개" }
-if ($lv1.Count) { $cnt += "매수 추천 $($lv1.Count)개" }
+if ($lv3.Count) { $cnt += "3단계 $($lv3.Count)개" }
+if ($lv2.Count) { $cnt += "2단계 $($lv2.Count)개" }
+if ($lv1.Count) { $cnt += "1단계 $($lv1.Count)개" }
 if ($cnt.Count) { $sig += "분할 매수 단계에 든 종목은 $($cnt -join ', ')입니다." }
 $newDip = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -ge 1 -and $_.dip.firstDay })
 if ($newDip.Count) { $sig += "오늘 새로 단계에 든 종목은 $(($newDip | ForEach-Object { "$($_.name)($($_.dip.label))" }) -join ', ')입니다." }
@@ -1959,23 +2044,28 @@ $rowsHtml = foreach ($s in $stocks) {
     $maHtml = ""
     $hitLv = @($s.maLevels | Where-Object { $_ -and $_.buySignal })
     if ($hitLv.Count) {
-        $maHtml = "<div style='font-size:11.5px;font-weight:700;color:#2a78d6;margin-top:3px;'>◎ $(($hitLv | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달(매수 기준)</div>"
+        $maStatTxt = if ($s.signalStats.ma) { "<div style='font-size:11px;color:#6e6c66;'>$($s.signalStats.ma.short)</div>" } else { "" }
+        $maHtml = "<div style='font-size:11.5px;font-weight:700;color:#2a78d6;margin-top:3px;'>◎ $(($hitLv | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달(매수 기준)</div>$maStatTxt"
         if (@($hitLv | Where-Object { $_.firstTouch }).Count) {
             [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $($hitLv[0].window)일선 도달"; priority = 105 })
         }
-    } else {
+    } elseif (@($s.maLevels | Where-Object { $_ -and $_.refSignal }).Count) {
+        $refLv = @($s.maLevels | Where-Object { $_ -and $_.refSignal })
+        $maHtml = "<div style='font-size:11.5px;color:#6e6c66;margin-top:3px;'>$(($refLv | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달(참고, 고점 대비 $(([double]$s.ddNow).ToString('0.0'))%)</div>"
+    } elseif ([double]$s.ddNow -ge [double]$buyRules.maMinDrawdownPct) {
         $nearLv = @($s.maLevels | Where-Object { $_ -and $_.state -eq "near" } | Sort-Object gapPct | Select-Object -First 1)
         if ($nearLv.Count) { $maHtml = "<div style='font-size:11.5px;color:#2a78d6;margin-top:3px;'>$($nearLv[0].window)일선까지 $(([double]$nearLv[0].gapPct).ToString('0.0'))%(매수 대기)</div>" }
     }
 
-    # 분할 매수 단계. 적극추천은 색을 채운 표시로 눈에 띄게 하고, 제목에는 2단계 이상으로 오른 날만 올린다.
+    # 분할 매수 단계. 3단계는 색을 채운 표시로 눈에 띄게 하고, 제목에는 2단계 이상으로 오른 날만 올린다. 아래에 과거 성적.
     $dipHtml = ""
     $dp = $s.dip
     if ($dp -and $dp.level -ge 1) {
         $dipLabel = if ($dp.level -ge 3) {
             "<span style='background:#2a78d6;color:#ffffff;font-weight:700;padding:1px 6px;border-radius:4px;'>▼ $($dp.label)</span>"
         } elseif ($dp.level -eq 2) { "<b>▼ $($dp.label)</b>:" } else { "$($dp.label):" }
-        $dipHtml = "<div style='font-size:11.5px;color:#2a78d6;margin-top:4px;'>${dipLabel} $($dp.detail)</div>"
+        $dipStatTxt = if ($s.signalStats.dip) { "<div style='font-size:11px;color:#6e6c66;'>$($s.signalStats.dip.short)</div>" } else { "" }
+        $dipHtml = "<div style='font-size:11.5px;color:#2a78d6;margin-top:4px;'>${dipLabel} $($dp.detail)</div>$dipStatTxt"
         if ($dp.firstDay -and $dp.level -ge 2) {
             [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $($dp.label)"; priority = $(if ($dp.level -ge 3) { 115 } else { 104 }) })
         }
@@ -2041,7 +2131,7 @@ $rowsHtml = foreach ($s in $stocks) {
 $mailHighlights = @($allHighlights | Where-Object { $_.kind -ne "dipGroup" } | Sort-Object priority -Descending | Select-Object -First 8)
 $mailHlLines = if ($mailHighlights.Count) {
     @($mailHighlights | ForEach-Object {
-        $tagColor = if ($_.tag -match '^(매수 (기준|추천|적극추천)|추가 매수 추천)$') { "#2a78d6" } else { "#6e6c66" }
+        $tagColor = if ($_.tag -match '^(매수 기준|분할 [123]단계)$') { "#2a78d6" } else { "#6e6c66" }
         $hlItem = $_
         $hlNews = ""
         if ($hlItem.news) {
@@ -2079,7 +2169,7 @@ $touchItems = @(foreach ($stk in $stocks) {
 if ($touchItems.Count) { $ladderLines += "<tr><td valign=top nowrap><font color=#2a78d6><b>◎ 이평선 도달</b></font></td><td>$($touchItems -join ', ')</td></tr>" }
 $ddStepsM = @($buyRules.dip.drawdownSteps)
 $maStepsM = @($buyRules.dip.maSteps)
-$stepNames = @("1단계 매수 추천", "2단계 추가 매수 추천", "3단계 매수 적극추천")
+$stepNames = @("분할 1단계", "분할 2단계", "분할 3단계")
 $ruleParts = @(for ($i = 0; $i -lt [math]::Min(3, $ddStepsM.Count); $i++) {
     "$(if ($i -eq 0) { '52주 고점보다 ' })$($ddStepsM[$i])% 낮$(if ($i -lt $maStepsM.Count) { "거나 $($maStepsM[$i])일선에 닿으면" } else { '으면' }) $($stepNames[$i])"
 })
@@ -2090,7 +2180,7 @@ $ladderHtml = @"
 <div style="margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-left:4px solid #2a78d6;border-radius:6px;">
   <div style="font-size:12px;font-weight:700;color:#0b0b0b;">오늘의 매수 단계</div>
   $ladderBody
-  <div style="font-size:10.5px;color:#898781;margin-top:6px;line-height:1.5;">괄호 안 %는 52주 고점 대비 하락률입니다. $($ruleParts -join ', ')입니다. 종목별로 기준을 따로 정한 종목은 대시보드 카드에 그 기준이 적힙니다. 본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다.</div>
+  <div style="font-size:10.5px;color:#898781;margin-top:6px;line-height:1.5;">괄호 안 %는 52주 고점 대비 하락률입니다. $($ruleParts -join ', ')입니다. 지수는 고점 대비 하락만 보고, 코인은 20%, 40%, 60% 기준입니다. 이평선 도달은 52주 고점보다 $($buyRules.maMinDrawdownPct)% 넘게 내려온 상태일 때만 매수 기준입니다. 과거 10년 검증에서 뚜렷하게 나았던 것은 지수와 대형주의 3단계와 이평선 매수 기준이었습니다. 본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다.</div>
 </div>
 "@
 
