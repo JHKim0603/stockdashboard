@@ -1051,6 +1051,10 @@
     "ko": "Dow, S&P 500, Nasdaq 선물은 채권 수익률 상승, AI 우려로 하락: KOD, SMMT, CLF, VKTX 주식에 집중",
     "seen": "2026-09-29"
   },
+  "Dow, S&P 500, Nasdaq Futures Fall As Weak Tech Earnings Trigger Selloff: INTC, IOVA, SLS, AMZN Stocks In Focus": {
+    "ko": "Dow, S&P 500, Nasdaq 선물은 약한 기술 수익이 매도를 촉발하면서 하락: INTC, IOVA, SLS, AMZN 주식에 집중",
+    "seen": "2026-10-30"
+  },
   "Dow, S&P 500, Nasdaq Futures Mixed After Fed Holds Rates Steady: GOOG, GOOGL, IOVA, MSFT, NOW In Focus": {
     "ko": "Fed가 금리를 안정적으로 유지한 후 Dow, S&P 500, Nasdaq 선물 혼합: GOOG, GOOGL, IOVA, MSFT, NOW In Focus",
     "seen": "2026-10-29"
@@ -1786,6 +1790,10 @@
   "Institutions dump shares as KOSPI plunges over 2% in South Korea": {
     "ko": "코스피가 한국에서 2% 이상 급락하자 기관들은 주식을 투매했습니다.",
     "seen": "2026-10-24"
+  },
+  "INTC, SNDK: Canaccord Calls Intel a “Battleground Stock” After 23% Plunge but Sees Strong AI Demand for SanDisk": {
+    "ko": "INTC, SNDK: Canaccord는 23% 급락 후 Intel을 \"전장 주식\"이라고 부르지만 SanDisk에 대한 강력한 AI 수요를 확인했습니다.",
+    "seen": "2026-10-30"
   },
   "Intel Drops 4% Ahead of Earnings as Foundry Hopes Fade; Alphabet Tumbles 12%, Microsoft Edges Lower": {
     "ko": "파운드리 희망이 사라지면서 인텔은 수익보다 4% 앞선다; 알파벳 폭락 12%, Microsoft Edges 하락",
@@ -2855,6 +2863,10 @@
     "ko": "Azure 성장 및 AI 수익화로 Microsoft(MSFT) 주가 반등",
     "seen": "2026-10-20"
   },
+  "Microsoft (MSFT) Stock Shrugs Off Q1 Earnings As AI Spending Looms": {
+    "ko": "마이크로소프트(MSFT) 주식은 AI 지출이 늘어나면서 1분기 수익이 감소했습니다.",
+    "seen": "2026-10-30"
+  },
   "Microsoft (MSFT) Stock: Ambitious Plan to Expand Data Center Capacity to 38GW by 2032": {
     "ko": "Microsoft(MSFT) 주식: 2032년까지 데이터 센터 용량을 38GW로 확장하려는 야심찬 계획",
     "seen": "2026-09-12"
@@ -3775,6 +3787,10 @@
     "ko": "Nvidia(NVDA)가 시장 수익률을 능가함: 알아야 할 몇 가지 사실",
     "seen": "2026-10-27"
   },
+  "NVIDIA (NVDA) to Invest $1 Billion in Naver, Becoming Third-Larg": {
+    "ko": "엔비디아(NVDA), 네이버에 10억 달러 투자해 3위로 올라",
+    "seen": "2026-10-30"
+  },
   "Nvidia (NVDA) Unveils Strategic Supply Chain Partnerships and AI Platform at GTC Berlin": {
     "ko": "엔비디아(NVDA), GTC 베를린에서 전략적 공급망 파트너십과 AI 플랫폼 공개",
     "seen": "2026-10-22"
@@ -3998,6 +4014,10 @@
   "Nvidia Shareholders Have a Major Reason to Be Bullish After Jensen Huang's Latest Announcement": {
     "ko": "Nvidia 주주들은 Jensen Huang의 최근 발표 이후 낙관적인 주요 이유를 가지고 있습니다.",
     "seen": "2026-10-29"
+  },
+  "Nvidia Shares Fall 1.64% After Hours": {
+    "ko": "엔비디아 주가는 시간외 1.64% 하락",
+    "seen": "2026-10-30"
   },
   "Nvidia Spent $26 Billion on Buybacks and Dividends in a Single Quarter. Its Board Is Betting Today's Profits Last 3 More Years.": {
     "ko": "Nvidia는 단일 분기에 자사주 매입과 배당금에 260억 달러를 지출했습니다. 이사회는 오늘의 이익이 3년 더 지속될 것으로 예상하고 있습니다.",
@@ -5013,7 +5033,7 @@
   },
   "S&P 500 index showed little change after Stockholm Stock Exchange close": {
     "ko": "S&P 500 지수는 스톡홀름 증권거래소 폐쇄 이후 거의 변화를 보이지 않았습니다.",
-    "seen": "2026-10-28"
+    "seen": "2026-10-30"
   },
   "S&P 500 Index Slips Weekly as Health Care, Materials Weigh": {
     "ko": "S&P 500 지수는 헬스케어, 소재 평가에 따라 매주 하락합니다.",
@@ -5363,6 +5383,10 @@
     "ko": "Sandisk 수익 발표가 며칠 남았습니다. 투자자가 알아야 할 사항은 다음과 같습니다.",
     "seen": "2026-10-27"
   },
+  "SanDisk earnings beat by $2.36, revenue topped estimates": {
+    "ko": "SanDisk 수익은 2.36달러 앞섰고 수익은 예상치를 넘어섰습니다.",
+    "seen": "2026-10-30"
+  },
   "SanDisk Falters for 3 Months But One Top-Tier Institutional Desk Is Sure It's Going to Nearly Triple": {
     "ko": "SanDisk는 3개월 동안 주춤했지만 한 최상위 기관 데스크에서는 거의 3배로 성장할 것이라고 확신합니다.",
     "seen": "2026-10-24"
@@ -5702,6 +5726,10 @@
   "SNDK Stock: Citigroup Sees SanDisk As Top Beneficiary Of Strong Micron Earnings": {
     "ko": "SNDK 주식: Citigroup은 SanDisk를 강력한 Micron 수익의 최대 수혜자로 보고 있습니다.",
     "seen": "2026-09-13"
+  },
+  "SNDK Tumbles Amid Tech Selloff Despite Upbeat Q1 Report; Retail Turns Bullish": {
+    "ko": "낙관적인 1분기 보고서에도 불구하고 기술 매도 속에 SNDK 하락; 소매업은 강세로 전환",
+    "seen": "2026-10-30"
   },
   "Something Is Happening With Alphabet Stock That Wall Street Isn’t Talking About": {
     "ko": "월스트리트가 말하지 않는 알파벳 주식에 무슨 일이 일어나고 있는지",
