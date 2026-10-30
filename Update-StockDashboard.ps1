@@ -363,6 +363,13 @@ $spamSources = @("Calgary Roughnecks", "icaremn\.com", "Spazio Aperto Salento", 
 $script:spamBlocked = 0
 function Test-SpamHeadline {
     param([string]$title, [string]$source)
+    # 언론사 페이지의 빈 틀 글자가 제목 자리에 그대로 오는 일이 있다(2026-10-30 알파벳 'META_TITLE_QUOTE').
+    # 대문자·숫자를 밑줄로 이은 한 단어나 빈 제목은 기사 제목이 아니므로 스팸처럼 거른다.
+    if ([string]::IsNullOrWhiteSpace($title) -or $title.Trim() -cmatch '^[A-Z0-9]+(_[A-Z0-9]+)+$') {
+        $script:spamBlocked++
+        Write-Host "    (제목 아님 차단: $source | $title)"
+        return $true
+    }
     $haystack = "$title $source"
     $hit = @($spamKeywords | Where-Object { $haystack -match $_ }) + @($spamSources | Where-Object { $source -and $source -match $_ })
     if (-not $hit.Count) { return $false }
@@ -1971,12 +1978,12 @@ function Get-MailSignal {
     # 분할 매수 2단계 이상, 이평선 도달(매수 기준), 분할 매수 1단계, 매수 대기.
     param($stk)
     $dp = $stk.dip
-    if ($dp -and [int]$dp.level -ge 2) { return "<font color=#2a78d6><b>▼ $($dp.label)</b></font>" }
+    if ($dp -and [int]$dp.level -ge 2) { return "<font color=#0f766e><b>$($dp.label)</b></font>" }
     $touched = @($stk.maLevels | Where-Object { $_ -and $_.buySignal })
-    if ($touched.Count) { return "<font color=#2a78d6><b>◎ $(($touched | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달</b></font>" }
-    if ($dp -and [int]$dp.level -eq 1) { return "<font color=#2a78d6>$($dp.label)</font>" }
+    if ($touched.Count) { return "<font color=#0f766e><b>◎ $(($touched | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달</b></font>" }
+    if ($dp -and [int]$dp.level -eq 1) { return "<font color=#0f766e>$($dp.label)</font>" }
     $nearest = @($stk.maLevels | Where-Object { $_ -and $_.state -eq "near" } | Sort-Object gapPct | Select-Object -First 1)
-    if ($nearest.Count) { return "<font color=#2a78d6>$($nearest[0].window)일선까지 $(([double]$nearest[0].gapPct).ToString('0.0'))%</font>" }
+    if ($nearest.Count) { return "<font color=#0f766e>$($nearest[0].window)일선까지 $(([double]$nearest[0].gapPct).ToString('0.0'))%</font>" }
     return ""
 }
 # 메일도 페이지처럼 분야(watchlist.json 의 Group)별로 묶는다. 순서는 관심 종목 목록에 처음 나온 순서다.
@@ -2046,7 +2053,7 @@ $rowsHtml = foreach ($s in $stocks) {
     $hitLv = @($s.maLevels | Where-Object { $_ -and $_.buySignal })
     if ($hitLv.Count) {
         $maStatTxt = if ($s.signalStats.ma) { "<div style='font-size:11px;color:#6e6c66;'>$($s.signalStats.ma.short)</div>" } else { "" }
-        $maHtml = "<div style='font-size:11.5px;font-weight:700;color:#2a78d6;margin-top:3px;'>◎ $(($hitLv | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달(매수 기준)</div>$maStatTxt"
+        $maHtml = "<div style='font-size:11.5px;font-weight:700;color:#0f766e;margin-top:3px;'>◎ $(($hitLv | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달(매수 기준)</div>$maStatTxt"
         if (@($hitLv | Where-Object { $_.firstTouch }).Count) {
             [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $($hitLv[0].window)일선 도달"; priority = 105 })
         }
@@ -2055,7 +2062,7 @@ $rowsHtml = foreach ($s in $stocks) {
         $maHtml = "<div style='font-size:11.5px;color:#6e6c66;margin-top:3px;'>$(($refLv | ForEach-Object { "$($_.window)일선" }) -join ', ') 도달(참고, 고점 대비 $(([double]$s.ddNow).ToString('0.0'))%)</div>"
     } elseif ([double]$s.ddNow -ge [double]$buyRules.maMinDrawdownPct) {
         $nearLv = @($s.maLevels | Where-Object { $_ -and $_.state -eq "near" } | Sort-Object gapPct | Select-Object -First 1)
-        if ($nearLv.Count) { $maHtml = "<div style='font-size:11.5px;color:#2a78d6;margin-top:3px;'>$($nearLv[0].window)일선까지 $(([double]$nearLv[0].gapPct).ToString('0.0'))%(매수 대기)</div>" }
+        if ($nearLv.Count) { $maHtml = "<div style='font-size:11.5px;color:#0f766e;margin-top:3px;'>$($nearLv[0].window)일선까지 $(([double]$nearLv[0].gapPct).ToString('0.0'))%(매수 대기)</div>" }
     }
 
     # 분할 매수 단계. 3단계는 색을 채운 표시로 눈에 띄게 하고, 제목에는 2단계 이상으로 오른 날만 올린다. 아래에 과거 성적.
@@ -2063,10 +2070,10 @@ $rowsHtml = foreach ($s in $stocks) {
     $dp = $s.dip
     if ($dp -and $dp.level -ge 1) {
         $dipLabel = if ($dp.level -ge 3) {
-            "<span style='background:#2a78d6;color:#ffffff;font-weight:700;padding:1px 6px;border-radius:4px;'>▼ $($dp.label)</span>"
-        } elseif ($dp.level -eq 2) { "<b>▼ $($dp.label)</b>:" } else { "$($dp.label):" }
+            "<span style='background:#0f766e;color:#ffffff;font-weight:700;padding:1px 6px;border-radius:4px;'>$($dp.label)</span>"
+        } elseif ($dp.level -eq 2) { "<b>$($dp.label)</b>:" } else { "$($dp.label):" }
         $dipStatTxt = if ($s.signalStats.dip) { "<div style='font-size:11px;color:#6e6c66;'>$($s.signalStats.dip.short)</div>" } else { "" }
-        $dipHtml = "<div style='font-size:11.5px;color:#2a78d6;margin-top:4px;'>${dipLabel} $($dp.detail)</div>$dipStatTxt"
+        $dipHtml = "<div style='font-size:11.5px;color:#0f766e;margin-top:4px;'>${dipLabel} $($dp.detail)</div>$dipStatTxt"
         if ($dp.firstDay -and $dp.level -ge 2) {
             [void]$highlights.Add([PSCustomObject]@{ text = "$($s.name) $($dp.label)"; priority = $(if ($dp.level -ge 3) { 115 } else { 104 }) })
         }
@@ -2093,7 +2100,7 @@ $rowsHtml = foreach ($s in $stocks) {
             # in a link would end the href early.
             $nTitle = [System.Net.WebUtility]::HtmlEncode([string]$n.title)
             $nLink = [System.Net.WebUtility]::HtmlEncode([string]$n.link)
-            "<div style='font-size:12px;color:#52514e;margin-top:3px;'>· $tag<a href='$nLink' style='color:#2a78d6;text-decoration:none;'>$nTitle</a></div>"
+            "<div style='font-size:12px;color:#52514e;margin-top:3px;'>· $tag<a href='$nLink' style='color:#0f766e;text-decoration:none;'>$nTitle</a></div>"
         }
         $newsHtml = $newsLines -join ""
     }
@@ -2132,7 +2139,7 @@ $rowsHtml = foreach ($s in $stocks) {
 $mailHighlights = @($allHighlights | Where-Object { $_.kind -ne "dipGroup" } | Sort-Object priority -Descending | Select-Object -First 8)
 $mailHlLines = if ($mailHighlights.Count) {
     @($mailHighlights | ForEach-Object {
-        $tagColor = if ($_.tag -match '^(매수 기준|분할 [123]단계)$') { "#2a78d6" } else { "#6e6c66" }
+        $tagColor = if ($_.tag -match '^(매수 기준|분할 [123]단계)$') { "#0f766e" } else { "#6e6c66" }
         $hlItem = $_
         $hlNews = ""
         if ($hlItem.news) {
@@ -2145,7 +2152,7 @@ $mailHlLines = if ($mailHighlights.Count) {
     })
 } else { @("· 평소보다 크게 움직인 종목이나 가까운 실적 발표는 없습니다.") }
 $briefRows = @($brief | ForEach-Object {
-    "<tr><td valign=top nowrap style='padding:3px 10px 3px 0;font-size:12px;font-weight:700;color:#2a78d6;'>$([System.Net.WebUtility]::HtmlEncode([string]$_.label))</td><td style='padding:3px 0;font-size:12.5px;color:#0b0b0b;line-height:1.6;'>$([System.Net.WebUtility]::HtmlEncode([string]$_.text))</td></tr>"
+    "<tr><td valign=top nowrap style='padding:3px 10px 3px 0;font-size:12px;font-weight:700;color:#0f766e;'>$([System.Net.WebUtility]::HtmlEncode([string]$_.label))</td><td style='padding:3px 0;font-size:12.5px;color:#0b0b0b;line-height:1.6;'>$([System.Net.WebUtility]::HtmlEncode([string]$_.text))</td></tr>"
 })
 $mailBriefHtml = if ($briefRows.Count) { "<div style='margin:0 0 12px;padding:12px 15px;background:#eef4fc;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>오늘의 브리핑</div><table cellpadding=0 cellspacing=0 style='border-collapse:collapse;'>$($briefRows -join '')</table></div>" } else { "" }
 $mailHlHtml = "<div style='margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>지금 주목할 점</div><div style='font-size:12.5px;color:#0b0b0b;line-height:1.65;'>$($mailHlLines -join '<br>')</div></div>"
@@ -2156,8 +2163,8 @@ $ladderLines = @(foreach ($lvl in 3, 2, 1) {
     $grp = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq $lvl } | Sort-Object { [double]$_.dip.dd } -Descending)
     if (-not $grp.Count) { continue }
     $lab = $grp[0].dip.label
-    $tag = if ($lvl -ge 3) { "<span style='background:#2a78d6;color:#ffffff;font-weight:700;padding:1px 6px;border-radius:4px;'>▼ $lab</span>" }
-        elseif ($lvl -eq 2) { "<font color=#2a78d6><b>▼ $lab</b></font>" } else { "<font color=#2a78d6><b>$lab</b></font>" }
+    $tag = if ($lvl -ge 3) { "<span style='background:#0f766e;color:#ffffff;font-weight:700;padding:1px 6px;border-radius:4px;'>$lab</span>" }
+        elseif ($lvl -eq 2) { "<font color=#0f766e><b>$lab</b></font>" } else { "<font color=#0f766e><b>$lab</b></font>" }
     # 종목 사이와 이유 사이가 모두 쉼표면 어디서 종목이 바뀌는지 안 보여서, 이유는 종목 이름 뒤 괄호에 넣는다.
     # 괄호 안 % 는 52주 고점 대비 하락률이다(아래 설명 줄에 적는다).
     $items = @($grp | ForEach-Object { "$($_.name)<font color=#6e6c66>($($_.dip.why -replace '고점 대비 ', ''))</font>$(if ($_.dip.firstDay) { ' <font color=#c62828><b>오늘 진입</b></font>' })" })
@@ -2167,7 +2174,7 @@ $touchItems = @(foreach ($stk in $stocks) {
     $touched = @($stk.maLevels | Where-Object { $_ -and $_.buySignal })
     if ($touched.Count) { "$($stk.name)<font color=#6e6c66>($(($touched | ForEach-Object { "$($_.window)일선$(if ($_.intraday) { ' 장중' })" }) -join ', '))</font>" }
 })
-if ($touchItems.Count) { $ladderLines += "<tr><td valign=top nowrap><font color=#2a78d6><b>◎ 이평선 도달</b></font></td><td>$($touchItems -join ', ')</td></tr>" }
+if ($touchItems.Count) { $ladderLines += "<tr><td valign=top nowrap><font color=#0f766e><b>◎ 이평선 도달</b></font></td><td>$($touchItems -join ', ')</td></tr>" }
 $ddStepsM = @($buyRules.dip.drawdownSteps)
 $maStepsM = @($buyRules.dip.maSteps)
 $stepNames = @("분할 1단계", "분할 2단계", "분할 3단계")
@@ -2178,7 +2185,7 @@ $ladderBody = if ($ladderLines.Count) {
     "<table width=100% cellpadding=4 cellspacing=0 style='margin-top:4px;font-size:12.5px;color:#0b0b0b;line-height:1.5;'>$($ladderLines -join '')</table>"
 } else { "<div style='font-size:12.5px;color:#52514e;margin-top:4px;'>오늘은 매수 단계에 든 종목이 없습니다.</div>" }
 $ladderHtml = @"
-<div style="margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-left:4px solid #2a78d6;border-radius:6px;">
+<div style="margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-left:4px solid #0f766e;border-radius:6px;">
   <div style="font-size:12px;font-weight:700;color:#0b0b0b;">오늘의 매수 단계</div>
   $ladderBody
   <div style="font-size:10.5px;color:#898781;margin-top:6px;line-height:1.5;">괄호 안 %는 52주 고점 대비 하락률입니다. $($ruleParts -join ', ')입니다. 지수는 고점 대비 하락만 보고, 코인은 20%, 40%, 60% 기준입니다. 이평선 도달은 52주 고점보다 $($buyRules.maMinDrawdownPct)% 넘게 내려온 상태일 때만 매수 기준입니다. 과거 10년 검증에서 뚜렷하게 나았던 것은 지수와 대형주의 3단계와 이평선 매수 기준이었습니다. 본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다.</div>
@@ -2311,7 +2318,7 @@ if ($fearGreed) {
     $fgBlockHtml = @"
 <div style="margin:0 0 16px;padding:12px 15px;background:#fdf6e7;border:1px solid #f0dcb4;border-left:4px solid #a15c00;border-radius:6px;">
   <div style="font-size:13px;font-weight:bold;color:#a15c00;">⚠ 오늘은 공포·탐욕지수를 받지 못했습니다</div>
-  <div style="font-size:11.5px;color:#52514e;margin-top:4px;">CNN 사이트가 응답하지 않았습니다. 다음 실행 때 자동으로 다시 조회합니다. 급한 경우 <a href="https://edition.cnn.com/markets/fear-and-greed" style="color:#2a78d6;">CNN Fear &amp; Greed</a>에서 직접 확인하시기 바랍니다.</div>
+  <div style="font-size:11.5px;color:#52514e;margin-top:4px;">CNN 사이트가 응답하지 않았습니다. 다음 실행 때 자동으로 다시 조회합니다. 급한 경우 <a href="https://edition.cnn.com/markets/fear-and-greed" style="color:#0f766e;">CNN Fear &amp; Greed</a>에서 직접 확인하시기 바랍니다.</div>
 </div>
 "@
 }
@@ -2338,7 +2345,7 @@ $emailHtml = @"
   <h2 style="margin:0 0 4px;color:#0b0b0b;">JH 주식 투자 Dashboard</h2>
   <div style="font-size:12px;color:#898781;margin-bottom:14px;">$emailDateStr 기준$fxLine$fgLine</div>
   <div style="margin-bottom:16px;">
-    <a href="$dashboardUrl" style="display:inline-block;background:#2a78d6;color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 18px;border-radius:6px;">📊 대시보드 열기 →</a>
+    <a href="$dashboardUrl" style="display:inline-block;background:#0f766e;color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 18px;border-radius:6px;">📊 대시보드 열기 →</a>
   </div>
   $mailBriefHtml
   $mailHlHtml
@@ -2350,7 +2357,7 @@ $emailHtml = @"
   $detailHtml
   <div style="margin-top:16px;font-size:11px;color:#898781;line-height:1.6;">
     출처: 시세 Yahoo Finance, 뉴스 Google 뉴스(영문 기사는 자동 번역). 개인 투자 판단의 참고용 요약입니다.<br>
-    실적, 목표주가, 이동평균선, 전체 차트는 <a href="$dashboardUrl" style="color:#2a78d6;">대시보드</a>에서 확인하시기 바랍니다.
+    실적, 목표주가, 이동평균선, 전체 차트는 <a href="$dashboardUrl" style="color:#0f766e;">대시보드</a>에서 확인하시기 바랍니다.
   </div>
 </div>
 </body></html>
