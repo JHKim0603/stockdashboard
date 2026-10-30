@@ -1659,7 +1659,8 @@ function Get-SignalStat {
         group = $g; signal = $signal; n = [int]$x.n; up = [int]$x.up; hit = [int]$x.hit; baseHit = [int]$x.baseHit; pct1y = [int]$x.pct1y
         since = [string]$btStats.since
         # 카드·메일: 두 문장. 주목할 점: 한 문장(short).
-        text  = "과거 10년 $($g)에서는 이 신호 뒤 1년이 지나 $($x.n)번 중 $($x.up)번 올랐습니다(아무 날이나 샀을 때 $($x.baseHit)%)." +
+        # 카드에서는 굵은 '과거 10년 성적' 뒤에 붙는다.
+        text  = "$($g)에서는 이 신호 뒤 1년이 지나 $($x.n)번 중 $($x.up)번 올랐습니다(아무 날이나 샀을 때 $($x.baseHit)%)." +
                 $(if ($mae) { " 산 뒤 3개월 안에 중간값 $mae% 더 내려갔습니다." } else { "" })
         short = "과거 10년 1년 뒤 오른 비율은 $($x.hit)%였습니다(평소 $($x.baseHit)%)."
     }
