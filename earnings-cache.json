@@ -1,14 +1,14 @@
 {
   "GOOGL": {
-    "fetched": "2026-10-30",
+    "fetched": "2026-10-31",
     "data": null
   },
   "MSFT": {
-    "fetched": "2026-10-30",
+    "fetched": "2026-10-31",
     "data": null
   },
   "MU": {
-    "fetched": "2026-10-30",
+    "fetched": "2026-10-31",
     "data": {
       "date": "2026-12-16",
       "confirmed": false,
@@ -16,15 +16,15 @@
     }
   },
   "NVDA": {
-    "fetched": "2026-10-30",
+    "fetched": "2026-10-31",
     "data": {
-      "date": "2026-11-18",
-      "confirmed": false,
-      "timing": null
+      "date": "2026-11-17",
+      "confirmed": true,
+      "timing": "장 마감 후"
     }
   },
   "PLTR": {
-    "fetched": "2026-10-30",
+    "fetched": "2026-10-31",
     "data": {
       "date": "2026-11-02",
       "confirmed": true,
@@ -32,7 +32,7 @@
     }
   },
   "SNDK": {
-    "fetched": "2026-10-30",
+    "fetched": "2026-10-31",
     "data": null
   }
 }
