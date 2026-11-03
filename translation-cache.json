@@ -755,6 +755,10 @@
     "seen": "2026-10-06",
     "ko": "기술주 랠리와 유가 하락 이후 아시아 주식 상승 예정: 시장 마무리"
   },
+  "Asian shares are mixed as tech losses offset broader gains on Wall Street": {
+    "seen": "2026-11-03",
+    "ko": "기술 손실이 월스트리트의 광범위한 이익을 상쇄함에 따라 아시아 증시는 혼조세를 보이고 있습니다."
+  },
   "Asian shares are mixed, with Kospi up 3% after US stocks rally on strong earnings": {
     "seen": "2026-10-21",
     "ko": "아시아 증시는 혼조세를 보이고 있으며 미국 증시는 강한 실적에 반등한 후 코스피가 3% 상승했습니다."
@@ -1336,7 +1340,7 @@
     "ko": "선물: 이러한 큰 수익으로 인해 시장 추세가 더 높아졌습니다."
   },
   "FY27 Q1 - Press Releases": {
-    "seen": "2026-10-31",
+    "seen": "2026-11-03",
     "ko": "FY27 1분기 - 보도 자료"
   },
   "Global shares are mixed after US stock rally, and oil prices gain more than 1%": {
@@ -2171,6 +2175,10 @@
     "seen": "2026-10-22",
     "ko": "Jim Cramer와 Ken Fisher의 AI 선택: Microsoft(MSFT)"
   },
+  "Jim Cramer Calls Out 'Pretty Thick' Negativity on Apple, Palantir and Marvell: 'No Matter What They Say, It Isn't Enough'": {
+    "seen": "2026-11-03",
+    "ko": "Jim Cramer는 Apple, Palantir 및 Marvell에 대한 '매우 두꺼운' 부정성을 지적합니다: '그들이 뭐라고 말하든 충분하지 않습니다'"
+  },
   "Jim Cramer Compares Palantir (PLTR) to an NFL Wide Receiver": {
     "seen": "2026-09-13",
     "ko": "Jim Cramer가 Palantir(PLTR)를 NFL 와이드 리시버와 비교합니다."
@@ -2376,7 +2384,7 @@
     "ko": "2026년 S&P 500 지수에 대한 주요 증권사의 전망"
   },
   "Major global stock market indices show mixed performance": {
-    "seen": "2026-10-30",
+    "seen": "2026-11-03",
     "ko": "주요 글로벌 주식시장 지수는 엇갈린 성과를 보이고 있습니다."
   },
   "Management Raised the Bar For NVIDIA Stock; Does The Chart Agree?": {
@@ -3643,6 +3651,10 @@
     "seen": "2026-10-09",
     "ko": "나스닥 100: 다우가 확고한 프리마켓을 유지하면서 기술주가 매수자를 찾습니다."
   },
+  "Nasdaq And S&P 500 Index Lose Momentum, Pull Down Market": {
+    "seen": "2026-11-03",
+    "ko": "나스닥과 S&P 500 지수는 모멘텀을 잃고 시장을 끌어내렸습니다."
+  },
   "Nasdaq climbs as chip and AI-linked stocks bounce back": {
     "seen": "2026-10-20",
     "ko": "나스닥은 칩과 AI 관련 주식이 반등하면서 상승"
@@ -3994,6 +4006,10 @@
   "Not Sandisk, Not Intel. This Stock Will Lead the S&P 500 Next Year": {
     "seen": "2026-10-13",
     "ko": "샌디스크도 아니고 인텔도 아닙니다. 이 주식은 내년에 S&P 500을 이끌 것이다"
+  },
+  "NVDA earnings reactions: historical next-day returns over 12 reports": {
+    "seen": "2026-11-03",
+    "ko": "NVDA 수익 반응: 12개 보고서에 대한 익일 수익률 기록"
   },
   "NVDA Stock Alert: What to Know as Nvidia Faces DOJ Probe": {
     "seen": "2026-09-13",
@@ -4614,6 +4630,10 @@
   "Oil and yields spike as foreigners dump South Korea stocks": {
     "seen": "2026-09-11",
     "ko": "외국인들이 한국 주식을 투매하면서 유가와 수익률이 급등합니다."
+  },
+  "Oil Prices Plunge 6%, Igniting US Stocks as Dow Surges Over 500 Points on First Trading Day of November": {
+    "seen": "2026-11-03",
+    "ko": "다우지수가 11월 첫 거래일에 500포인트 이상 급등하면서 유가가 6% 급락해 미국 주식에 불을 붙였습니다."
   },
   "Okta jumps after-hours following tapped inclusion in the S&P 500": {
     "seen": "2026-10-31",
@@ -6536,7 +6556,7 @@
     "ko": "오늘의 주식 시장: 주식 시장 뉴스 및 분석"
   },
   "Stock Market: Will S&P 500 Open Up or Down Today?": {
-    "seen": "2026-10-30",
+    "seen": "2026-11-03",
     "ko": "주식시장: 오늘 S&P 500이 상승할 것인가, 하락할 것인가?"
   },
   "Stock markets continue to rise as US indices gain": {
