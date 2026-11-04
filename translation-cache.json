@@ -199,6 +199,10 @@
     "seen": "2026-10-30",
     "ko": "52개의 ETF가 수요일에 Micron(MU) Holdings에 추가되었습니다."
   },
+  "55 ETFs Add to NVIDIA (NVDA) on Nov. 2": {
+    "seen": "2026-11-04",
+    "ko": "11월 2일 NVIDIA(NVDA)에 55개 ETF 추가"
+  },
   "A 7-Day Losing Streak Has SanDisk Stock Down 23%": {
     "seen": "2026-10-17",
     "ko": "7일 연속 손실로 SanDisk 주가 23% 하락"
@@ -771,6 +775,10 @@
     "seen": "2026-11-03",
     "ko": "Apple은 2026년에 24% 상승: AAPL 주가가 다음에는 300달러 또는 400달러에 도달할까요?"
   },
+  "Apple Says It Will Keep Paying More for Memory Chips After December. That's Good News for Micron Stock.": {
+    "seen": "2026-11-04",
+    "ko": "애플은 12월 이후에도 메모리 칩에 대한 추가 비용을 계속 지불할 것이라고 밝혔습니다. Micron Stock에게는 좋은 소식입니다."
+  },
   "Apple vs. Palantir: Which Stock Has More Upside?": {
     "seen": "2026-10-30",
     "ko": "Apple vs. Palantir: 어느 주식이 더 많은 상승 여력을 가지고 있나요?"
@@ -1311,9 +1319,21 @@
     "seen": "2026-09-30",
     "ko": "ETF는 9월 25일 Palantir(PLTR)의 순매도자입니다"
   },
+  "ETFs Bought $108.2 Million of Palantir (PLTR) on Monday": {
+    "seen": "2026-11-04",
+    "ko": "ETF는 월요일에 1억 820만 달러 규모의 Palantir(PLTR)를 매입했습니다."
+  },
   "ETFs Bought $505.7 Million of NVIDIA (NVDA) on Friday": {
     "seen": "2026-11-03",
     "ko": "ETF는 금요일에 5억 570만 달러 규모의 NVIDIA(NVDA)를 매입했습니다."
+  },
+  "ETFs Bought $561.6 Million of Microsoft (MSFT) on Monday": {
+    "seen": "2026-11-04",
+    "ko": "ETF는 월요일에 5억 6160만 달러 규모의 마이크로소프트(MSFT) 주식을 매입했습니다."
+  },
+  "Evening Wrap: ASX 200 sags as mining sell-off intensifies, US election results in focus": {
+    "seen": "2026-11-04",
+    "ko": "이브닝 랩(Evening Wrap): 광산 매각이 심화되고 미국 선거 결과가 주목되면서 ASX 200이 하락했습니다."
   },
   "Evercore Names the 3 Conditions That Could Wipe Out S&P 500’s Gains": {
     "seen": "2026-11-04",
@@ -2615,6 +2635,10 @@
     "seen": "2026-10-20",
     "ko": "Micron (MU) Looks Cheap at 5 Times Forward Earnings. 이익 호황이 지속될 수 있는가?"
   },
+  "Micron (MU) Sees $262.9 Million in Net ETF Buying on Nov. 2": {
+    "seen": "2026-11-04",
+    "ko": "마이크론(MU), 11월 2일 ETF 순매수 2억 6290만 달러 확인"
+  },
   "Micron (MU) Stock Jumps As Record AI Memory Profits Reset Expectations": {
     "seen": "2026-10-02",
     "ko": "기록적인 AI 메모리 이익이 기대치를 재설정함에 따라 마이크론(MU) 주가가 급등했습니다."
@@ -3863,6 +3887,10 @@
     "seen": "2026-10-29",
     "ko": "나스닥 종합지수는 연준의 결정 이후 알파벳이 10% 하락하고 마이크로소프트가 시간 외 상승하면서 26,549.85로 상승"
   },
+  "Nasdaq Composite: 25,372 Close Sets Stage for Election-Driven Session - ad-hoc-news.de": {
+    "seen": "2026-11-04",
+    "ko": "나스닥 종합: 25,372개 선거 중심 세션의 마감 세트 단계 - ad-hoc-news.de"
+  },
   "Nasdaq Drops 1.25% as OpenAI Revenue Concerns Weigh on Tech Stocks": {
     "seen": "2026-10-09",
     "ko": "OpenAI 수익 우려로 기술주 압박으로 나스닥 1.25% 하락"
@@ -5051,6 +5079,10 @@
     "seen": "2026-10-15",
     "ko": "Palantir는 한 달 동안 16% 상승했지만 오늘은 하락하고 있습니다. 이익을 얻을 것인가, 아니면 더 많이 매수할 것인가?"
   },
+  "Palantir Just Did This for the First Time Ever. Is the Stock a Buy?": {
+    "seen": "2026-11-04",
+    "ko": "Palantir는 사상 처음으로 이런 일을 해냈습니다. 주식은 매수인가?"
+  },
   "Palantir Just Told Wall Street Where AI Infrastructure Is Headed": {
     "seen": "2026-09-17",
     "ko": "Palantir는 AI 인프라가 어디로 향하는지 월스트리트에 말했습니다."
@@ -5427,6 +5459,10 @@
     "seen": "2026-10-15",
     "ko": "AI 금융 위험이 기술 전반에 확산되고 분석가가 Palantir Technologies 평가 및 목표 가격을 검토함에 따라 PLTR 주가가 100달러로 하락"
   },
+  "PLTR Stock In Focus: Exec Says 'It's Gonna Be Very Hard To Value Palantir' As Commercial Business Surpasses US Government Revenue": {
+    "seen": "2026-11-04",
+    "ko": "초점을 맞춘 PLTR 주식: 상업 사업이 미국 정부 수익을 능가하기 때문에 경영진은 '팔란티르의 가치를 평가하는 것이 매우 어려울 것'이라고 말합니다."
+  },
   "PLTR Stock Price Forecast: Stock Holds Above $200 and Hits Record High, Where Is the Next Target?": {
     "seen": "2026-10-10",
     "ko": "PLTR 주가 예측: 주가가 200달러 이상을 유지하고 사상 최고치를 기록했습니다. 다음 목표는 어디입니까?"
@@ -5752,7 +5788,7 @@
     "ko": "S&P 500 지수: S&P 뉴스, 주목할 주식 및 SPDR ETF 추적"
   },
   "S&P 500 Index(.SPX) Stock Price Today | Quotes & News": {
-    "seen": "2026-10-07",
+    "seen": "2026-11-04",
     "ko": "S&P 500 지수(.SPX) 오늘 주가 | 인용문 및 뉴스"
   },
   "S&P 500 investors may want to rethink their favorite ETF": {
@@ -6511,6 +6547,10 @@
     "seen": "2026-10-07",
     "ko": "Invesco S&P 500 Equal Weight Utilities ETF(RSPU)에 투자해야 합니까?"
   },
+  "Should You Sell Your Micron Stock Now?": {
+    "seen": "2026-11-04",
+    "ko": "지금 Micron 주식을 매도해야 할까요?"
+  },
   "SK Hynix Falls 4% on Earnings Caution Before a Rebalancing Goldman Says Favors It; SanDisk Slips 2%, Micron Holds Firm": {
     "seen": "2026-10-07",
     "ko": "SK하이닉스, 수익 4% 하락 골드만삭스가 재조정을 선호한다고 말하기 전 주의; SanDisk는 2% 하락, Micron은 확고히 유지"
@@ -6574,6 +6614,10 @@
   "SpaceX Earnings Lift Nasdaq 1.05% as Tech Rebounds": {
     "seen": "2026-10-22",
     "ko": "SpaceX 수익, 기술 반등으로 Nasdaq 1.05% 상승"
+  },
+  "SpaceX or Micron: If I Could Only Own One for the Next 5 Years, It Would Be This": {
+    "seen": "2026-11-04",
+    "ko": "SpaceX 또는 Micron: 향후 5년 동안 하나만 소유할 수 있다면 이것일 것입니다"
   },
   "SpaceX profit helps lift tech stocks and Wall Street": {
     "seen": "2026-10-22",
@@ -6790,6 +6834,10 @@
   "Stock Market Today: Dow Jones, S&P 500 Futures Gain While Nasdaq 100 Falls as Scott Bessent Says Iran's Economy Is 'Collapsing' — SXTC, AMAT, CMG in Focus": {
     "seen": "2026-10-13",
     "ko": "오늘의 주식 시장: Scott Bessent가 이란 경제가 '붕괴'하고 있다고 말하면서 Dow Jones, S&P 500 선물 상승, Nasdaq 100 하락 - SXTC, AMAT, CMG 집중"
+  },
+  "Stock Market Today: Dow Jones, S&P 500 Futures Rise as Democrats Take Control of Congress—AMD, AMGN, NVO in Focus": {
+    "seen": "2026-11-04",
+    "ko": "오늘의 주식 시장: 민주당이 의회를 장악함에 따라 Dow Jones, S&P 500 선물 상승 - AMD, AMGN, NVO에 초점"
   },
   "Stock Market Today: Dow Jones, S&P 500 Futures Trade Mixed After Fed Keeps Rates Unchanged — MSFT, GOOG": {
     "seen": "2026-10-29",
@@ -7331,6 +7379,10 @@
     "seen": "2026-11-04",
     "ko": "투자자들이 중간 결과를 기다리면서 미국 주식 선물은 조금씩 상승"
   },
+  "US Equity Index Futures Jump While Dollar Weakens, Treasury Yields Slide After Democrats Take Congress in Midterm Elections": {
+    "seen": "2026-11-04",
+    "ko": "미국 주가지수 선물은 달러 약세 동안 상승하고, 민주당이 중간선거에서 의회를 차지한 후 재무부 수익률은 하락했습니다."
+  },
   "US Futures Climb With Semiconductor Stocks Rebounding After Rout": {
     "seen": "2026-10-20",
     "ko": "미국 선물은 대패 후 반등하는 반도체 주식으로 상승"
@@ -7422,6 +7474,10 @@
   "US stocks sink amid AI slowdown warnings": {
     "seen": "2026-09-15",
     "ko": "AI 둔화 경고에 미국 증시 하락"
+  },
+  "US Stocks Waver as Election, AI Bubble Risks Weigh on Outlook": {
+    "seen": "2026-11-04",
+    "ko": "미국 주식은 선거로 흔들리고 AI 버블 위험은 전망에 영향을 미칩니다"
   },
   "US Tech Stocks Rally Strongly With Nasdaq Composite Index Set to Snap Three-Day Losing Streak as Midterm Elections Conclude and Short Covering Expectations Rise": {
     "seen": "2026-11-04",
@@ -7622,6 +7678,10 @@
   "What Is Going on With Nvidia Stock on Tuesday?": {
     "seen": "2026-10-28",
     "ko": "화요일에 Nvidia 주식에 무슨 일이 일어나고 있나요?"
+  },
+  "What Is Going On With Nvidia Stock on Wednesday?": {
+    "seen": "2026-11-04",
+    "ko": "수요일에 Nvidia 주식에 무슨 일이 일어나고 있나요?"
   },
   "What Is Going on With SanDisk Stock on Tuesday?": {
     "seen": "2026-11-04",
@@ -7986,6 +8046,10 @@
   "Why Nvidia stock is down over 4% on Thursday?": {
     "seen": "2026-10-23",
     "ko": "Nvidia 주식이 목요일에 4% 이상 하락한 이유는 무엇입니까?"
+  },
+  "Why Nvidia Stock Is Rising as Crackdown on Data Centers Looms": {
+    "seen": "2026-11-04",
+    "ko": "데이터 센터에 대한 단속이 임박하면서 Nvidia 주가가 상승하는 이유"
   },
   "Why Nvidia stock is rising on Wednesday?": {
     "seen": "2026-10-22",
