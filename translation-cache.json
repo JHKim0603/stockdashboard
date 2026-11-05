@@ -36,7 +36,7 @@
     "ko": "$GOOG 및 $GOOGL 주식 시장 경고: 알파벳 고소"
   },
   "$Nasdaq Composite Index (.IXIC.US)$": {
-    "seen": "2026-10-14",
+    "seen": "2026-11-05",
     "ko": "$나스닥 종합지수(.IXIC.US)$"
   },
   "$Nasdaq Composite Index (.IXIC.US)$ $Direxion Daily Semiconductor Bull 3x Shares ETF (SOXL.US)$": {
@@ -178,6 +178,10 @@
   "4 stocks to watch on Thursday: MSFT, AMZN, DASH, and BMY (SP500:)": {
     "seen": "2026-10-29",
     "ko": "목요일에 주목해야 할 주식 4개: MSFT, AMZN, DASH, BMY(SP500:)"
+  },
+  "5-star analyst resets Nvidia stock target after Intel crash": {
+    "seen": "2026-11-05",
+    "ko": "5성급 분석가, Intel 붕괴 후 Nvidia 주식 목표 재설정"
   },
   "5-star analyst resets SanDisk stock price target by $175": {
     "seen": "2026-10-08",
@@ -827,6 +831,10 @@
     "seen": "2026-10-21",
     "ko": "아시아 증시는 혼조세를 보이고 있으며 미국 증시는 강한 실적에 반등한 후 코스피가 3% 상승했습니다."
   },
+  "Asian shares mostly advance following US midterms, though Kospi falls on selling of chipmakers": {
+    "seen": "2026-11-05",
+    "ko": "아시아 증시는 미국 중간고사 이후 대부분 상승했지만, 코스피는 칩 제조업체 매도로 인해 하락했습니다."
+  },
   "Asian shares mostly advance following US midterms, though Kospi falls on selling of chipmakers - Union-Bulletin": {
     "seen": "2026-11-05",
     "ko": "코스피는 칩 제조사 매각으로 하락했지만, 아시아 증시는 대부분 미국 중간고사 이후 상승했다 - Union-Bulletin"
@@ -1250,6 +1258,10 @@
   "Dow, S&P 500, Nasdaq Futures Fall As Weak Tech Earnings Trigger Selloff: INTC, IOVA, SLS, AMZN Stocks In Focus": {
     "seen": "2026-10-30",
     "ko": "Dow, S&P 500, Nasdaq 선물은 약한 기술 수익이 매도를 촉발하면서 하락: INTC, IOVA, SLS, AMZN 주식에 집중"
+  },
+  "Dow, S&P 500, Nasdaq Futures Mixed After A Democratic Sweep In Midterms: NVDA, MU, SNDK, NBIS, IREN In Focus": {
+    "seen": "2026-11-05",
+    "ko": "Dow, S&P 500, Nasdaq 선물은 중기 민주당 압승 후 혼합되었습니다: NVDA, MU, SNDK, NBIS, IREN 초점"
   },
   "Dow, S&P 500, Nasdaq Futures Mixed After Fed Holds Rates Steady: GOOG, GOOGL, IOVA, MSFT, NOW In Focus": {
     "seen": "2026-10-29",
@@ -2519,6 +2531,10 @@
     "seen": "2026-09-15",
     "ko": "코스피 변동성, 반도체 집중 속에 글로벌 1위"
   },
+  "KOSPI, KOSDAQ plunge as South Korea triggers twin sell-sidecar halts": {
+    "seen": "2026-11-05",
+    "ko": "한국이 쌍매도 사이드카 중단을 촉발하면서 코스피와 코스닥이 급락했습니다."
+  },
   "Learn Why The Bull Case For Micron Stock Could Change Following Memory Shortage Warning": {
     "seen": "2026-10-30",
     "ko": "메모리 부족 경고에 따라 Micron 주식의 상승세가 바뀔 수 있는 이유를 알아보세요."
@@ -2770,6 +2786,10 @@
   "Micron Has Skyrocketed 256% in 2026. What Would It Take to Get MU Stock Up to $1,250?": {
     "seen": "2026-09-11",
     "ko": "Micron은 2026년에 256% 급등했습니다. MU 주식을 1,250달러까지 얻으려면 무엇이 필요합니까?"
+  },
+  "Micron Hits 3-Month Low Amid Chip Rout After Top Democratic Lawmaker Calls For AI Regulation, Pause In Development": {
+    "seen": "2026-11-05",
+    "ko": "마이크론은 최고 민주당 의원이 AI 규제를 요구하고 개발을 일시 중지한 후 칩 대실로 인해 3개월 최저치를 기록했습니다."
   },
   "Micron Investors: Mark December 9 On Your Calendar (NASDAQ:MU)": {
     "seen": "2026-11-04",
@@ -3278,6 +3298,10 @@
   "Microsoft (MSFT) Stands Alone as Hyperscaler with Positive Free Cash Flow Outlook, Says BofA": {
     "seen": "2026-10-17",
     "ko": "BofA는 Microsoft(MSFT)가 긍정적인 Free Cash Flow 전망을 갖춘 하이퍼스케일러로 독보적이라고 밝혔습니다."
+  },
+  "Microsoft (MSFT) Stock Could Be Undervalued After Its 74% Five Year Run": {
+    "seen": "2026-11-05",
+    "ko": "Microsoft(MSFT) 주식은 5년 동안 74% 상승한 후 저평가될 수 있습니다."
   },
   "Microsoft (MSFT) Stock Hits A Record High: Here Is Why?": {
     "seen": "2026-10-14",
@@ -3823,6 +3847,10 @@
     "seen": "2026-10-30",
     "ko": "MSFT 주식은 Microsoft가 분기별 수익 및 매출 기대치를 상회했음에도 불구하고 투자 비용 감소가 AI 버블의 종말을 신호할 수 있다는 투자자의 우려로 $530로 반전됩니다."
   },
+  "MSFT Stock Surges Above $555 to New Record Highs as Midterms Lift Microsoft and Big Tech": {
+    "seen": "2026-11-05",
+    "ko": "MSFT 주식은 중간고사가 Microsoft와 Big Tech를 상승시키면서 555달러 이상으로 사상 최고치를 기록했습니다."
+  },
   "MSFT Stock Surges Above $556 to Record Highs as Midterms Lift Microsoft and Big Tech": {
     "seen": "2026-11-05",
     "ko": "MSFT 주식은 중간고사가 Microsoft와 Big Tech를 끌어올리면서 556달러 이상으로 최고치를 기록했습니다."
@@ -4006,6 +4034,10 @@
   "Nasdaq futures and options": {
     "seen": "2026-09-15",
     "ko": "나스닥 선물 및 옵션"
+  },
+  "Nasdaq futures slide over 1% as election rally gives way to weak chip earnings": {
+    "seen": "2026-11-05",
+    "ko": "선거 랠리가 칩 수익 약세로 이어지면서 나스닥 선물은 1% 이상 하락했습니다."
   },
   "Nasdaq Gains 1.11% on Semiconductor Rebound, AI Debt Worries Persist": {
     "seen": "2026-10-20",
@@ -5390,6 +5422,14 @@
   "Palantir Technologies (PLTR) Shares Drop Despite Strong Q3 and R": {
     "seen": "2026-11-03",
     "ko": "Palantir Technologies(PLTR), 3분기 및 R 실적 강세에도 불구하고 주가 하락"
+  },
+  "Palantir Technologies (PLTR) Shares Fall Despite Strong Q3; Grow": {
+    "seen": "2026-11-05",
+    "ko": "Palantir Technologies(PLTR) 주가는 3분기 강세에도 불구하고 하락했습니다. 성장하다"
+  },
+  "Palantir Technologies (PLTR) Shares Slide for Seventh Day Amid M": {
+    "seen": "2026-11-05",
+    "ko": "Palantir Technologies(PLTR)는 M에서 7일째 슬라이드를 공유합니다."
   },
   "Palantir Technologies (PLTR) Signs Knox Partnership, Is The Stock Fully Priced?": {
     "seen": "2026-10-21",
@@ -7023,6 +7063,10 @@
     "seen": "2026-10-29",
     "ko": "미국 지수가 상승하면서 주식 시장은 계속 상승하고 있습니다."
   },
+  "Stock markets rise as US and European indices surge": {
+    "seen": "2026-11-05",
+    "ko": "미국과 유럽 지수 급등에 주식시장 상승"
+  },
   "Stock Of The Day: AI Energy Play Bloom Energy Nears Buy Point, S&P 500 Entry": {
     "seen": "2026-09-12",
     "ko": "오늘의 주식: AI 에너지 플레이 Bloom Energy가 매수 지점에 가까워지고 S&P 500 진입"
@@ -8186,6 +8230,10 @@
   "Why Micron Stock Just Sank": {
     "seen": "2026-09-13",
     "ko": "마이크론 주식이 폭락한 이유"
+  },
+  "Why Micron, Sandisk, and SK hynix Stocks Extend Losses Overnight After Wednesday’s Plunge — and What Wall Street Sees Next": {
+    "seen": "2026-11-05",
+    "ko": "마이크론, 샌디스크, SK하이닉스 주식이 수요일 급락 후 밤새 손실을 확대하는 이유와 월스트리트가 다음에 보는 것"
   },
   "Why Micron, Sandisk, and SK Hynix Stocks Suddenly Reversed Course Overnight — and What It Means for Investors": {
     "seen": "2026-11-04",
