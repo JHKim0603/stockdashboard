@@ -223,6 +223,10 @@
     "seen": "2026-11-05",
     "ko": "Copeland Capital Management LLC가 구매한 NVIDIA Corporation $NVDA 주식 7,519개"
   },
+  "A 60-Year-Old Who Bought 1,000 Micron Shares at $192 Just Lost $138,840. He's Still Up $464,000. Here's What Happens Next.": {
+    "seen": "2026-11-06",
+    "ko": "192달러에 마이크론 주식 1,000주를 구입한 60세 남성은 138,840달러를 잃었습니다. 그는 아직 $464,000를 갖고 있습니다. 다음에 일어날 일은 다음과 같습니다."
+  },
   "A 7-Day Losing Streak Has SanDisk Stock Down 23%": {
     "seen": "2026-10-17",
     "ko": "7일 연속 손실로 SanDisk 주가 23% 하락"
@@ -870,6 +874,10 @@
   "Asian Stocks Brace for Selloff as AI Rout Deepens: Markets Wrap": {
     "seen": "2026-11-06",
     "ko": "AI 패배가 심화됨에 따라 아시아 주식은 매도에 대비합니다: 시장 마무리"
+  },
+  "Asian stocks plunge after Nasdaq enters correction territory on AI fears": {
+    "seen": "2026-11-06",
+    "ko": "나스닥, AI 우려로 조정권 진입 후 아시아 증시 급락"
   },
   "Asian Stocks Set to Gain on Resurgent AI Optimism: Markets Wrap": {
     "seen": "2026-10-28",
@@ -1702,6 +1710,10 @@
   "Google starts September with AI momentum after longest monthly losing streak in over a decade": {
     "seen": "2026-09-18",
     "ko": "Google은 10년 만에 가장 긴 월별 연속 손실 이후 AI 모멘텀으로 9월을 시작합니다."
+  },
+  "Google Stock (GOOGL) Falls 2.2% as AI Stocks Slide (Nov 5)": {
+    "seen": "2026-11-06",
+    "ko": "AI 주식 하락으로 구글 주식(GOOGL) 2.2% 하락(11월 5일)"
   },
   "Google Stock (GOOGL) Gets a Price Target Boost. Here’s Why": {
     "seen": "2026-10-14",
@@ -2979,6 +2991,10 @@
     "seen": "2026-10-24",
     "ko": "마이크론 주식은 6% 급락에도 불구하고 놀라운 $3,000 콜을 받았습니다."
   },
+  "Micron Stock Has Lost Over 40% Since Its June Record. I'd Still Buy It.": {
+    "seen": "2026-11-06",
+    "ko": "마이크론 주식은 6월 기록 이후 40% 이상 하락했습니다. 나는 아직도 그것을 살 것이다."
+  },
   "Micron Stock Has Made Historic Run, Traders Are Now Asking What’s Left": {
     "seen": "2026-10-01",
     "ko": "Micron 주식은 역사적인 상승세를 보였으며 거래자들은 이제 남은 것이 무엇인지 묻고 있습니다."
@@ -3194,6 +3210,10 @@
   "Micron Technology Shares Fall 5.2% as Semiconductor Stocks Decline": {
     "seen": "2026-09-16",
     "ko": "반도체 주가 하락으로 마이크론 테크놀로지 주가 5.2% 하락"
+  },
+  "Micron Technology Shares Jump 4.11% After Hours Following Sharp Selloff": {
+    "seen": "2026-11-06",
+    "ko": "마이크론 테크놀로지 주가는 급격한 매도 이후 몇 시간 만에 4.11% 상승"
   },
   "Micron Technology Shares Rise 1.37% After Hours - Tesla (NASDAQ:TSLA), Micron Technology (NASDAQ:MU)": {
     "seen": "2026-10-28",
@@ -4339,6 +4359,10 @@
     "seen": "2026-11-03",
     "ko": "나스닥 슬라이드 클라우드 아시아 오픈, 이란에 유가 하락: 시장 마무리"
   },
+  "Nasdaq Suffers Record Plunge as $2.5 Trillion Wiped Out in a Single Day": {
+    "seen": "2026-11-06",
+    "ko": "나스닥, 하루 만에 2조 5천억 달러 손실로 기록적인 폭락"
+  },
   "Nasdaq surges 2% towards a new all-time trading high": {
     "seen": "2026-09-22",
     "ko": "나스닥, 2% 급등하며 사상 최고치 경신"
@@ -4943,6 +4967,10 @@
     "seen": "2026-09-17",
     "ko": "Nvidia는 단일 분기에 자사주 매입과 배당금에 260억 달러를 지출했습니다. 이사회는 오늘의 이익이 3년 더 지속될 것으로 예상하고 있습니다."
   },
+  "Nvidia Stock (NVDA) Falls 9.3% as AI Chip Stocks Slide (Nov 5)": {
+    "seen": "2026-11-06",
+    "ko": "AI 칩 주가 하락으로 엔비디아 주가(NVDA) 9.3% 하락(11월 5일)"
+  },
   "Nvidia Stock (NVDA) Falls Despite a Quantum Computing Update": {
     "seen": "2026-09-17",
     "ko": "퀀텀 컴퓨팅 업데이트에도 불구하고 엔비디아 주식(NVDA) 하락"
@@ -5022,6 +5050,10 @@
   "Nvidia Stock Just Crashed 22%. Jim Cramer Says It’s the Cheapest in a Decade": {
     "seen": "2026-11-06",
     "ko": "엔비디아 주식이 22% 폭락했습니다. Jim Cramer는 이것이 10년 만에 가장 저렴하다고 말합니다."
+  },
+  "Nvidia Stock Loses $1.39 Trillion Since October Peak — Jim Cramer Says NVDA Can 'Buy and Reload'": {
+    "seen": "2026-11-06",
+    "ko": "Nvidia 주식은 10월 정점 이후 1조 3900억 달러 손실 — Jim Cramer는 NVDA가 '구매 후 다시 로드'할 수 있다고 말합니다."
   },
   "Nvidia Stock NVDA Falls to $220 as Data-Center Debt Yields Weigh on Sentiment": {
     "seen": "2026-10-15",
@@ -5680,7 +5712,7 @@
     "ko": "시장 상승에도 불구하고 Palantir Technologies Inc.(PLTR) 주가 하락: 주목해야 할 중요한 사실"
   },
   "Palantir Technologies Inc. (PLTR) Stock Forecasts": {
-    "seen": "2026-10-16",
+    "seen": "2026-11-06",
     "ko": "Palantir Technologies Inc.(PLTR) 주식 예측"
   },
   "Palantir Technologies Inc. (PLTR) Stock Sinks As Market Gains: Here's Why": {
@@ -6643,6 +6675,10 @@
     "seen": "2026-10-14",
     "ko": "SanDisk 주식(SNDK)은 Meta와의 데이터 스토리지 파트너십에도 불구하고 4% 하락"
   },
+  "Sandisk Stock (SNDK) Falls 22.3% as Chip Stocks Slide (Nov 5)": {
+    "seen": "2026-11-06",
+    "ko": "칩 주식 하락으로 샌디스크 주식(SNDK) 22.3% 하락(11월 5일)"
+  },
   "SanDisk Stock (SNDK) Is a Buy, Says Wedbush Ahead of Q1 Earnings on October 29": {
     "seen": "2026-10-28",
     "ko": "Wedbush가 10월 29일 1분기 실적을 앞두고 SanDisk 주식(SNDK)을 매수할 것이라고 밝혔습니다."
@@ -6910,6 +6946,10 @@
   "Should You Buy Micron Before Sept. 30?": {
     "seen": "2026-09-23",
     "ko": "9월 30일 이전에 마이크론을 구매해야 할까요?"
+  },
+  "Should You Buy Nvidia Stock Before Nov. 17?": {
+    "seen": "2026-11-06",
+    "ko": "11월 17일 이전에 Nvidia 주식을 구매해야 할까요?"
   },
   "Should You Buy Nvidia Stock in October? What Its Decade-Low Valuation Signals": {
     "seen": "2026-10-02",
@@ -7288,7 +7328,7 @@
     "ko": "오늘의 주식 시장: 주식 시장 뉴스 및 분석"
   },
   "Stock Market: Will S&P 500 Open Up or Down Today?": {
-    "seen": "2026-11-04",
+    "seen": "2026-11-06",
     "ko": "주식시장: 오늘 S&P 500이 상승할 것인가, 하락할 것인가?"
   },
   "Stock markets continue to rise as US indices gain": {
@@ -7538,6 +7578,10 @@
   "The S&P 500 Hits a New Record High, Powered by Tech—and Not Much Else": {
     "seen": "2026-10-07",
     "ko": "S&P 500은 기술에 힘입어 신기록을 경신했습니다."
+  },
+  "The S&P 500 index fell sharply after the Stockholm exchange closed on Thursday": {
+    "seen": "2026-11-06",
+    "ko": "목요일 스톡홀름 거래소가 마감된 후 S&P 500 지수는 급락했습니다."
   },
   "The S&P 500 Is Approaching a Valuation Not Seen Since the Peak of the Dot-Com Bubble, and History Suggests a Crash Could Follow": {
     "seen": "2026-10-30",
