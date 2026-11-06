@@ -362,6 +362,12 @@
   .ov-brief { background: var(--accent-wash); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
   .ov-brief-title { font-size: 13px; font-weight: 700; color: var(--ink-primary); margin-bottom: 6px; }
   .ov-brief-title span { font-size: 12px; font-weight: 400; color: var(--ink-muted); margin-left: 6px; }
+  /* 한 줄 결론: 브리핑 맨 위. 왼쪽 띠 색은 오늘 방향(빨강 상승, 파랑 하락). */
+  .ov-headline { border-left: 4px solid var(--ink-muted); padding: 1px 0 1px 11px; margin: 2px 0 10px; }
+  .ov-headline.up { border-left-color: var(--rise); }
+  .ov-headline.down { border-left-color: var(--fall); }
+  .ov-h-title { font-size: 18px; font-weight: 750; color: var(--ink-primary); line-height: 1.35; }
+  .ov-h-text { font-size: 14px; color: var(--ink-secondary); line-height: 1.6; margin-top: 3px; }
   .ov-brief dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 14px; row-gap: 4px; margin: 0; }
   .ov-brief dt { font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
   .ov-brief dd { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-primary); }
@@ -1340,6 +1346,7 @@
   const SCHEDULE = __SCHEDULE_JSON__;
   const STRIP = __STRIP_JSON__;
   const BRIEF = __BRIEF_JSON__;
+  const HEADLINE = __HEADLINE_JSON__;
   const RANGES = [
     { key: "1M", label: "1개월", days: 22 },
     { key: "3M", label: "3개월", days: 64 },
@@ -3212,9 +3219,11 @@
       esc(h.tag) + '</span>' + esc(h.text) + hlNews(h) + '</li>';
     const briefHtml = () => {
       const b = (BRIEF || []).filter(x => x && x.text);
-      if (!b.length) return "";
-      return '<div class="ov-brief"><div class="ov-brief-title">오늘의 브리핑<span>' + esc(fetchedAt.slice(5, 10).replace("-", "/")) + ' 기준</span></div><dl>' +
-        b.map(x => '<dt>' + esc(x.label) + '</dt><dd>' + esc(x.text) + '</dd>').join("") + '</dl></div>';
+      const h = HEADLINE && HEADLINE.title ? HEADLINE : null;
+      if (!b.length && !h) return "";
+      return '<div class="ov-brief"><div class="ov-brief-title">오늘의 브리핑<span>' + esc(fetchedAt.slice(5, 10).replace("-", "/")) + ' 기준</span></div>' +
+        (h ? '<div class="ov-headline ' + esc(h.tone || "flat") + '"><div class="ov-h-title">' + esc(h.title) + '</div><div class="ov-h-text">' + esc(h.text) + '</div></div>' : "") +
+        (b.length ? '<dl>' + b.map(x => '<dt>' + esc(x.label) + '</dt><dd>' + esc(x.text) + '</dd>').join("") + '</dl>' : "") + '</div>';
     };
 
     function render() {

@@ -1499,6 +1499,86 @@ foreach ($st in $stocks) {
     $st | Add-Member -NotePropertyName relBase -NotePropertyValue $relBase -Force
 }
 
+# 오늘 움직임의 맥락. 증권 시황 기사처럼 크기를 말로 쓰고("평소 하루 움직임의 9배", 급등·급락), 언제 이후인지
+# ("2024년 8월 이후 가장 큰 하루 하락", "2025년 4월 이후 가장 낮은 가격"), 며칠째인지("5거래일 연속 하락")를 붙인다.
+# 자료는 카드와 같은 2년치 일봉이다. 그래서 기록 전체에서 처음이면 '최근 2년 중'이라고 적는다.
+function Get-MoveContext {
+    param($st)
+    $ci = [Globalization.CultureInfo]::InvariantCulture
+    $vals = @($st.series | ForEach-Object { [double]$_ })
+    $ds = @($st.dates | ForEach-Object { [datetime]::ParseExact([string]$_, "yyyy-MM-dd", $ci) })
+    $n = $vals.Count
+    if ($n -lt 30) { return $null }
+    $chgAt = { param($i) if ($vals[$i - 1] -eq 0) { 0.0 } else { ($vals[$i] / $vals[$i - 1] - 1) * 100 } }
+    $today = & $chgAt ($n - 1)
+    $thrD = if ($st.perf -and $st.perf.thr -and $st.perf.thr.d1) { [double]$st.perf.thr.d1 } else { $null }
+    $ratio = if ($thrD) { [math]::Round([math]::Abs($today) / $thrD, 1) } else { $null }
+    $yrs = [math]::Max(1, [int][math]::Round(($ds[-1] - $ds[0]).TotalDays / 365))
+    # 하루 변화가 오늘만큼 컸던 가장 최근 날(평소의 2배 이상일 때만 본다)
+    $dayRec = ""
+    if ($null -ne $ratio -and $ratio -ge 2) {
+        $kind = if ($today -lt 0) { "하락" } else { "상승" }
+        $j = -1
+        for ($i = $n - 2; $i -ge 1; $i--) {
+            $c = & $chgAt $i
+            if (($today -lt 0 -and $c -le $today) -or ($today -ge 0 -and $c -ge $today)) { $j = $i; break }
+        }
+        if ($j -lt 0) { $dayRec = "최근 ${yrs}년 중 가장 큰 하루 ${kind}입니다" }
+        elseif (($ds[-1] - $ds[$j]).TotalDays -ge 90) { $dayRec = "$($ds[$j].Year)년 $($ds[$j].Month)월 이후 가장 큰 하루 ${kind}입니다" }
+    }
+    # 며칠째 같은 방향인지
+    $k = 0; $dir = 0
+    for ($i = $n - 1; $i -ge 1; $i--) {
+        $c = & $chgAt $i
+        $sg = if ($c -gt 0.0001) { 1 } elseif ($c -lt -0.0001) { -1 } else { 0 }
+        if ($sg -eq 0) { break }
+        if ($dir -eq 0) { $dir = $sg }
+        if ($sg -ne $dir) { break }
+        $k++
+    }
+    # 가격이 언제 이후 최고·최저인지. 업무 대시보드와 같은 규칙: 지금이 최근 120일 고점(저점)이거나 그 근처
+    # (평소 한 달 움직임의 4분의 1, 최대 2% 안)이고, 그 앞에서 지금 값 이상(이하)이었던 날이 반년보다 앞일 때.
+    $priceSince = $null
+    $cutD = $ds[-1].AddDays(-120)
+    $sdM = if ($st.perf -and $st.perf.thr -and $st.perf.thr.m1) { [double]$st.perf.thr.m1 } else { 4.0 }
+    $tol = [math]::Min(2.0, 0.25 * $sdM) / 100
+    $last = $vals[-1]
+    $recent = @(for ($i = 0; $i -lt $n - 1; $i++) { if ($ds[$i] -ge $cutD) { $vals[$i] } })
+    foreach ($pd in @("high", "low")) {
+        $exact = $true
+        if ($recent.Count) {
+            if ($pd -eq "high") { $rm = ($recent | Measure-Object -Maximum).Maximum; if ($rm -gt $last * (1 + $tol)) { continue }; $exact = ($rm -le $last) }
+            else { $rm = ($recent | Measure-Object -Minimum).Minimum; if ($rm -lt $last * (1 - $tol)) { continue }; $exact = ($rm -ge $last) }
+        }
+        $j = -1
+        for ($i = $n - 2; $i -ge 0; $i--) {
+            if ($ds[$i] -ge $cutD) { continue }
+            if (($pd -eq "high" -and $vals[$i] -ge $last) -or ($pd -eq "low" -and $vals[$i] -le $last)) { $j = $i; break }
+        }
+        if ($j -ge 0 -and ($ds[$j] - $ds[0]).TotalDays -lt 60) { $j = -1 }
+        $word = if ($pd -eq "high") { "높은" } else { "낮은" }
+        $lvl = if ($exact) { "가장 $word 가격입니다" } else { "가장 $word 수준입니다" }
+        if ($j -lt 0) {
+            if (($ds[-1] - $ds[0]).TotalDays -ge 365) { $priceSince = [PSCustomObject]@{ dir = $pd; text = "최근 ${yrs}년 중 $lvl"; far = $true }; break }
+        } elseif (($ds[-1] - $ds[$j]).TotalDays -ge 180) {
+            $priceSince = [PSCustomObject]@{ dir = $pd; text = "$($ds[$j].Year)년 $($ds[$j].Month)월 이후 $lvl"; far = (($ds[-1] - $ds[$j]).TotalDays -ge 365) }
+            break
+        }
+    }
+    [PSCustomObject]@{ today = [math]::Round($today, 2); ratio = $ratio; dayRec = $dayRec; streakDir = $dir; streak = $k; priceSince = $priceSince }
+}
+foreach ($st in $stocks) {
+    $st | Add-Member -NotePropertyName move -NotePropertyValue (Get-MoveContext $st) -Force
+}
+# 급등·급락은 평소 하루 움직임의 2.5배 이상이면서 2% 넘게 움직였을 때만 쓴다(변동이 아주 작은 날의 2.5배는 큰일이 아니다).
+function Test-BigMove { param($d1, $ratio) ($null -ne $d1) -and ([math]::Abs([double]$d1) -ge 2) -and ($null -ne $ratio) -and ([double]$ratio -ge 2.5) }
+function Get-DayVerb {
+    param([double]$p, $ratio, [bool]$mid)
+    $big = Test-BigMove $p $ratio
+    if ($p -ge 0) { if ($big) { if ($mid) { "급등해" } else { "급등했습니다" } } elseif ($mid) { "올라" } else { "올랐습니다" } }
+    else { if ($big) { if ($mid) { "급락해" } else { "급락했습니다" } } elseif ($mid) { "내려" } else { "내렸습니다" } }
+}
+
 # 목표주가 변화. 토스증권의 '한 줄 요약'처럼 증권사 목표주가 평균이 바뀐 날을 알린다. 네이버는 그날 평균만 주므로
 # 날마다 target-cache.json 에 적어 두고(봇이 커밋) 전 기록과 비교한다. 같은 날 여러 번 돌면 그날 값만 고쳐 쓴다.
 # 1% 이상 바뀐 가장 최근 날을 targetChange 로 남기고, 그날이 오늘이면 지금 주목할 점에 올린다. 기록은 400일치만 둔다.
@@ -1554,7 +1634,8 @@ if ($tcLines.Count -and $tcJson -ne $targetCacheOriginal) {
 # 받침 유무로 조사를 고른다. 영문·숫자로 끝나면 읽는 소리로 판단한다.
 function Get-Josa {
     param([string]$word, [string]$withFinal, [string]$withoutFinal)
-    $w = ($word -replace '[\s\)\]]+$', '')
+    # 끝의 괄호 묶음은 떼고 그 앞 말로 고른다: "엔비디아(고점 대비 −25.4%, 200일선 도달)가"(괄호 앞 말 기준).
+    $w = ($word -replace '(\s*[\(\[][^\(\)\[\]]*[\)\]])+\s*$', '') -replace '\s+$', ''
     if (-not $w) { return $withoutFinal }
     $ch = $w[$w.Length - 1]
     $code = [int]$ch
@@ -1563,6 +1644,18 @@ function Get-Josa {
     }
     if ("LMNRlmnr0136783".Contains([string]$ch)) { return $withFinal }
     $withoutFinal
+}
+# '으로/로'는 받침이 없거나 ㄹ 받침이면 '로'다(Get-Josa 는 받침 유무만 본다). 숫자는 읽는 소리로: 20 → 이십 → '으로'.
+function Get-JosaRo {
+    param([string]$word)
+    $w = ($word -replace '(\s*[\(\[][^\(\)\[\]]*[\)\]])+\s*$', '') -replace '\s+$', ''
+    if (-not $w) { return "로" }
+    $ch = $w[$w.Length - 1]
+    $code = [int]$ch
+    if ($code -ge 0xAC00 -and $code -le 0xD7A3) { $f = ($code - 0xAC00) % 28; if ($f -eq 0 -or $f -eq 8) { return "로" } else { return "으로" } }
+    if ("036".Contains([string]$ch)) { return "으로" }
+    if ("LMNlmn".Contains([string]$ch)) { return "으로" }
+    "로"
 }
 function Format-Price {
     param($v, $ccy)
@@ -1704,13 +1797,20 @@ foreach ($st in $stocks) {
             Add-Highlight "실적" "$topic $when($($eDate.Month)/$($eDate.Day)$timing, 현지 기준) 실적을 발표합니다." (90 - $dLeft) $st.symbol
         }
     }
+    # 1년보다 앞의 날까지 거슬러 갈 때만 '언제 이후'를 붙인다(52주 신고가와 같은 말이 되지 않게).
+    $farSince = if ($st.move -and $st.move.priceSince -and $st.move.priceSince.far) { $st.move.priceSince } else { $null }
     if ($st.rangeHigh -and $lastV -ge [double]$st.rangeHigh * 0.999) {
-        Add-Highlight "신고가" "$topic 52주 신고가를 기록했습니다." 95 $st.symbol
+        Add-Highlight "신고가" "$topic 52주 신고가를 기록했습니다.$(if ($farSince -and $farSince.dir -eq 'high') { " $($farSince.text)" })" 95 $st.symbol
     } elseif ($st.rangeLow -and $lastV -le [double]$st.rangeLow * 1.001) {
-        Add-Highlight "신저가" "$topic 52주 신저가를 기록했습니다." 95 $st.symbol
+        Add-Highlight "신저가" "$topic 52주 신저가를 기록했습니다.$(if ($farSince -and $farSince.dir -eq 'low') { " $($farSince.text)" })" 95 $st.symbol
     } elseif ($st.rangeHigh -and $lastV -ge [double]$st.rangeHigh * 0.97) {
         $gapHi = ([double]$st.rangeHigh / $lastV - 1) * 100
         Add-Highlight "신고가" "$topic 52주 고점까지 $($gapHi.ToString('0.0'))% 남았습니다." 55 $st.symbol
+    }
+    # 5거래일 이상 같은 방향(시황 기사의 'n거래일 연속 하락')
+    if ($st.move -and $st.move.streak -ge 5) {
+        $upS = $st.move.streakDir -gt 0
+        Add-Highlight $(if ($upS) { "연속 상승" } else { "연속 하락" }) "$topic $($st.move.streak)거래일 연속 $(if ($upS) { '올랐습니다' } else { '내렸습니다' })." (60 + $st.move.streak) $st.symbol
     }
     if ($st.cross -eq "golden") { Add-Highlight "추세" "$($nm)에서 골든크로스가 나왔습니다(20일선이 60일선 위로)." 80 $st.symbol }
     elseif ($st.cross -eq "dead") { Add-Highlight "추세" "$($nm)에서 데드크로스가 나왔습니다(20일선이 60일선 아래로)." 80 $st.symbol }
@@ -1722,8 +1822,11 @@ foreach ($st in $stocks) {
         $big = [math]::Max(5, $(if ($st.perf.thr.d1) { 2 * [double]$st.perf.thr.d1 } else { 5 }))
         if ([math]::Abs($d1) -ge $big) {
             $tagMv = if ($d1 -ge 0) { "급등" } else { "급락" }
-            $verbMv = if ($d1 -ge 0) { "올랐습니다" } else { "내렸습니다" }
-            Add-Highlight $tagMv "$topic 하루 사이 $([math]::Abs($d1).ToString('0.0'))% $verbMv." (85 + [math]::Abs($d1) / 10) $st.symbol
+            $mvRatio = if ($st.move) { $st.move.ratio } else { $null }
+            $extra = ""
+            if ($null -ne $mvRatio -and [double]$mvRatio -ge 2) { $extra += " 평소 하루 움직임의 $(([double]$mvRatio).ToString('0.0'))배입니다." }
+            if ($st.move -and $st.move.dayRec) { $extra += " $($st.move.dayRec)." }
+            Add-Highlight $tagMv "$topic 하루 사이 $([math]::Abs($d1).ToString('0.0'))% $(Get-DayVerb $d1 $mvRatio $false).$extra" (85 + [math]::Abs($d1) / 10) $st.symbol
         }
     }
     if ($null -ne $st.alertBelow -and $lastV -le [double]$st.alertBelow -and $prevV -gt [double]$st.alertBelow) {
@@ -1854,24 +1957,86 @@ $mvMid = { param([double]$p) if ([math]::Abs($p) -lt 0.05) { "보합이었고" }
 $mvEnd = { param([double]$p) if ([math]::Abs($p) -lt 0.05) { "보합이었습니다." } elseif ($p -gt 0) { "$([math]::Abs($p).ToString('0.0'))% 올랐습니다." } else { "$([math]::Abs($p).ToString('0.0'))% 내렸습니다." } }
 $stripBy = @{}
 foreach ($x in @($marketStrip)) { $stripBy[[string]$x.symbol] = $x }
-$mkParts = @()
-if ($stripBy.ContainsKey("^KS11")) { $mkParts += , @("코스피는", [double]$stripBy["^KS11"].d1) }
-if ($stripBy.ContainsKey("^IXIC")) { $mkParts += , @("나스닥은", [double]$stripBy["^IXIC"].d1) }
-if ($mkParts.Count -eq 2) { Add-Brief "시장" "$($mkParts[0][0]) $(& $mvMid $mkParts[0][1]) $($mkParts[1][0]) $(& $mvEnd $mkParts[1][1])" }
-elseif ($mkParts.Count -eq 1) { Add-Brief "시장" "$($mkParts[0][0]) $(& $mvEnd $mkParts[0][1])" }
-if ($brief.Count -and $stripBy.ContainsKey("^VIX") -and [double]$stripBy["^VIX"].last -ge 25) {
-    $brief[$brief.Count - 1].text += " 미국 증시 불안 지수(VIX)가 $(([double]$stripBy['^VIX'].last).ToString('0.0'))로 높습니다."
-}
+$pctW = { param([double]$p) $a = [math]::Abs($p); if ($a -ge 10) { [math]::Round($a).ToString("0") } else { $a.ToString("0.0") } }
+# 코스피·나스닥은 관심 종목 목록의 지수 카드(2년 일봉)에서 크기와 연속 기록을 읽는다.
+$idxRows = @(foreach ($pair in @(@{ sym = "^KS11"; name = "코스피" }, @{ sym = "^IXIC"; name = "나스닥" })) {
+    $s0 = @($stocks | Where-Object { $_.symbol -eq $pair.sym })[0]
+    if ($s0 -and $s0.perf -and $null -ne $s0.perf.d1) {
+        [PSCustomObject]@{ name = $pair.name; d1 = [double]$s0.perf.d1; ratio = $(if ($s0.move) { $s0.move.ratio } else { $null }); move = $s0.move }
+    }
+})
 $members = @($stocks | Where-Object { $_.kind -ne "index" -and $_.perf -and $null -ne $_.perf.d1 })
+$nUp = @($members | Where-Object { [double]$_.perf.d1 -ge 0.05 }).Count
+$nDn = @($members | Where-Object { [double]$_.perf.d1 -le -0.05 }).Count
+$newDip = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -ge 1 -and $_.dip.firstDay })
+$maHit = @($stocks | Where-Object { @($_.maLevels | Where-Object { $_ -and $_.buySignal }).Count })
+
+# 한 줄 결론(오늘의 브리핑 위, 메일 맨 위). 증권사 리포트 첫 장처럼 결론을 먼저 쓰고, 끝에 내 매수 기준에 주는 뜻을 붙인다.
+# 제목: 지수가 급등·급락했으면 그 지수, 아니면 관심 종목 전체의 방향.
+$hlTitle = ""; $hlTone = "flat"
+$bigIdx = @($idxRows | Where-Object { Test-BigMove $_.d1 $_.ratio } | Sort-Object { [math]::Abs($_.d1) } -Descending)
+if ($bigIdx.Count -ge 2 -and (($bigIdx[0].d1 -ge 0) -eq ($bigIdx[1].d1 -ge 0))) {
+    $hlTitle = "코스피와 나스닥이 함께 $(if ($bigIdx[0].d1 -ge 0) { '급등' } else { '급락' })했습니다"
+    $hlTone = if ($bigIdx[0].d1 -ge 0) { "up" } else { "down" }
+} elseif ($bigIdx.Count -ge 1) {
+    $b0 = $bigIdx[0]
+    $hlTitle = "$($b0.name)$(Get-Josa $b0.name '이' '가') 하루 $(& $pctW $b0.d1)% $(if ($b0.d1 -ge 0) { '급등' } else { '급락' })했습니다"
+    $hlTone = if ($b0.d1 -ge 0) { "up" } else { "down" }
+} elseif ($members.Count) {
+    $maxIdx = if ($idxRows.Count) { ($idxRows | ForEach-Object { [math]::Abs($_.d1) } | Measure-Object -Maximum).Maximum } else { 0 }
+    if ($nDn -eq $members.Count) { $hlTitle = "관심 종목이 모두 내렸습니다"; $hlTone = "down" }
+    elseif ($nUp -eq $members.Count) { $hlTitle = "관심 종목이 모두 올랐습니다"; $hlTone = "up" }
+    elseif ($nDn -ge 0.7 * $members.Count) { $hlTitle = "관심 종목 대부분이 내렸습니다"; $hlTone = "down" }
+    elseif ($nUp -ge 0.7 * $members.Count) { $hlTitle = "관심 종목 대부분이 올랐습니다"; $hlTone = "up" }
+    elseif ($maxIdx -lt 0.5) { $hlTitle = "시장에 큰 움직임이 없었습니다" }
+    else { $hlTitle = "오른 종목과 내린 종목이 비슷합니다" }
+}
+$hlText = @()
+foreach ($x in $idxRows) {
+    $topicI = "$($x.name)$(Get-Josa $x.name '은' '는')"
+    if ([math]::Abs($x.d1) -lt 0.05) { $hlText += "$topicI 보합이었습니다."; continue }
+    $hlText += "$topicI $(& $pctW $x.d1)% $(Get-DayVerb $x.d1 $x.ratio $false)."
+    if (Test-BigMove $x.d1 $x.ratio) {
+        $rTxt = "평소 하루 움직임의 $([math]::Round([double]$x.ratio))배"
+        if ($x.move.dayRec) { $hlText += "$($x.move.dayRec)($rTxt)." } else { $hlText += "${rTxt}입니다." }
+    }
+    if ($x.move -and $x.move.streak -ge 3) { $hlText += "$topicI $($x.move.streak)거래일 연속 $(if ($x.move.streakDir -gt 0) { '올랐습니다' } else { '내렸습니다' })." }
+}
+if ($members.Count -and $hlTitle -notmatch '관심 종목') {
+    $hlText += $(if ($nDn -eq $members.Count) { "관심 종목 $($members.Count)개가 모두 내렸습니다." }
+        elseif ($nUp -eq $members.Count) { "관심 종목 $($members.Count)개가 모두 올랐습니다." }
+        else { "관심 종목 $($members.Count)개 중 ${nUp}개가 오르고 ${nDn}개가 내렸습니다." })
+}
+# 내 매수 기준에 주는 뜻
+if ($newDip.Count) { $hlText += "오늘 새로 분할 매수 단계에 든 종목은 $(($newDip | ForEach-Object { $_.name }) -join ', ')입니다." }
+if ($maHit.Count) { $hlText += "이평선 매수 기준에 닿은 종목은 $(($maHit | ForEach-Object { $_.name }) -join ', ')입니다." }
+if (-not $newDip.Count -and -not $maHit.Count) { $hlText += "오늘 새로 매수 기준에 든 종목은 없습니다." }
+$headline = if ($hlTitle) { [PSCustomObject]@{ tone = $hlTone; title = $hlTitle; text = ($hlText -join " ") } } else { $null }
+
+# 브리핑 '시장': 결론에 쓴 코스피·나스닥 말고 나머지 지수와 불안 지수.
+$mk = @()
+foreach ($pair in @(@{ sym = "^KQ11"; name = "코스닥" }, @{ sym = "^GSPC"; name = "S&P 500" }, @{ sym = "^SOX"; name = "필라델피아 반도체지수" })) {
+    if ($stripBy.ContainsKey($pair.sym)) { $mk += "$($pair.name)$(Get-Josa $pair.name '은' '는') $(& $mvEnd ([double]$stripBy[$pair.sym].d1))" }
+}
+if ($stripBy.ContainsKey("^VIX")) {
+    $vix = [double]$stripBy["^VIX"].last
+    $vixTxt = $vix.ToString("0.0")
+    if ($vix -ge 25) { $mk += "미국 증시 불안 지수(VIX)가 $vixTxt$(Get-JosaRo $vixTxt) 높습니다." }
+}
+Add-Brief "시장" ($mk -join " ")
 if ($members.Count) {
-    $nUp = @($members | Where-Object { [double]$_.perf.d1 -ge 0.05 }).Count
-    $nDn = @($members | Where-Object { [double]$_.perf.d1 -le -0.05 }).Count
     $top = @($members | Sort-Object { [math]::Abs([double]$_.perf.d1) } -Descending)[0]
     $topD = [double]$top.perf.d1
     $txt = if ($nDn -eq $members.Count) { "관심 종목 $($members.Count)개가 모두 내렸습니다." }
         elseif ($nUp -eq $members.Count) { "관심 종목 $($members.Count)개가 모두 올랐습니다." }
         else { "관심 종목 $($members.Count)개 중 오른 종목은 ${nUp}개, 내린 종목은 ${nDn}개입니다." }
-    if ([math]::Abs($topD) -ge 0.05) { $txt += " 가장 크게 움직인 종목은 $($top.name)$(Get-Josa ([string]$top.name) '으로' '로') 하루 사이 $(& $mvEnd $topD)" }
+    if ([math]::Abs($topD) -ge 0.05) {
+        $txt += " 가장 크게 움직인 종목은 $($top.name)$(Get-JosaRo ([string]$top.name)) 하루 사이 $([math]::Abs($topD).ToString('0.0'))% $(Get-DayVerb $topD $(if ($top.move) { $top.move.ratio } else { $null }) $false)."
+        if ($top.move -and (Test-BigMove $topD $top.move.ratio)) {
+            $txt += " 평소 하루 움직임의 $(([double]$top.move.ratio).ToString('0.0'))배입니다."
+            if ($top.move.dayRec) { $txt += " $($top.move.dayRec)." }
+        }
+    }
     Add-Brief "관심 종목" $txt
 }
 $sig = @()
@@ -1883,16 +2048,14 @@ if ($lv3.Count) { $cnt += "3단계 $($lv3.Count)개" }
 if ($lv2.Count) { $cnt += "2단계 $($lv2.Count)개" }
 if ($lv1.Count) { $cnt += "1단계 $($lv1.Count)개" }
 if ($cnt.Count) { $sig += "분할 매수 단계에 든 종목은 $($cnt -join ', ')입니다." }
-$newDip = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -ge 1 -and $_.dip.firstDay })
 if ($newDip.Count) { $sig += "오늘 새로 단계에 든 종목은 $(($newDip | ForEach-Object { "$($_.name)($($_.dip.label))" }) -join ', ')입니다." }
-$maHit = @($stocks | Where-Object { @($_.maLevels | Where-Object { $_ -and $_.buySignal }).Count })
 if ($maHit.Count) {
     $sig += "이평선에 닿아 매수 기준에 해당하는 종목은 $(($maHit | ForEach-Object { $w = @($_.maLevels | Where-Object { $_ -and $_.buySignal })[0].window; "$($_.name)(${w}일선)" }) -join ', ')입니다."
 }
 if (-not $sig.Count) { $sig += "분할 매수 단계나 이평선 도달 매수 기준에 해당하는 종목은 없습니다." }
 Add-Brief "매수 신호" ($sig -join " ")
 $mood = @()
-if ($fearGreed) { $mood += "공포·탐욕지수는 $($fearGreed.score)로 $($fearGreed.ratingKo) 구간입니다." }
+if ($fearGreed) { $mood += "공포·탐욕지수는 $($fearGreed.score)$(Get-JosaRo ([string]$fearGreed.score)) $($fearGreed.ratingKo) 구간입니다." }
 $soonEnd = $nowKst.Date.AddDays(3).ToString("yyyy-MM-dd")
 $soon = @($scheduleItems | Where-Object { [string]$_.date -le $soonEnd -and [string]$_.end -ge $nowKst.Date.ToString("yyyy-MM-dd") } | Select-Object -First 3)
 if ($soon.Count) {
@@ -1904,6 +2067,7 @@ if ($soon.Count) {
     $mood += "3일 안 일정은 $($soonTxt -join ', ')입니다."
 }
 Add-Brief "심리·일정" ($mood -join " ")
+$headlineJson = if ($headline) { (ConvertTo-Json -InputObject $headline -Depth 3 -Compress).Replace("</", "<\/") } else { "null" }
 $briefJson = ConvertTo-Json -InputObject @($brief) -Depth 3 -Compress
 if (-not $briefJson -or $briefJson -eq "null") { $briefJson = "[]" }
 $briefJson = $briefJson.Replace("</", "<\/")
@@ -1923,7 +2087,7 @@ $stripJson = ConvertTo-JsonOrNull -InputObject @($marketStrip) -Depth 4
 $fetchedAt = $nowKst.ToString("yyyy-MM-ddTHH:mm:ss") + "+09:00"  # $nowKst's DateTimeKind is still Utc after the manual +9h shift, so "zzz" would report +00:00 — append the known-fixed KST offset literally instead.
 
 $template = Get-Content -Path (Join-Path $root "template.html") -Raw -Encoding UTF8
-$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson).Replace("__BRIEF_JSON__", $briefJson)
+$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson).Replace("__BRIEF_JSON__", $briefJson).Replace("__HEADLINE_JSON__", $headlineJson)
 
 $outPath = Join-Path $root "dashboard.html"
 Set-Content -Path $outPath -Value $output -Encoding UTF8
@@ -2154,7 +2318,12 @@ $mailHlLines = if ($mailHighlights.Count) {
 $briefRows = @($brief | ForEach-Object {
     "<tr><td valign=top nowrap style='padding:3px 10px 3px 0;font-size:12px;font-weight:700;color:#0f766e;'>$([System.Net.WebUtility]::HtmlEncode([string]$_.label))</td><td style='padding:3px 0;font-size:12.5px;color:#0b0b0b;line-height:1.6;'>$([System.Net.WebUtility]::HtmlEncode([string]$_.text))</td></tr>"
 })
-$mailBriefHtml = if ($briefRows.Count) { "<div style='margin:0 0 12px;padding:12px 15px;background:#eef4fc;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>오늘의 브리핑</div><table cellpadding=0 cellspacing=0 style='border-collapse:collapse;'>$($briefRows -join '')</table></div>" } else { "" }
+# 한 줄 결론: 브리핑 상자 맨 위에 제목과 설명. 왼쪽 띠 색은 오늘 방향.
+$mailHeadHtml = if ($headline) {
+    $hc = switch ($headline.tone) { "up" { "#c62828" } "down" { "#1f5fcc" } default { "#6e6c66" } }
+    "<div style='border-left:4px solid $hc;padding:1px 0 1px 10px;margin:2px 0 10px;'><div style='font-size:16px;font-weight:700;color:#0b0b0b;line-height:1.4;'>$([System.Net.WebUtility]::HtmlEncode([string]$headline.title))</div><div style='font-size:13px;color:#52514e;line-height:1.6;margin-top:3px;'>$([System.Net.WebUtility]::HtmlEncode([string]$headline.text))</div></div>"
+} else { "" }
+$mailBriefHtml = if ($briefRows.Count -or $mailHeadHtml) { "<div style='margin:0 0 12px;padding:12px 15px;background:#eef4fc;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>오늘의 브리핑</div>$mailHeadHtml<table cellpadding=0 cellspacing=0 style='border-collapse:collapse;'>$($briefRows -join '')</table></div>" } else { "" }
 $mailHlHtml = "<div style='margin:0 0 16px;padding:12px 15px;background:#ffffff;border:1px solid #e1e0d9;border-radius:6px;'><div style='font-size:12px;font-weight:700;color:#0b0b0b;margin-bottom:4px;'>지금 주목할 점</div><div style='font-size:12.5px;color:#0b0b0b;line-height:1.65;'>$($mailHlLines -join '<br>')</div></div>"
 
 # 오늘의 매수 단계. 분할 매수 3, 2, 1단계와 이평선 도달(매수 기준) 종목을 한 상자에 모은다. 페이지에서는 카드와 표에
