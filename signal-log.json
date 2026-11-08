@@ -1,0 +1,224 @@
+{
+  "//": "신호 실전 기록부. Update-StockDashboard.ps1 이 신호가 켜진 날짜와 가격을 남기고 대시보드가 그 뒤 수익률을 계산한다.",
+  "started": "2026-11-08",
+  "entries": [
+    {
+      "symbol": "^IXIC",
+      "name": "나스닥",
+      "kind": "index",
+      "signal": "분할 1단계",
+      "level": 1,
+      "date": "2026-11-06",
+      "price": 24579.43,
+      "currency": "",
+      "bench": null,
+      "benchPrice": null,
+      "atStart": true
+    },
+    {
+      "symbol": "^KS11",
+      "name": "KOSPI",
+      "kind": "index",
+      "signal": "분할 3단계",
+      "level": 3,
+      "date": "2026-11-06",
+      "price": 5059.69,
+      "currency": "",
+      "bench": null,
+      "benchPrice": null,
+      "atStart": true
+    },
+    {
+      "symbol": "000660.KS",
+      "name": "SK하이닉스",
+      "kind": "kr",
+      "signal": "분할 3단계",
+      "level": 3,
+      "date": "2026-11-06",
+      "price": 1132000.0,
+      "currency": "₩",
+      "bench": "^KS11",
+      "benchPrice": 5059.69,
+      "atStart": true
+    },
+    {
+      "symbol": "005930.KS",
+      "name": "삼성전자",
+      "kind": "kr",
+      "signal": "분할 3단계",
+      "level": 3,
+      "date": "2026-11-06",
+      "price": 188700.0,
+      "currency": "₩",
+      "bench": "^KS11",
+      "benchPrice": 5059.69,
+      "atStart": true
+    },
+    {
+      "symbol": "GOOGL",
+      "name": "알파벳",
+      "kind": "us",
+      "signal": "분할 3단계",
+      "level": 3,
+      "date": "2026-11-06",
+      "price": 284.78,
+      "currency": "$",
+      "bench": "^IXIC",
+      "benchPrice": 24579.43,
+      "atStart": true
+    },
+    {
+      "symbol": "MU",
+      "name": "마이크론",
+      "kind": "us",
+      "signal": "분할 3단계",
+      "level": 3,
+      "date": "2026-11-06",
+      "price": 690.0,
+      "currency": "$",
+      "bench": "^IXIC",
+      "benchPrice": 24579.43,
+      "atStart": true
+    },
+    {
+      "symbol": "NVDA",
+      "name": "엔비디아",
+      "kind": "us",
+      "signal": "분할 2단계",
+      "level": 2,
+      "date": "2026-11-06",
+      "price": 186.64,
+      "currency": "$",
+      "bench": "^IXIC",
+      "benchPrice": 24579.43,
+      "atStart": true
+    },
+    {
+      "symbol": "PLTR",
+      "name": "팔란티어",
+      "kind": "us",
+      "signal": "분할 2단계",
+      "level": 2,
+      "date": "2026-11-06",
+      "price": 160.38,
+      "currency": "$",
+      "bench": "^IXIC",
+      "benchPrice": 24579.43,
+      "atStart": true
+    },
+    {
+      "symbol": "QLD",
+      "name": "QLD",
+      "kind": "us",
+      "signal": "분할 2단계",
+      "level": 2,
+      "date": "2026-11-06",
+      "price": 74.11,
+      "currency": "$",
+      "bench": "^IXIC",
+      "benchPrice": 24579.43,
+      "atStart": true
+    },
+    {
+      "symbol": "SNDK",
+      "name": "샌디스크",
+      "kind": "us",
+      "signal": "분할 3단계",
+      "level": 3,
+      "date": "2026-11-06",
+      "price": 835.06,
+      "currency": "$",
+      "bench": "^IXIC",
+      "benchPrice": 24579.43,
+      "atStart": true
+    },
+    {
+      "symbol": "BTC-KRW",
+      "name": "비트코인",
+      "kind": "crypto",
+      "signal": "분할 2단계",
+      "level": 2,
+      "date": "2026-11-08",
+      "price": 103453984.0,
+      "currency": "₩",
+      "bench": null,
+      "benchPrice": null,
+      "atStart": true
+    },
+    {
+      "symbol": "ETH-USD",
+      "name": "이더리움",
+      "kind": "crypto",
+      "signal": "분할 1단계",
+      "level": 1,
+      "date": "2026-11-08",
+      "price": 2236.12,
+      "currency": "$",
+      "bench": null,
+      "benchPrice": null,
+      "atStart": true
+    }
+  ],
+  "episodes": {
+    "MU": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "000660.KS": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "005930.KS": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "^KS11": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "NVDA": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
+      "end": null
+    },
+    "SNDK": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "QLD": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
+      "end": null
+    },
+    "BTC-KRW": {
+      "start": "2026-11-08",
+      "maxLevel": 2,
+      "end": null
+    },
+    "GOOGL": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "PLTR": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
+      "end": null
+    },
+    "ETH-USD": {
+      "start": "2026-11-08",
+      "maxLevel": 1,
+      "end": null
+    },
+    "^IXIC": {
+      "start": "2026-11-06",
+      "maxLevel": 1,
+      "end": null
+    }
+  }
+}
