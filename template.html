@@ -445,6 +445,13 @@
   }
   .seg button.on { color: #fff; background: var(--accent); border-color: var(--accent); }
   .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* 원화 기준 켜기(미국 종목을 원화로 바꾼 수익률) */
+  .krw-toggle {
+    font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-muted); background: transparent; margin-left: 6px;
+    border: 1px dashed var(--border); border-radius: 6px; padding: 3px 9px; cursor: pointer;
+  }
+  .krw-toggle.on { color: var(--accent); border: 1px solid var(--accent); background: var(--accent-wash); }
+  .krw-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .hm-row { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px; align-items: stretch; padding: 4px 0; }
   .hm-label { display: flex; flex-direction: column; justify-content: center; gap: 2px; font-size: 13px; }
   .hm-label b { color: var(--ink-primary); }
@@ -591,6 +598,32 @@
   .ov-ma.near { color: var(--accent); font-weight: 600; }
   .ov-ma.touch { display: inline-block; color: #fff; background: var(--accent); font-weight: 700; padding: 1px 8px; border-radius: 10px; }
   .hm-ma { font-size: 12px; font-weight: 700; color: var(--accent); }
+  .hm-prio { font-size: 11.5px; font-weight: 700; color: var(--ink-primary); }
+  /* 신호 실전 기록부 · 내 보유와 분할 매수 계획 */
+  .siglog-box, .hold-box {
+    max-width: var(--page-max); margin: 0 auto 18px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px 12px; scroll-margin-top: 64px;
+  }
+  .siglog-box h3, .hold-box summary { font-size: 15px; font-weight: 700; color: var(--ink-primary); margin: 0 0 4px; }
+  .hold-box summary { cursor: pointer; list-style: none; }
+  .hold-box summary::-webkit-details-marker { display: none; }
+  .hold-box summary::before { content: "▸ "; color: var(--accent); }
+  .hold-box[open] summary::before { content: "▾ "; }
+  .sl-sum { font-size: 13px; color: var(--ink-secondary); margin: 2px 0 8px; }
+  .sl-wrap, .hd-wrap { overflow-x: auto; }
+  .sl-table, .hd-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .sl-table th, .sl-table td, .hd-table th, .hd-table td { padding: 6px 8px; border-bottom: 1px solid var(--gridline); text-align: right; white-space: nowrap; }
+  .sl-table th, .hd-table th { font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+  .sl-table td:first-child, .sl-table th:first-child, .sl-table td:nth-child(2), .sl-table th:nth-child(2),
+  .hd-table td:first-child, .hd-table th:first-child { text-align: left; }
+  .sl-start { font-size: 11px; color: var(--ink-muted); }
+  .hd-in { width: 6.5em; padding: 3px 6px; font: inherit; font-size: 13px; text-align: right; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface-raised); color: var(--ink-primary); }
+  .hd-in.wide { width: 9em; }
+  .hd-in:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hd-bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; color: var(--ink-secondary); margin: 8px 0; }
+  .hd-bar button { font: inherit; font-size: 12.5px; padding: 3px 9px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--ink-secondary); cursor: pointer; }
+  .hd-note { font-size: 12px; color: var(--ink-muted); line-height: 1.55; margin-top: 6px; }
   .hl-tag.buy { color: #fff; background: var(--accent); padding: 0 6px; border-radius: 4px; }
   /* 분할 매수 단계: dip1~dip3 = 분할 1~3단계 */
   .cross-badge.dip1 { color: var(--accent); background: var(--accent-wash); }
@@ -1257,7 +1290,9 @@
   <nav class="jump-nav" id="jump-nav" aria-label="구역 바로가기"></nav>
   <div class="mkt-strip" id="mkt-strip" hidden></div>
   <div class="overview" id="overview" hidden></div>
+  <details class="hold-box" id="holdings" hidden><summary>내 보유와 분할 매수 계획 <span class="sl-start">(이 브라우저에만 저장)</span></summary><div id="holdBody"></div></details>
   <div class="compare-box" id="compare" hidden></div>
+  <div class="siglog-box" id="siglog" hidden></div>
   <div class="schedule-box" id="schedule" hidden></div>
   <div id="card-groups"></div>
 
@@ -1346,6 +1381,7 @@
   const SCHEDULE = __SCHEDULE_JSON__;
   const STRIP = __STRIP_JSON__;
   const BRIEF = __BRIEF_JSON__;
+  const SIGNAL_LOG = __SIGNAL_LOG_JSON__;
   const HEADLINE = __HEADLINE_JSON__;
   const RANGES = [
     { key: "1M", label: "1개월", days: 22 },
@@ -2866,7 +2902,43 @@
   ];
   const fmtPct = v => (v === null || v === undefined) ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 1) + "%";
   const dirCls = v => (v === null || v === undefined || Math.abs(v) < 0.005) ? "" : (v > 0 ? "up" : "down");
-  const perfOf = (st, k) => (st.perf ? st.perf[k] : null);
+  // ---- 원화 기준 수익률 ------------------------------------------------------------------------
+  // 미국 종목·미국 지수·달러 코인은 달러 가격이라, 원화로 산 사람의 실제 수익률은 그 사이 환율 변화만큼 다르다.
+  // [원화 기준]을 켜면 그날 종가 × 그날(없으면 그 전 마지막) 원/달러 환율로 바꿔 등락을 다시 잰다. 기간 정의는 생성 스크립트의
+  // perf(오늘·1주·1개월·연초·1년)와 같다. 켜고 끈 상태는 그 브라우저에 기억한다.
+  const KRW_KEY = "stock-krw-view";
+  let krwOn = (function () { try { return localStorage.getItem(KRW_KEY) === "1"; } catch (e) { return false; } })();
+  const isUsdPriced = st => st.currency === "$" || /^\^(IXIC|GSPC|SOX)$/.test(st.symbol || "");
+  const fxAt = (function () {
+    const fd = (usdKrwSeries && usdKrwSeries.dates) || [], fv = (usdKrwSeries && usdKrwSeries.series) || [];
+    return d => {
+      let lo = 0, hi = fd.length - 1, ans = -1;
+      while (lo <= hi) { const mid = (lo + hi) >> 1; if (fd[mid] <= d) { ans = mid; lo = mid + 1; } else hi = mid - 1; }
+      return ans >= 0 ? fv[ans] : null;
+    };
+  })();
+  const krwCache = new Map();
+  // 원화로 바꾼 종가 계열. 환율 자료가 없는 앞쪽 날짜는 null 로 둔다.
+  function krwSeriesOf(st) {
+    if (!isUsdPriced(st) || !usdKrwSeries) return null;
+    if (krwCache.has(st.symbol)) return krwCache.get(st.symbol);
+    const out = st.series.map((v, i) => { const f = fxAt(st.dates[i]); return f ? v * f : null; });
+    krwCache.set(st.symbol, out);
+    return out;
+  }
+  function krwPerf(st) {
+    const sr = krwSeriesOf(st);
+    if (!sr || !st.perf) return st.perf;
+    const ds = st.dates, li = ds.length - 1;
+    const idxBefore = d => { let j = li; while (j > 0 && ds[j] > d) j--; return ds[j] <= d ? j : -1; };
+    const shift = days => { const t = new Date(ds[li] + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() - days); return t.toISOString().slice(0, 10); };
+    const pctFrom = j => (j >= 0 && sr[j] && sr[li]) ? Math.round((sr[li] / sr[j] - 1) * 10000) / 100 : null;
+    return Object.assign({}, st.perf, {
+      d1: pctFrom(li - 1), w1: pctFrom(idxBefore(shift(7))), m1: pctFrom(idxBefore(shift(30))),
+      ytd: pctFrom(idxBefore((+ds[li].slice(0, 4) - 1) + "-12-31")), y1: pctFrom(idxBefore(shift(365)))
+    });
+  }
+  const perfOf = (st, k) => { const p = krwOn && isUsdPriced(st) ? krwPerf(st) : st.perf; return p ? p[k] : null; };
   const thrOf = (st, k) => (st.perf && st.perf.thr ? st.perf.thr[k] : null);
   // 표 칸: 평소 등락 폭(같은 기간 수익률의 표준편차)보다 크면 옅게, 2배 이상이면 진하게
   const tintTd = (v, thr) => {
@@ -3098,12 +3170,14 @@
       const tag = x.card || fx ? "button" : "div";
       const v = x.d1;
       const md = /^\d{4}-\d{2}-\d{2}$/.test(x.date || "") ? (+x.date.slice(5, 7)) + "/" + (+x.date.slice(8, 10)) : "";
-      const signed = (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(2) + "%";
+      // 금리(미국 10년물)는 % 변화가 아니라 bp(0.01%p)로 적는다. 4.20% → 4.25% 는 '+1.19%'가 아니라 '+5bp'다.
+      const chgTxt = x.rate && typeof x.bp === "number" ? Math.abs(x.bp).toFixed(1) + "bp" : Math.abs(v).toFixed(2) + "%";
+      const signed = (v > 0 ? "+" : v < 0 ? "−" : "") + chgTxt;
       const title = x.name + " " + fmtExact(x) + ", " + md + " 기준, 직전 거래일보다 " + signed + ". 작은 그래프는 최근 1개월입니다." +
         (x.card ? " 누르면 카드로 이동합니다." : fx ? " 누르면 환율 추이를 엽니다." : "");
       return '<' + tag + (tag === "button" ? ' type="button"' : "") + ' class="mk-tile" data-sym="' + esc(x.symbol) + '" title="' + esc(title) + '">' +
         '<span class="mk-name">' + esc(x.name) + '</span><span class="mk-val">' + esc(fmtV(x)) + '</span>' +
-        '<span class="mk-chg ' + dirCls(v) + '">' + (v > 0 ? "▲ " : v < 0 ? "▼ " : "") + Math.abs(v).toFixed(2) + '%</span>' + spark(x) + '</' + tag + '>';
+        '<span class="mk-chg ' + dirCls(v) + '">' + (v > 0 ? "▲ " : v < 0 ? "▼ " : "") + chgTxt + '</span>' + spark(x) + '</' + tag + '>';
     }).join("");
     host.addEventListener("click", e => {
       const t = e.target.closest("button.mk-tile");
@@ -3145,7 +3219,9 @@
           const v = perfOf(x.st, period);
           return '<button type="button" class="hm-tile ' + tileLv(v, thrOf(x.st, period)) + '" data-i="' + x.i + '" title="' + esc(x.st.name) + ' 카드로 이동">' +
             '<span class="hm-name">' + esc(x.st.name) + '</span><span class="hm-pct ' + dirCls(v) + '">' + fmtPct(v) + '</span>' +
-            (function () { const ms = maSummary(x.st); return ms && /^(touch|dip2|dip3)$/.test(ms.cls) ? '<span class="hm-ma">' + esc(ms.text) + '</span>' : ""; })() + '</button>';
+            (function () { const ms = maSummary(x.st); return ms && /^(touch|dip2|dip3)$/.test(ms.cls) ? '<span class="hm-ma">' + esc(ms.text) + '</span>' : ""; })() +
+            // 단계에 든 종목이 셋 이상이면 생성 스크립트가 매긴 '먼저 볼' 순서 1~3위를 붙인다(이유는 칸 설명에).
+            (x.st.prio && x.st.prio.rank <= 3 && x.st.prio.of >= 3 ? '<span class="hm-prio" title="' + esc("먼저 볼 순서 " + x.st.prio.rank + "위: " + (x.st.prio.why || []).join(", ")) + '">먼저 ' + "①②③"[x.st.prio.rank - 1] + '</span>' : "") + '</button>';
         }).join("");
         return '<div class="hm-row"><div class="hm-label"><b>' + esc(g) + '</b><span class="hm-dir ' + dir + '">' + esc(dirTxt) + '</span></div>' +
           '<div class="hm-tiles">' + tiles + '</div></div>';
@@ -3232,14 +3308,16 @@
         '<div class="ov-top"><div class="ov-map"><div class="ov-head"><div class="ov-title">한눈 요약</div>' +
         '<div class="seg" role="group" aria-label="등락 기간">' +
         PERIODS.map(pd => '<button type="button" data-period="' + pd.key + '" class="' + (pd.key === period ? "on" : "") + '">' + pd.label + '</button>').join("") +
-        '</div></div>' + heatmapHtml() + '</div>' +
+        '</div>' + (usdKrwSeries ? '<button type="button" class="krw-toggle' + (krwOn ? " on" : "") + '" data-krw aria-pressed="' + krwOn +
+          '" title="미국 종목·미국 지수·달러 코인의 등락을 원화로 바꿔 잽니다(그날 원/달러 환율 적용)">원화 기준</button>' : "") +
+        '</div>' + heatmapHtml() + '</div>' +
         (hl.length ? '<div class="ov-today"><div class="ov-today-title">지금 주목할 점</div><ul>' +
           hl.slice(0, HL_SHOW).map(hlItem).join("") + '</ul>' +
           (hl.length > HL_SHOW ? '<details class="hl-more"' + (hlOpen ? " open" : "") + '><summary>나머지 ' + (hl.length - HL_SHOW) + '건 더 보기</summary><ul>' +
             hl.slice(HL_SHOW).map(hlItem).join("") + '</ul></details>' : "") +
           '</div>' : "") +
         '</div>' +
-        '<div class="ov-legend"><b class="up">빨강</b>은 상승, <b class="down">파랑</b>은 하락입니다. ' +
+        '<div class="ov-legend"><b class="up">빨강</b>은 상승, <b class="down">파랑</b>은 하락입니다. ' + (krwOn ? '<b>원화 기준</b>(미국 종목·지수·달러 코인은 그날 원/달러 환율로 바꾼 등락)입니다. ' : '') +
         '칸 배경이 진할수록 그 종목의 평소 등락 폭보다 크게 움직였습니다.' +
         '<details class="ov-more"' + (legendOpen ? " open" : "") + '><summary>표시 읽는 법</summary><p>머리글을 누르면 정렬됩니다. ' +
         '◎는 52주 고점보다 ' + ((stocks[0] && stocks[0].maMinDd) || 20) + '% 넘게 내려온 상태에서 주가가 위에서 내려와 이평선에 닿은 종목입니다(이평선 도달 매수 기준). ' +
@@ -3272,6 +3350,13 @@
       if (e.target.closest("a[href]")) return;  // 관련 기사 링크는 카드로 이동하지 않고 기사로
       const pb = e.target.closest("[data-period]");
       if (pb) { period = pb.dataset.period; render(); return; }
+      if (e.target.closest("[data-krw]")) {
+        krwOn = !krwOn;
+        try { localStorage.setItem(KRW_KEY, krwOn ? "1" : "0"); } catch (err) { /* 기억 못 해도 화면은 그대로 */ }
+        render();
+        document.dispatchEvent(new CustomEvent("krw-toggle"));
+        return;
+      }
       const sb = e.target.closest("[data-sort]");
       if (sb) {
         const k = sb.dataset.sort;
@@ -3354,14 +3439,16 @@
       return d.toISOString().slice(0, 10);
     };
     function pointsOf(st) {
-      const ds = st.dates, sr = st.series;
+      const ds = st.dates, sr = (krwOn && krwSeriesOf(st)) || st.series;
       const cut = cutOf(ds[ds.length - 1]);
       let k = ds.length - 1;
       while (k > 0 && ds[k] > cut) k--;
+      // 원화 기준에서 환율 자료가 시작일보다 짧으면 환율이 있는 첫날로 당긴다.
+      while (k < ds.length - 1 && !sr[k]) k++;
       const base = sr[k];
       if (!base) return null;
       const pts = [];
-      for (let i = k; i < ds.length; i++) pts.push({ d: ds[i], t: Date.parse(ds[i] + "T00:00:00Z"), v: (sr[i] / base - 1) * 100 });
+      for (let i = k; i < ds.length; i++) if (sr[i]) pts.push({ d: ds[i], t: Date.parse(ds[i] + "T00:00:00Z"), v: (sr[i] / base - 1) * 100 });
       // 자료가 시작일보다 늦게 시작하면(샌디스크처럼 상장이 늦은 종목) 첫 자료일을 0%로 맞췄다는 표시를 붙인다.
       pts.short = Date.parse(ds[0] + "T00:00:00Z") - Date.parse(cut + "T00:00:00Z") > 10 * 86400000;
       return pts.length >= 2 ? pts : null;
@@ -3552,7 +3639,7 @@
         (idxList.length ? '<div class="cmp-chips"><span class="cmp-chips-label">시장 지수</span>' + idxList.map(chip).join("") + '</div>' : "") +
         (msg ? '<div class="cmp-msg">' + esc(msg) + '</div>' : "") +
         '<div class="cmp-plot"></div>' +
-        '<div class="ov-note">기간 시작일의 종가를 0%로 맞춘 수익률입니다. 회색 점선은 시장 지수이고, 종목은 한 번에 6개까지 함께 볼 수 있습니다. ' +
+        '<div class="ov-note">' + (krwOn ? '<b>원화 기준</b>: 미국 종목·지수·달러 코인은 그날 원/달러 환율로 바꾼 수익률입니다. ' : '') + '기간 시작일의 종가를 0%로 맞춘 수익률입니다. 회색 점선은 시장 지수이고, 종목은 한 번에 6개까지 함께 볼 수 있습니다. ' +
         '이름을 누르면 켜고 끕니다. [직접]을 누르면 시작일을 고를 수 있어 산 날짜부터의 수익률을 볼 수 있습니다. ' +
         '이름 뒤 *는 자료가 시작일보다 짧아 첫 자료일을 0%로 맞춘 종목입니다. 그래프를 누르거나 마우스를 올리면 날짜별 값이 나옵니다.</div>';
       plot = host.querySelector(".cmp-plot");
@@ -3595,11 +3682,138 @@
     // 숨긴 채로 그리면 폭을 0으로 읽으므로 먼저 보이게 한 뒤 그린다.
     host.hidden = false;
     render();
+    // 한눈 요약의 [원화 기준]을 바꾸면 이 그래프도 같은 기준으로 다시 그린다.
+    document.addEventListener("krw-toggle", () => render());
     // 화면 폭이 바뀌면 그래프만 다시 그린다.
     let lastW = plot ? plot.clientWidth : 0, rt = null;
     window.addEventListener("resize", () => {
       clearTimeout(rt);
       rt = setTimeout(() => { if (plot && plot.clientWidth !== lastW) { lastW = plot.clientWidth; drawChart(); } }, 150);
+    });
+  })();
+
+  // ---- 신호 실전 기록부 ------------------------------------------------------------------------
+  // 생성 스크립트가 signal-log.json 에 남긴 '신호가 켜진 날짜와 가격'으로, 그 뒤 실제 수익률과 시장 대비를 보여 준다.
+  // 과거 10년 검증(카드의 '과거 성적')이 지금 시장에서도 맞는지 확인하는 용도다. 기록을 시작한 날 이미 단계 안에 있던
+  // 종목은 '시작일'로 따로 표시한다(신호 첫날 가격이 아니라서 성적을 따로 센다).
+  (function buildSignalLog() {
+    const host = document.getElementById("siglog");
+    const log = SIGNAL_LOG;
+    if (!host || !log || !Array.isArray(log.entries)) return;
+    const bySym = {};
+    stocks.forEach(st => { bySym[st.symbol] = st; });
+    const lastOf = sym => { const st = bySym[sym]; return st && st.series && st.series.length ? st.series[st.series.length - 1] : null; };
+    const dayDiff = (a, b) => Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400000);
+    const rows = log.entries.map(e => {
+      const now = lastOf(e.symbol), st = bySym[e.symbol];
+      if (!now || !e.price || !st) return null;
+      const ret = (now / e.price - 1) * 100;
+      const bNow = e.bench ? lastOf(e.bench) : null;
+      const bRet = bNow && e.benchPrice ? (bNow / e.benchPrice - 1) * 100 : null;
+      return { e, now, ret, rel: bRet === null ? null : ret - bRet, days: dayDiff(e.date, st.dates[st.dates.length - 1]) };
+    }).filter(Boolean).sort((a, b) => b.e.date.localeCompare(a.e.date) || a.e.name.localeCompare(b.e.name));
+    const md = d => d ? (+d.slice(5, 7)) + "/" + (+d.slice(8, 10)) : "";
+    const statOf = list => {
+      if (!list.length) return null;
+      const avg = list.reduce((s, r) => s + r.ret, 0) / list.length;
+      const rels = list.filter(r => r.rel !== null);
+      return { n: list.length, avg, up: Math.round(list.filter(r => r.ret > 0).length / list.length * 100), rel: rels.length ? rels.reduce((s, r) => s + r.rel, 0) / rels.length : null };
+    };
+    const fresh = statOf(rows.filter(r => !r.e.atStart)), start = statOf(rows.filter(r => r.e.atStart));
+    const pp = v => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "%p";
+    const statTxt = (s, label) => s ? label + " " + s.n + "건 · 평균 " + fmtPct(s.avg) + " · 오른 비율 " + s.up + "%" + (s.rel !== null ? " · 시장 대비 " + pp(s.rel) : "") : "";
+    const fmtPx = (v, ccy) => (ccy || "") + fmtNum(v, ccy);
+    const head = '<tr><th>켜진 날</th><th>종목 · 신호</th><th>그날 값</th><th>지금</th><th>수익률</th><th>시장 대비</th><th>지난 날</th></tr>';
+    const line = r => '<tr><td>' + esc(md(r.e.date)) + (r.e.atStart ? ' <span class="sl-start">시작일</span>' : '') + '</td>' +
+      '<td>' + esc(r.e.name) + ' · ' + esc(r.e.signal) + '</td><td>' + esc(fmtPx(r.e.price, r.e.currency)) + '</td><td>' + esc(fmtPx(r.now, r.e.currency)) + '</td>' +
+      '<td class="' + dirCls(r.ret) + '">' + fmtPct(r.ret) + '</td>' +
+      '<td class="' + dirCls(r.rel) + '">' + (r.rel === null ? "–" : pp(r.rel)) + '</td><td>' + r.days + '일</td></tr>';
+    host.innerHTML = '<h3>신호 실전 기록</h3>' +
+      '<div class="sl-sum">기록 시작 ' + esc(md(log.started)) + ' · ' +
+      ([statTxt(fresh, "새로 켜진 신호"), statTxt(start, "시작일에 이미 켜져 있던 신호")].filter(Boolean).join(" / ") || "아직 기록된 신호가 없습니다") + '</div>' +
+      (rows.length ? '<div class="sl-wrap"><table class="sl-table">' + head + rows.slice(0, 20).map(line).join("") + '</table></div>' : "") +
+      '<div class="hd-note">신호가 새로 켜진 날(분할 단계는 더 높은 단계에 처음 든 날)의 종가를 기준으로 지금까지의 수익률입니다. 시장 대비는 같은 기간 국내 종목은 코스피, ' +
+      '미국 종목은 나스닥의 수익률을 뺀 값입니다. 카드의 과거 성적은 1년 뒤 기준이라 몇 주 안의 수익률과 바로 비교하지 마세요.' + (rows.length > 20 ? ' 최근 20건만 보입니다.' : '') + '</div>';
+    host.hidden = false;
+  })();
+
+  // ---- 내 보유와 분할 매수 계획 -----------------------------------------------------------------
+  // 수량·평단·종목별 예산을 넣으면 평가손익과 비중, 지금 단계까지 계획한 금액 중 더 살 금액, 다음 단계 가격을 보여 준다.
+  // 이 저장소와 페이지는 공개라 보유 정보는 이 브라우저(localStorage)에만 둔다. 다른 기기로 옮길 때는 [내보내기]·[가져오기].
+  (function buildHoldings() {
+    const box = document.getElementById("holdings"), body = document.getElementById("holdBody");
+    if (!box || !body) return;
+    const STORE = "stock-holdings-v1";
+    const state = { alloc: [30, 30, 40], rows: {} };
+    try { const s = JSON.parse(localStorage.getItem(STORE) || "null"); if (s && typeof s === "object") Object.assign(state, s); } catch (e) { /* 빈 상태로 시작 */ }
+    const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* 저장 못 해도 화면은 그대로 */ } };
+    const list = stocks.filter(s => s.kind !== "index" && s.series && s.series.length);
+    const fx = s => s.currency === "$" ? (usdKrw || 0) : 1;
+    const num = v => { const n = Number(String(v === undefined || v === null ? "" : v).replace(/[^\d.]/g, "")); return isFinite(n) ? n : 0; };
+    const won = v => { const a = Math.abs(v), sg = v < 0 ? "−" : ""; return a >= 1e8 ? sg + koWon(a) + " 원" : sg + Math.round(a).toLocaleString("en-US") + "원"; };
+    function calc() {
+      const al = state.alloc.map(num);
+      const out = list.map(s => {
+        const r = state.rows[s.symbol] || {}, q = num(r.qty), avg = num(r.avg), bud = num(r.budget);
+        const last = s.series[s.series.length - 1], f = fx(s);
+        const lvl = s.dip ? s.dip.level : 0;
+        const value = q * last * f, cost = q * avg * f;
+        const planned = bud * al.slice(0, lvl).reduce((a, b) => a + b, 0) / 100;
+        const steps = s.dip && s.dip.steps ? s.dip.steps : [];
+        const nextStep = steps[lvl];
+        const nextPx = nextStep && s.rangeHigh ? s.rangeHigh * (1 - nextStep / 100) : null;
+        return { s, q, avg, bud, last, value, cost, pl: cost ? (value / cost - 1) * 100 : null, lvl, more: Math.max(0, planned - cost),
+          nextPx, nextGap: nextPx ? (nextPx / last - 1) * 100 : null, nextLabel: nextStep ? (lvl + 1) + "단계" : "" };
+      });
+      const total = out.reduce((a, r) => a + r.value, 0);
+      out.forEach(r => { r.weight = total ? r.value / total * 100 : null; });
+      return { out, total, cost: out.reduce((a, r) => a + r.cost, 0), more: out.reduce((a, r) => a + r.more, 0) };
+    }
+    function render() {
+      const { out, total, cost, more } = calc();
+      const inp = (sym, k, v, cls) => '<input class="hd-in' + (cls ? " " + cls : "") + '" data-h="' + esc(sym) + '" data-k="' + k + '" inputmode="decimal" autocomplete="off" value="' + (v ? esc(String(v)) : "") + '" placeholder="0" aria-label="' + esc(sym + " " + k) + '">';
+      const allocIn = i => (i + 1) + '단계 <input class="hd-in" data-alloc="' + i + '" inputmode="decimal" value="' + esc(String(state.alloc[i])) + '" style="width:4em" aria-label="' + (i + 1) + '단계 비율">';
+      const totalPl = cost ? (total / cost - 1) * 100 : null;
+      body.innerHTML =
+        '<div class="hd-bar"><span>단계별로 나눠 살 비율(%)</span>' + [0, 1, 2].map(allocIn).join(" ") +
+        '<button type="button" data-hd="export">내보내기(복사)</button><button type="button" data-hd="import">가져오기</button></div>' +
+        '<div class="hd-wrap"><table class="hd-table"><tr><th>종목</th><th>수량</th><th>평단</th><th>지금</th><th>평가손익</th><th>평가금액</th><th>비중</th>' +
+        '<th>종목 예산(원)</th><th>지금 단계</th><th>단계까지 더 살 금액</th><th>다음 단계 가격</th></tr>' +
+        out.map(r => '<tr><td>' + esc(r.s.name) + '</td><td>' + inp(r.s.symbol, "qty", r.q) + '</td><td>' + inp(r.s.symbol, "avg", r.avg) + '</td>' +
+          '<td>' + esc(r.s.currency + fmtNum(r.last, r.s.currency)) + '</td>' +
+          '<td class="' + dirCls(r.pl) + '">' + (r.pl === null ? "–" : fmtPct(r.pl)) + '</td><td>' + (r.value ? won(r.value) : "–") + '</td>' +
+          '<td>' + (r.weight ? r.weight.toFixed(1) + "%" : "–") + '</td><td>' + inp(r.s.symbol, "budget", r.bud, "wide") + '</td>' +
+          '<td>' + (r.lvl ? r.lvl + "단계" : "–") + '</td><td>' + (r.bud && r.lvl ? won(r.more) : "–") + '</td>' +
+          '<td>' + (r.nextPx ? esc(r.s.currency + fmtNum(r.nextPx, r.s.currency)) + ' <span class="sl-start">(' + r.nextLabel + ', ' + fmtPct(r.nextGap) + ')</span>' : "–") + '</td></tr>').join("") +
+        '<tr><td><b>합계</b></td><td></td><td></td><td></td><td class="' + dirCls(totalPl) + '">' + (totalPl === null ? "–" : fmtPct(totalPl)) + '</td>' +
+        '<td><b>' + (total ? won(total) : "–") + '</b></td><td></td><td></td><td></td><td><b>' + (more ? won(more) : "–") + '</b></td><td></td></tr></table></div>' +
+        '<div class="hd-note">넣은 값은 이 브라우저에만 저장되고 저장소·서버로 보내지 않습니다. 평단은 그 종목 통화로 넣습니다. 달러 종목은 오늘 원/달러 환율(' +
+        fmtNum(usdKrw || 0, "₩") + '원)로 원화 평가했습니다. "단계까지 더 살 금액"은 종목 예산 × 지금 단계까지의 비율 합에서 이미 산 금액(수량 × 평단)을 뺀 값입니다. ' +
+        '다음 단계 가격은 52주 고점 대비 하락 기준입니다(이평선 기준은 카드 참고).</div>';
+    }
+    box.hidden = false;
+    render();
+    body.addEventListener("change", e => {
+      const a = e.target.closest("[data-alloc]");
+      if (a) { state.alloc[+a.dataset.alloc] = num(a.value); save(); render(); return; }
+      const h = e.target.closest("[data-h]");
+      if (!h) return;
+      const r = state.rows[h.dataset.h] = state.rows[h.dataset.h] || {};
+      r[h.dataset.k] = h.value.replace(/[^\d.]/g, "");
+      save();
+      render();
+    });
+    body.addEventListener("click", e => {
+      const b = e.target.closest("[data-hd]");
+      if (!b) return;
+      if (b.dataset.hd === "export") {
+        const done = ok => { const o = b.textContent; b.textContent = ok ? "복사했습니다" : "복사하지 못했습니다"; setTimeout(() => { b.textContent = o; }, 1500); };
+        if (navigator.clipboard) navigator.clipboard.writeText(JSON.stringify(state)).then(() => done(true), () => done(false)); else done(false);
+      } else {
+        const text = window.prompt("다른 기기에서 [내보내기]로 복사한 글을 붙여 넣으세요");
+        if (!text) return;
+        try { const s = JSON.parse(text); if (s && s.rows) { Object.assign(state, s); save(); render(); } } catch (err) { window.alert("읽을 수 없는 글입니다."); }
+      }
     });
   })();
 
@@ -3641,7 +3855,9 @@
   (function buildNav() {
     const nav = document.getElementById("jump-nav");
     const links = [["overview", "한눈 요약"]];
+    if (!document.getElementById("holdings").hidden) links.push(["holdings", "내 보유"]);
     if (!document.getElementById("compare").hidden) links.push(["compare", "수익률 비교"]);
+    if (!document.getElementById("siglog").hidden) links.push(["siglog", "신호 기록"]);
     if (!document.getElementById("schedule").hidden) links.push(["schedule", "일정"]);
     groupNames.forEach((g, gi) => links.push(["grp-" + gi, g]));
     nav.innerHTML = links.map(([id, label]) => '<a href="#' + id + '">' + esc(label) + '</a>').join("");

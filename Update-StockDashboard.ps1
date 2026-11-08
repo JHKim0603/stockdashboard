@@ -361,23 +361,8 @@ $spamKeywords = @("카지노", "casino", "바카라", "baccarat", "슬롯머신"
     "포커(?!스)", "사설놀이터", "머니상(?!승)", "성인용품", "(?<!분)야동", "비아그라")
 $spamSources = @("Calgary Roughnecks", "icaremn\.com", "Spazio Aperto Salento", "Platea Magazine", "plateamagazine", "casinotoki")
 $script:spamBlocked = 0
-function Test-SpamHeadline {
-    param([string]$title, [string]$source)
-    # 언론사 페이지의 빈 틀 글자가 제목 자리에 그대로 오는 일이 있다(2026-10-30 알파벳 'META_TITLE_QUOTE').
-    # 대문자·숫자를 밑줄로 이은 한 단어나 빈 제목은 기사 제목이 아니므로 스팸처럼 거른다.
-    if ([string]::IsNullOrWhiteSpace($title) -or $title.Trim() -cmatch '^[A-Z0-9]+(_[A-Z0-9]+)+$') {
-        $script:spamBlocked++
-        Write-Host "    (제목 아님 차단: $source | $title)"
-        return $true
-    }
-    $haystack = "$title $source"
-    $hit = @($spamKeywords | Where-Object { $haystack -match $_ }) + @($spamSources | Where-Object { $source -and $source -match $_ })
-    if (-not $hit.Count) { return $false }
-    # 걸러낸 제목을 실행 기록에 남긴다. 정상 기사가 잘못 걸리면 여기서 보인다.
-    $script:spamBlocked++
-    Write-Host "    (스팸 차단 '$($hit[0])': $source | $title)"
-    return $true
-}
+# Test-SpamHeadline 은 work-dashboard·stockdashboard 가 함께 쓰는 news-filter.ps1 에 있다(위 목록을 그대로 쓴다).
+. (Join-Path $PSScriptRoot "news-filter.ps1")
 
 function Get-NewsHeadlines {
     # Google News RSS 는 관련도순이고 기간을 묻지 않으면 기간을 따지지 않는다. 그래서 앞에서
@@ -1129,7 +1114,8 @@ $usdKrw = $null
 $usdKrwSeries = $null
 try {
     # 1y range doubles as history for the FX trend chart, not just the topbar's latest value.
-    $fxResp = Invoke-RestMethod -Uri "https://query1.finance.yahoo.com/v8/finance/chart/KRW=X?interval=1d&range=1y" -Headers $headers
+    # 2026-11-08: 2y 로 늘렸다. 페이지의 [원화 기준](미국 종목을 원화로 바꾼 수익률)이 수익률 비교의 2년·직접 기간까지 덮게 하려고.
+    $fxResp = Invoke-RestMethod -Uri "https://query1.finance.yahoo.com/v8/finance/chart/KRW=X?interval=1d&range=2y" -Headers $headers
     $fxResult = $fxResp.chart.result[0]
     $usdKrw = [math]::Round([double]$fxResult.meta.regularMarketPrice, 2)
 
@@ -1360,6 +1346,9 @@ $stripDefs = @(
     @{ sym = "^VIX";    name = "VIX(변동성)";       dp = 2 }
     @{ sym = "KRW=X";   name = "원/달러 환율";      dp = 2; suffix = "원" }
     @{ sym = "BTC-KRW"; name = "비트코인";          dp = 0; prefix = "₩" }
+    # 2026-11-08 추가: 반도체·빅테크 값에 영향이 큰 금리와 달러. 금리는 % 변화 대신 bp(0.01%p)로 적는다(rate).
+    @{ sym = "^TNX";     name = "미국 10년물 금리"; dp = 2; suffix = "%"; rate = $true }
+    @{ sym = "DX-Y.NYB"; name = "달러인덱스";       dp = 2 }
 )
 function Get-StripSeries {
     param($sym)
@@ -1391,6 +1380,8 @@ $marketStrip = @(foreach ($d in $stripDefs) {
         else { Get-StripSeries $d.sym }
     if (-not $src -or @($src.series).Count -lt 2) { continue }
     $sr = @($src.series | ForEach-Object { [double]$_ })
+    # ^TNX 는 예전에 금리 × 10(42.5 = 4.25%)으로 오던 때가 있었다. 20 을 넘으면 10 으로 나눠 % 로 맞춘다.
+    if ($d.rate -and $sr[-1] -gt 20) { $sr = @($sr | ForEach-Object { [math]::Round($_ / 10, 3) }) }
     $ds = @($src.dates)
     $n = $sr.Count
     # 작은 그래프는 최근 1개월. 코인은 주말에도 거래하므로 개수가 아니라 날짜로 자른다.
@@ -1410,6 +1401,8 @@ $marketStrip = @(foreach ($d in $stripDefs) {
         date   = [string]$ds[-1]
         spark  = @($sr[$k..($n - 1)])
         card   = [bool]$inWatch
+        rate   = [bool]$d.rate
+        bp     = if ($d.rate) { [math]::Round(($sr[$n - 1] - $sr[$n - 2]) * 100, 1) } else { $null }
     }
 })
 Write-Host "시장 띠 $($marketStrip.Count)/$($stripDefs.Count)개"
@@ -2018,6 +2011,14 @@ $mk = @()
 foreach ($pair in @(@{ sym = "^KQ11"; name = "코스닥" }, @{ sym = "^GSPC"; name = "S&P 500" }, @{ sym = "^SOX"; name = "필라델피아 반도체지수" })) {
     if ($stripBy.ContainsKey($pair.sym)) { $mk += "$($pair.name)$(Get-Josa $pair.name '은' '는') $(& $mvEnd ([double]$stripBy[$pair.sym].d1))" }
 }
+# 금리·달러: 하루에 10bp(0.1%p) 넘게 움직였거나 달러인덱스가 0.7% 넘게 움직였을 때만 적는다(평소 움직임은 띠에서 본다).
+if ($stripBy.ContainsKey("^TNX") -and [math]::Abs([double]$stripBy["^TNX"].bp) -ge 10) {
+    $t10 = $stripBy["^TNX"]
+    $mk += "미국 10년물 금리가 $(([double]$t10.last).ToString('0.00'))%로 하루 사이 $(([math]::Abs([double]$t10.bp)).ToString('0'))bp $(if ([double]$t10.bp -gt 0) { '올랐습니다' } else { '내렸습니다' })."
+}
+if ($stripBy.ContainsKey("DX-Y.NYB") -and [math]::Abs([double]$stripBy["DX-Y.NYB"].d1) -ge 0.7) {
+    $mk += "달러인덱스는 $(& $mvEnd ([double]$stripBy['DX-Y.NYB'].d1))"
+}
 if ($stripBy.ContainsKey("^VIX")) {
     $vix = [double]$stripBy["^VIX"].last
     $vixTxt = $vix.ToString("0.0")
@@ -2054,6 +2055,111 @@ if ($maHit.Count) {
 }
 if (-not $sig.Count) { $sig += "분할 매수 단계나 이평선 도달 매수 기준에 해당하는 종목은 없습니다." }
 Add-Brief "매수 신호" ($sig -join " ")
+
+# --- 먼저 볼 종목 (2026-11-08) ----------------------------------------------------------------
+# 시장 전체가 빠지면 관심 종목 대부분이 분할 매수 단계에 들어 신호만으로는 구분이 안 된다(11/7: 14개 중 12개).
+# 단계에 든 종목을 네 가지로 점수 내 '먼저 볼 3개'를 고른다. 사라는 뜻이 아니라 살펴볼 순서다.
+#   과거 성적 35점: 그 분야·그 단계 신호의 1년 뒤 백분위(backtest-stats, 50 = 아무 날이나 산 것). 45 이하 0점, 70 이상 만점.
+#   단계 15점: 3단계 15, 2단계 10, 1단계 5.
+#   시장보다 더 빠짐 25점: 최근 1개월 수익률 - 시장(국내 코스피, 미국 나스닥) 수익률. -30%p 이하 만점. 지수는 중간값.
+#   평소보다 큰 하락 25점: 최근 1개월 하락이 평소 1개월 움직임(표준편차)의 몇 배인지. 2배 이상 만점.
+$clamp01 = { param([double]$v) [math]::Max(0.0, [math]::Min(1.0, $v)) }
+$prioList = @(foreach ($s in @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -ge 1 })) {
+    $pct = if ($s.signalStats -and $s.signalStats.dip -and $null -ne $s.signalStats.dip.pct1y) { [double]$s.signalStats.dip.pct1y } else { 50 }
+    $sHist = 35 * (& $clamp01 (($pct - 45) / 25))
+    $sStage = 5 * [int]$s.dip.level
+    $rel = if ($null -ne $s.relM1) { [double]$s.relM1 } else { $null }
+    $sRel = if ($null -ne $rel) { 25 * (& $clamp01 (-$rel / 30)) } else { 12.5 }
+    $m1 = if ($s.perf) { $s.perf.m1 } else { $null }
+    $thr = if ($s.perf -and $s.perf.thr) { $s.perf.thr.m1 } else { $null }
+    $z = if ($null -ne $m1 -and $thr) { -[double]$m1 / [double]$thr } else { 0 }
+    $sZ = 25 * (& $clamp01 ($z / 2))
+    $why = @("$($s.dip.label)")
+    if ($null -ne $rel -and $rel -le -5) { $why += "시장보다 $([math]::Abs($rel).ToString('0'))%p 더 빠짐" }
+    if ($z -ge 1) { $why += "평소 한 달 움직임의 $($z.ToString('0.0'))배 하락" }
+    # 브리핑에서 종목 이름 뒤 괄호 안에 들어가므로 괄호를 겹쳐 쓰지 않는다.
+    if ($pct -ge 60 -or $pct -le 50) { $why += "과거 성적 백분위 $([int]$pct)" }
+    [PSCustomObject]@{ symbol = $s.symbol; name = $s.name; score = [math]::Round($sHist + $sStage + $sRel + $sZ, 1); why = $why
+        parts = [PSCustomObject]@{ hist = [math]::Round($sHist, 1); stage = $sStage; rel = [math]::Round($sRel, 1); z = [math]::Round($sZ, 1) } }
+})
+$prioList = @($prioList | Sort-Object score -Descending)
+for ($i = 0; $i -lt $prioList.Count; $i++) {
+    $pr = $prioList[$i]
+    $st = @($stocks | Where-Object { $_.symbol -eq $pr.symbol })[0]
+    if ($st) { $st | Add-Member -NotePropertyName prio -NotePropertyValue ([PSCustomObject]@{ rank = $i + 1; of = $prioList.Count; score = $pr.score; why = $pr.why; parts = $pr.parts }) -Force }
+}
+# 단계에 든 종목이 세 개 이상일 때만 브리핑에 순서를 적는다(한두 개면 매수 신호 줄로 충분하다).
+if ($prioList.Count -ge 3) {
+    $top = @($prioList | Select-Object -First 3)
+    Add-Brief "먼저 볼 종목" ("단계에 든 $($prioList.Count)개 중 " + (($top | ForEach-Object { "$($_.name)($(@($_.why | Select-Object -Skip 1) -join ', '))" }) -join ', ') + " 순으로 살펴볼 만합니다." -replace '\(\)', '')
+}
+
+# --- 신호 실전 기록부 (2026-11-08) -------------------------------------------------------------
+# 과거 10년 검증(backtest)은 지난 일이다. 앞으로 신호가 켜진 날짜와 가격을 signal-log.json 에 남겨, 그 뒤 실제 수익률을
+# 과거 성적과 나란히 본다. 워크플로가 다른 캐시와 함께 커밋한다.
+#   분할 단계: 0단계에서 1단계 이상으로 들어간 날이 한 '구간'의 시작. 구간 안에서 더 높은 단계에 처음 든 날마다 한 줄.
+#   단계가 0으로 돌아오면 구간이 끝난다(끝난 날을 적는다). 끝난 뒤 5일 안에 다시 들면 같은 구간으로 이어 본다(오락가락 방지).
+#   이평선 매수 기준: 켜진 날 한 줄. 같은 종목에서 20일 안에 다시 켜지면 새로 적지 않는다.
+#   기록을 처음 시작한 날 이미 단계 안에 있던 종목은 atStart = true 로 표시한다(신호 첫날 가격이 아니다).
+$signalLogPath = Join-Path $PSScriptRoot "signal-log.json"
+$sigLog = $null
+if (Test-Path $signalLogPath) {
+    try { $sigLog = Get-Content $signalLogPath -Raw -Encoding UTF8 | ConvertFrom-Json } catch { Write-Warning "signal-log.json 읽기 실패: $($_.Exception.Message)" }
+}
+$firstLog = -not $sigLog
+$entries = New-Object System.Collections.ArrayList
+$episodes = @{}
+if ($sigLog) {
+    foreach ($e in @($sigLog.entries)) { if ($e) { [void]$entries.Add($e) } }
+    if ($sigLog.episodes) { foreach ($pp in $sigLog.episodes.PSObject.Properties) { $episodes[$pp.Name] = $pp.Value } }
+}
+$benchOf = @{ kr = "^KS11"; us = "^IXIC" }
+foreach ($s in $stocks) {
+    if (-not $s.series -or @($s.series).Count -lt 2) { continue }
+    $day = [string]@($s.dates)[-1]
+    $px = [double]@($s.series)[-1]
+    $bSym = if ($benchOf.ContainsKey([string]$s.kind)) { $benchOf[[string]$s.kind] } else { $null }
+    $bSt = if ($bSym) { @($stocks | Where-Object { $_.symbol -eq $bSym })[0] } else { $null }
+    $bPx = if ($bSt) { [double]@($bSt.series)[-1] } else { $null }
+    $lvl = if ($s.dip) { [int]$s.dip.level } else { 0 }
+    $ep = $episodes[[string]$s.symbol]
+    if ($lvl -ge 1) {
+        $reopen = $ep -and $ep.end -and ((([DateTime]$day) - ([DateTime]$ep.end)).TotalDays -le 5)
+        if (-not $ep -or ($ep.end -and -not $reopen)) {
+            $ep = [PSCustomObject]@{ start = $day; maxLevel = 0; end = $null }
+        } elseif ($reopen) { $ep.end = $null }
+        if ($lvl -gt [int]$ep.maxLevel) {
+            [void]$entries.Add([PSCustomObject]@{ symbol = $s.symbol; name = $s.name; kind = $s.kind; signal = [string]$s.dip.label; level = $lvl
+                date = $day; price = $px; currency = $s.currency; bench = $bSym; benchPrice = $bPx; atStart = [bool]$firstLog })
+            $ep.maxLevel = $lvl
+            Write-Host "  신호 기록: $($s.name) $($s.dip.label) $day $px"
+        }
+        $episodes[[string]$s.symbol] = $ep
+    } elseif ($ep -and -not $ep.end) {
+        $ep.end = $day
+        $episodes[[string]$s.symbol] = $ep
+    }
+    $hit = @($s.maLevels | Where-Object { $_ -and $_.buySignal })
+    if ($hit.Count) {
+        $recent = @($entries | Where-Object { $_.symbol -eq $s.symbol -and $_.signal -like "이평선*" -and ((([DateTime]$day) - ([DateTime]$_.date)).TotalDays -lt 20) })
+        if (-not $recent.Count) {
+            [void]$entries.Add([PSCustomObject]@{ symbol = $s.symbol; name = $s.name; kind = $s.kind; signal = "이평선 매수 기준($($hit[0].window)일선)"; level = 0
+                date = $day; price = $px; currency = $s.currency; bench = $bSym; benchPrice = $bPx; atStart = $false })
+            Write-Host "  신호 기록: $($s.name) 이평선 $($hit[0].window)일선 $day $px"
+        }
+    }
+}
+$sigLogOut = [ordered]@{
+    "//"     = "신호 실전 기록부. Update-StockDashboard.ps1 이 신호가 켜진 날짜와 가격을 남기고 대시보드가 그 뒤 수익률을 계산한다."
+    started  = if ($sigLog -and $sigLog.started) { [string]$sigLog.started } else { $nowKst.ToString("yyyy-MM-dd") }
+    entries  = @($entries | Sort-Object date, symbol)
+    episodes = $episodes
+}
+try {
+    $sigJson = ConvertTo-Json -InputObject $sigLogOut -Depth 6
+    [System.IO.File]::WriteAllText($signalLogPath, $sigJson, (New-Object System.Text.UTF8Encoding $false))
+} catch { Write-Warning "signal-log.json 저장 실패: $($_.Exception.Message)" }
+$signalLogJs = [PSCustomObject]@{ started = $sigLogOut.started; entries = @($sigLogOut.entries) }
 $mood = @()
 if ($fearGreed) { $mood += "공포·탐욕지수는 $($fearGreed.score)$(Get-JosaRo ([string]$fearGreed.score)) $($fearGreed.ratingKo) 구간입니다." }
 $soonEnd = $nowKst.Date.AddDays(3).ToString("yyyy-MM-dd")
@@ -2084,10 +2190,11 @@ $usdKrwJson = ConvertTo-JsonOrNull -InputObject $usdKrw
 $usdKrwSeriesJson = ConvertTo-JsonOrNull -InputObject $usdKrwSeries -Depth 4
 $fearGreedJson = ConvertTo-JsonOrNull -InputObject $fearGreed
 $stripJson = ConvertTo-JsonOrNull -InputObject @($marketStrip) -Depth 4
+$signalLogJson = ConvertTo-JsonOrNull -InputObject $signalLogJs -Depth 6
 $fetchedAt = $nowKst.ToString("yyyy-MM-ddTHH:mm:ss") + "+09:00"  # $nowKst's DateTimeKind is still Utc after the manual +9h shift, so "zzz" would report +00:00 — append the known-fixed KST offset literally instead.
 
 $template = Get-Content -Path (Join-Path $root "template.html") -Raw -Encoding UTF8
-$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson).Replace("__BRIEF_JSON__", $briefJson).Replace("__HEADLINE_JSON__", $headlineJson)
+$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson).Replace("__BRIEF_JSON__", $briefJson).Replace("__SIGNAL_LOG_JSON__", $signalLogJson).Replace("__HEADLINE_JSON__", $headlineJson)
 
 $outPath = Join-Path $root "dashboard.html"
 Set-Content -Path $outPath -Value $output -Encoding UTF8
@@ -2565,7 +2672,7 @@ if ($emailKb -gt 90) {
 $problems = New-Object System.Collections.Generic.List[string]
 
 $renderedHtml = Get-Content -Path $outPath -Raw -Encoding UTF8
-foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__", "__HIGHLIGHTS_JSON__", "__SCHEDULE_JSON__", "__STRIP_JSON__", "__BRIEF_JSON__")) {
+foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__", "__HIGHLIGHTS_JSON__", "__SCHEDULE_JSON__", "__STRIP_JSON__", "__BRIEF_JSON__", "__SIGNAL_LOG_JSON__")) {
     if ($renderedHtml -like "*$token*") { $problems.Add("템플릿 치환 누락: $token") }
 }
 
