@@ -15,6 +15,10 @@
     "ko": "\"역대 최악의 버블\": 마이크론은 매도 전 193% 하락했습니다. 구매하기에는 너무 늦었나요?",
     "seen": "2026-11-06"
   },
+  "[포토] 엔비디아 시총 260조 증발…삼전닉스는 반등": {
+    "ko": "[포토] 엔비디아 시총 260조 영화관…삼전닉스는 반등",
+    "seen": "2026-11-10"
+  },
   "[포토] 코스피 지수, '5550선으로 후퇴'": {
     "ko": "[포토] 코스피 지수, '5550선으로 후퇴'",
     "seen": "2026-10-20"
@@ -1475,9 +1479,17 @@
     "ko": "ETF는 10월 30일에 Micron Technology(MU)를 매수합니다.",
     "seen": "2026-11-03"
   },
+  "ETFs Are Buying Microsoft (MSFT) on Nov. 6": {
+    "ko": "ETF는 11월 6일에 마이크로소프트(MSFT)를 인수합니다",
+    "seen": "2026-11-10"
+  },
   "ETFs Are Buying Palantir (PLTR) on Friday": {
     "ko": "ETF는 금요일에 Palantir (PLTR)를 구매하고 있습니다",
     "seen": "2026-10-13"
+  },
+  "ETFs Are Buying Palantir (PLTR) on Nov. 6": {
+    "ko": "ETF는 11월 6일에 Palantir(PLTR)을 매수하고 있습니다.",
+    "seen": "2026-11-10"
   },
   "ETFs Are Buying Palantir (PLTR) on Wednesday": {
     "ko": "ETF는 수요일에 Palantir (PLTR)을 구매하고 있습니다",
@@ -1550,6 +1562,10 @@
   "Fast-Money Systematic Funds Stoked $2.3 Trillion Tech-Stock Rout": {
     "ko": "Fast-Money Systematic Funds로 2조 3천억 달러의 기술주 손실이 발생했습니다.",
     "seen": "2026-11-06"
+  },
+  "Fear in global markets eases as AI concerns cool, Middle East remains calm": {
+    "ko": "AI 우려가 진정되면서 글로벌 시장의 두려움은 완화되고 중동은 평온함을 유지",
+    "seen": "2026-11-10"
   },
   "Fewer stocks are carrying the market than at any time since the dot-com peak": {
     "ko": "닷컴 정점 이후 어느 때보다 시장을 주도하는 주식이 적습니다.",
@@ -2507,6 +2523,10 @@
     "ko": "NVIDIA의 저렴한 Valuation은 주식 투자의 기회인가?",
     "seen": "2026-11-04"
   },
+  "Is One Lagging Number Reason Enough To Sell Palantir Stock?": {
+    "ko": "Palantir 주식을 매도하기에 충분한 이유가 하나입니까?",
+    "seen": "2026-11-10"
+  },
   "Is Palantir Stock a Buy After its Latest Earnings Report?": {
     "ko": "Palantir 주식은 최근 수익 보고서 이후 매수 대상인가요?",
     "seen": "2026-11-04"
@@ -2798,6 +2818,10 @@
   "Lam Research, Micron Tech among market cap stock movers on Friday": {
     "ko": "금요일 시가총액 변동자 중 Lam Research, Micron Tech",
     "seen": "2026-11-07"
+  },
+  "Last week, the Nasdaq Composite index entered correction territory having declined more than 10% from the record high level achieved last month. Both the Nasdaq and S&P 500 showed a positive session before the weekend (6 November), but over one mo": {
+    "ko": "지난 주 나스닥 종합지수는 지난달 달성한 사상 최고 수준보다 10% 이상 하락하며 조정 영역에 진입했습니다. 나스닥과 S&P 500 모두 주말(11월 6일) 이전에 긍정적인 세션을 보였으나 한 달이 넘었습니다.",
+    "seen": "2026-11-10"
   },
   "Learn Why The Bull Case For Micron Stock Could Change Following Memory Shortage Warning": {
     "ko": "메모리 부족 경고에 따라 Micron 주식의 상승세가 바뀔 수 있는 이유를 알아보세요.",
@@ -3346,6 +3370,10 @@
   "Micron Technology announces Idaho investment plan: Will MU hold $920.09 support?": {
     "ko": "Micron Technology, 아이다호 투자 계획 발표: MU가 $920.09 지원을 제공합니까?",
     "seen": "2026-10-28"
+  },
+  "Micron Technology climbs 6% amid broad tech rally (MU:NASDAQ)": {
+    "ko": "광범위한 기술 랠리 속에서 마이크론 테크놀로지(Micron Technology)가 6% 상승(MU:NASDAQ)",
+    "seen": "2026-11-10"
   },
   "Micron Technology Has Just Shared Great News (NASDAQ:MU)": {
     "ko": "Micron Technology가 방금 좋은 소식을 공유했습니다(NASDAQ:MU)",
@@ -4587,6 +4615,10 @@
     "ko": "나스닥 시가총액 2조 5천억 달러 급락",
     "seen": "2026-11-06"
   },
+  "Nasdaq Market Correction: History Is Clear About What Happens Next": {
+    "ko": "나스닥 시장 조정: 다음에 무슨 일이 일어날지에 대한 역사는 분명합니다",
+    "seen": "2026-11-10"
+  },
   "Nasdaq notches record high close as investors focus on earnings": {
     "ko": "투자자들이 실적에 집중함에 따라 나스닥은 사상 최고치를 기록했습니다.",
     "seen": "2026-10-06"
@@ -4939,6 +4971,10 @@
     "ko": "Nvidia(NVDA)가 더 넓은 시장을 능가합니다: 알아야 할 사항",
     "seen": "2026-10-06"
   },
+  "NVIDIA (NVDA) Sees $275.6 Million in Net ETF Selling on Nov. 6": {
+    "ko": "NVIDIA(NVDA), 11월 6일 순 ETF 순매도 2억 7,560만 달러 기록",
+    "seen": "2026-11-10"
+  },
   "NVIDIA (NVDA) Sees $682.3 Million in Net ETF Buying on Oct. 28": {
     "ko": "NVIDIA(NVDA), 10월 28일 ETF 순매수 6억 8,230만 달러 확인",
     "seen": "2026-10-30"
@@ -5207,6 +5243,10 @@
     "ko": "엔비디아 투자자들은 11월 17일에 주목해야 합니다",
     "seen": "2026-11-05"
   },
+  "Nvidia is 7% of the S&P 500, so if you have an index fund or pension, the Jensen Huang scandal is in your": {
+    "ko": "Nvidia는 S&P 500의 7%를 차지하므로 인덱스 펀드나 연금을 가지고 있다면 Jensen Huang 스캔들이 당신의",
+    "seen": "2026-11-10"
+  },
   "Nvidia is about 6% of the S&P 500. If Jensen Huang is ousted, there’s no clear successor — could chaos hit portfolios?": {
     "ko": "Nvidia는 S&P 500의 약 6%를 차지하고 있습니다. Jensen Huang이 축출되면 명확한 후임자가 없습니다. 혼란이 포트폴리오에 타격을 줄 수 있을까요?",
     "seen": "2026-11-10"
@@ -5362,6 +5402,10 @@
   "Nvidia Stock Drops. It’s Still the Best Chip Bet in an AI Slowdown.": {
     "ko": "엔비디아 주식 하락. AI 둔화 속에서도 여전히 최고의 칩 베팅입니다.",
     "seen": "2026-09-15"
+  },
+  "Nvidia stock edges higher as investors weigh potential fallout of CEO's affair with alleged spy": {
+    "ko": "엔비디아 주가는 투자자들이 CEO와 스파이 혐의와의 관계에 대한 잠재적 여파를 고려함에 따라 상승했습니다.",
+    "seen": "2026-11-10"
   },
   "Nvidia Stock Faces Critical Warning Sign. Is the AI Trade Breaking?": {
     "ko": "Nvidia 주식은 심각한 경고 신호에 직면해 있습니다. AI 거래가 중단되고 있습니까?",
@@ -5566,6 +5610,10 @@
   "Oil Prices Plunge 6%, Igniting US Stocks as Dow Surges Over 500 Points on First Trading Day of November": {
     "ko": "다우지수가 11월 첫 거래일에 500포인트 이상 급등하면서 유가가 6% 급락해 미국 주식에 불을 붙였습니다.",
     "seen": "2026-11-03"
+  },
+  "Oil slides and US technology stocks claw back last week’s losses": {
+    "ko": "오일 슬라이드와 미국 기술주는 지난주 손실을 만회했습니다.",
+    "seen": "2026-11-10"
   },
   "Okta (OKTA) Has Joined The S&P 500": {
     "ko": "Okta (OKTA)가 S&P 500에 합류했습니다",
@@ -5874,6 +5922,10 @@
   "Palantir Stock (PLTR) Is Trending on News that Cathie Wood Cut Her Position": {
     "ko": "Cathie Wood가 포지션을 삭감했다는 소식에 Palantir Stock(PLTR)이 인기를 끌고 있습니다.",
     "seen": "2026-09-11"
+  },
+  "Palantir Stock (PLTR) Rises 5.5% as AI Stocks Rebound (Nov 9)": {
+    "ko": "AI 주식 반등으로 Palantir 주식(PLTR)이 5.5% 상승(11월 9일)",
+    "seen": "2026-11-10"
   },
   "Palantir stock at $193 after a 4.4% Knox rebound: bull $213, bear $184 into the 2 November results": {
     "ko": "4.4% Knox 반등 후 Palantir 주가는 193달러입니다. 213달러 강세, 11월 2일 실적에 184달러 하락",
@@ -6562,6 +6614,10 @@
   "S&P 500 futures price on October 5, 2026": {
     "ko": "2026년 10월 5일 S&P 500 선물 가격",
     "seen": "2026-10-03"
+  },
+  "S&P 500 Futures Steady in Premarket Trading; Intercorp Finl Svcs, Sanmina Lead": {
+    "ko": "S&P 500 선물은 시장 전 거래에서 안정적입니다. Intercorp Finl Svcs, Sanmina 리드",
+    "seen": "2026-11-10"
   },
   "S&P 500 Index and Nasdaq Index: Tech Bets on a One-and-Done Fed Hike": {
     "ko": "S&P 500 지수 및 나스닥 지수: 일회성 연준 인상에 대한 기술 투자",
@@ -7755,6 +7811,10 @@
     "ko": "오늘의 주식 시장: 연준의 금리 결정에 앞서 다우, S&P 500, 나스닥이 상승할 예정",
     "seen": "2026-09-16"
   },
+  "Stock Market Today: Dow, S&P 500 Futures Rise, Nasdaq 100 Futures Fall as Trump Signals Iran War to End ‘Fairly Soon’ — CRWV, TTWO, BW In Focus": {
+    "ko": "오늘의 주식 시장: 트럼프가 이란 전쟁이 '상당히 곧' 끝날 것이라는 신호를 보내면서 다우, S&P 500 선물 상승, 나스닥 100 선물 하락 — CRWV, TTWO, BW 집중",
+    "seen": "2026-11-10"
+  },
   "Stock market today: Dow, S&P 500, Nasdaq fall as Treasury yields continue to climb": {
     "ko": "오늘의 주식 시장: 국채 수익률이 계속 상승하면서 Dow, S&P 500, Nasdaq은 하락했습니다.",
     "seen": "2026-09-29"
@@ -8647,6 +8707,10 @@
     "ko": "Microsoft 투자자는 무엇에 베팅하고 있습니까?",
     "seen": "2026-11-06"
   },
+  "What Are NVIDIA Investors Betting On?": {
+    "ko": "NVIDIA 투자자들은 무엇에 베팅하고 있나요?",
+    "seen": "2026-11-10"
+  },
   "What Are Palantir Stock Bulls Not Worried About?": {
     "ko": "Palantir 주식 황소가 걱정하지 않는 것은 무엇입니까?",
     "seen": "2026-10-07"
@@ -8695,6 +8759,10 @@
     "ko": "메모리 경쟁자의 돌파구 이후 Sandisk(SNDK)는 무엇을 관찰해야 합니까?",
     "seen": "2026-10-14"
   },
+  "What Explains The Move In SanDisk Stock?": {
+    "ko": "SanDisk 주식의 움직임을 설명하는 것은 무엇입니까?",
+    "seen": "2026-11-10"
+  },
   "What Happens To Microsoft Stock If Its AI Spending Keeps Climbing?": {
     "ko": "AI 지출이 계속 증가하면 Microsoft 주식은 어떻게 되나요?",
     "seen": "2026-09-17"
@@ -8702,6 +8770,10 @@
   "What Invesco S&P 500 Equal Weight Tech (RSPT) Bought: Okta Leads on Wednesday": {
     "ko": "Invesco S&P 500 Equal Weight Tech(RSPT)가 매수한 것: Okta가 수요일에 선두를 차지했습니다.",
     "seen": "2026-11-06"
+  },
+  "What Is Driving Palantir Stock?": {
+    "ko": "Palantir 주식을 이끄는 것은 무엇입니까?",
+    "seen": "2026-11-10"
   },
   "What Is Going on With Alphabet Stock on Thursday?": {
     "ko": "목요일에 알파벳 주식에 무슨 일이 일어나고 있나요?",
