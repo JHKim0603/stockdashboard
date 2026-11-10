@@ -186,27 +186,22 @@
     }
   ],
   "episodes": {
-    "MU": {
+    "000660.KS": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "NVDA": {
+    "GOOGL": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "PLTR": {
       "start": "2026-11-06",
       "maxLevel": 2,
       "end": null
     },
-    "SNDK": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "^IXIC": {
-      "start": "2026-11-06",
-      "maxLevel": 1,
-      "end": "2026-11-09"
-    },
-    "000660.KS": {
+    "MU": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -221,17 +216,7 @@
       "maxLevel": 2,
       "end": null
     },
-    "005930.KS": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "PLTR": {
-      "start": "2026-11-06",
-      "maxLevel": 2,
-      "end": null
-    },
-    "GOOGL": {
+    "SNDK": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -241,9 +226,24 @@
       "maxLevel": 2,
       "end": null
     },
+    "^IXIC": {
+      "start": "2026-11-06",
+      "maxLevel": 1,
+      "end": "2026-11-09"
+    },
     "^KS11": {
       "start": "2026-11-06",
       "maxLevel": 3,
+      "end": null
+    },
+    "005930.KS": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "NVDA": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
       "end": null
     }
   }
