@@ -363,6 +363,18 @@ $spamSources = @("Calgary Roughnecks", "icaremn\.com", "Spazio Aperto Salento", 
 $script:spamBlocked = 0
 # Test-SpamHeadline 은 work-dashboard·stockdashboard 가 함께 쓰는 news-filter.ps1 에 있다(위 목록을 그대로 쓴다).
 . (Join-Path $PSScriptRoot "news-filter.ps1")
+# 영문 투자 기사 중 낚시성 제목(예측·'지금 사야 하나'·유명인 말·몇 가지 이유 목록)과 그런 글이 대부분인 곳은 뺀다.
+# 번역하면 '예측: 2027년까지 Nvidia와 Palantir의 주가가 될 것입니다(힌트: 단 1개만 매수)'처럼 읽혔다(2026-11-06 점검).
+function Test-ClickbaitTitle {
+    param([string]$title, [string]$source)
+    if ($source -match '(?i)motley fool|24/7 wall|investorplace|insidermonkey|insider monkey|zacks investment research') { return $true }
+    $pats = @('(?i)^\s*(prediction|forecast)s?\s*:', '(?i)\bshould you (buy|sell)\b', '(?i)\bis it (time|too late) to (buy|sell)\b',
+              '(?i)\bbuy (now|before|and hold)\b', '(?i)\bbefore it''s too late\b', '(?i)\bmillionaire', '(?i)\bjim cramer\b',
+              '(?i)\b\d+\s+(reasons|stocks|things)\b', '(?i)\bno-brainer\b', '(?i)\bhand over fist\b', '(?i)\bforever\b',
+              '(?i)\bgenerational\b', '(?i)\bsmartest\b', '(?i)\bhint:')
+    foreach ($pt in $pats) { if ($title -match $pt) { return $true } }
+    $false
+}
 
 function Get-NewsHeadlines {
     # Google News RSS 는 관련도순이고 기간을 묻지 않으면 기간을 따지지 않는다. 그래서 앞에서
@@ -419,6 +431,7 @@ function Get-NewsHeadlines {
             if ($pubDate.UtcDateTime -lt $cutoff) { continue }
             # 자르기 전에 거른다. 자른 뒤에 거르면 스팸이 빠진 만큼 기사 수가 줄어든다.
             if (Test-SpamHeadline -title $title -source $source) { continue }
+            if ($lang -eq "en" -and (Test-ClickbaitTitle -title $title -source $source)) { continue }
             [PSCustomObject]@{
                 title   = $title
                 source  = $source
@@ -440,8 +453,8 @@ function Get-NewsHeadlines {
                 source        = $p.source
                 date          = $p.pubDate.ToString("yyyy-MM-dd")
                 link          = $p.link
-                # 번역 전이라 원문 기준으로 한 번 잡아두고, 번역이 붙으면 아래에서 다시 판별한다.
-                sentiment     = Get-NewsSentiment $p.title
+                # 영문 기사는 번역 제목으로 단어를 세면 엉뚱하게 갈려('다운그레이드'가 든 호평 기사가 악재) 표시하지 않는다.
+                sentiment     = $(if ($lang -eq "en") { "neutral" } else { Get-NewsSentiment $p.title })
             }
         })
     } catch {
@@ -754,12 +767,14 @@ function Get-StockSnapshot {
     }
 
     $lowsArr = $result.indicators.quote[0].low
+    $volArr  = $result.indicators.quote[0].volume
     $pairs = @(for ($i = 0; $i -lt $closes.Count; $i++) {
         if ($null -ne $closes[$i]) {
             [PSCustomObject]@{
                 Date  = ConvertTo-ExchangeDate $timestamps[$i]
                 Close = [math]::Round([double]$closes[$i], 2)
                 Low   = if ($lowsArr -and $null -ne $lowsArr[$i]) { [math]::Round([double]$lowsArr[$i], 2) } else { [math]::Round([double]$closes[$i], 2) }
+                Vol   = if ($volArr -and $null -ne $volArr[$i]) { [double]$volArr[$i] } else { 0 }
             }
         }
     })
@@ -777,13 +792,16 @@ function Get-StockSnapshot {
         $metaDate = ConvertTo-ExchangeDate $meta.regularMarketTime
         if ($pairs.Count -eq 0 -or $metaDate -gt $pairs[-1].Date) {
             $metaLow = if ($meta.regularMarketDayLow -and [double]$meta.regularMarketDayLow -gt 0) { [math]::Round([double]$meta.regularMarketDayLow, 2) } else { [math]::Round([double]$meta.regularMarketPrice, 2) }
-            $pairs += [PSCustomObject]@{ Date = $metaDate; Close = [math]::Round([double]$meta.regularMarketPrice, 2); Low = $metaLow }
+            $pairs += [PSCustomObject]@{ Date = $metaDate; Close = [math]::Round([double]$meta.regularMarketPrice, 2); Low = $metaLow
+                Vol = $(if ($meta.regularMarketVolume) { [double]$meta.regularMarketVolume } else { 0 }) }
         }
     }
 
     $fullSeries = @($pairs.Close)
     $fullLows   = @($pairs.Low)
     $fullDates  = @($pairs.Date)
+    # 카드 차트 아래 거래량 막대(최근 1년 260거래일). 시세 배열의 끝에 맞춰 둔다(앞쪽은 차트 기간 밖).
+    $fullVols   = @($pairs | Select-Object -Last 260 | ForEach-Object { [int64][math]::Round([double]$_.Vol) })
 
     # Today's volume against the stock's own 20-session average, from the volume array this same
     # response already carries. The average excludes the latest session by date, since the
@@ -865,6 +883,7 @@ function Get-StockSnapshot {
         series    = $fullSeries
         dates     = $fullDates
         volume    = $meta.regularMarketVolume
+        volumes   = $fullVols
         volumeRatio = $volumeRatio
         # 거래소 자체 이름. 시세 지연 점검에서 같은 장끼리만 비교하려면 이게 필요하다 —
         # MarketLabel 로는 KOSPI 지수와 나스닥 지수가 똑같이 "지수" 라 한 그룹이 돼버린다.
@@ -941,14 +960,14 @@ function Get-MaTrendComment {
     $a = $ma20[$i]; $b = $ma60[$i]; $c = $ma180[$i]
 
     $cross = Get-CrossSignal -series $series
-    if ($cross -eq "golden") { return @{ text = "골든크로스, 상승 전환"; tone = "up" } }
-    if ($cross -eq "dead")   { return @{ text = "데드크로스, 하락 전환"; tone = "down" } }
+    if ($cross -eq "golden") { return @{ text = "상승 전환(골든크로스)"; tone = "up" } }
+    if ($cross -eq "dead")   { return @{ text = "하락 전환(데드크로스)"; tone = "down" } }
 
     if ($null -eq $a -or $null -eq $b) { return $null }  # not enough history yet for even the 20/60 pair
 
     if ($null -ne $c) {
-        if ($last -gt $a -and $a -gt $b -and $b -gt $c) { return @{ text = "정배열, 상승 추세"; tone = "up" } }
-        if ($last -lt $a -and $a -lt $b -and $b -lt $c) { return @{ text = "역배열, 하락 추세"; tone = "down" } }
+        if ($last -gt $a -and $a -gt $b -and $b -gt $c) { return @{ text = "상승 추세(정배열)"; tone = "up" } }
+        if ($last -lt $a -and $a -lt $b -and $b -lt $c) { return @{ text = "하락 추세(역배열)"; tone = "down" } }
     }
 
     if ($a -gt $b) { return @{ text = "단기 상승"; tone = "up" } }
@@ -1222,6 +1241,10 @@ try {
             New-FgPoint "1개월 전" $fg.previous_1_month
             New-FgPoint "1년 전"  $fg.previous_1_year
         )
+        # 최근 1년 일별 값(같은 응답에 들어 있다). 날짜와 점수만 남긴다.
+        trend    = @(@($fgResp.fear_and_greed_historical.data) | Where-Object { $_ -and $null -ne $_.y } | ForEach-Object {
+            [PSCustomObject]@{ d = [DateTimeOffset]::FromUnixTimeMilliseconds([long]$_.x).ToString("yyyy-MM-dd"); s = [math]::Round([double]$_.y, 0) }
+        })
     }
 } catch {
     Write-Warning "Fear & Greed index fetch failed: $($_.Exception.Message)"
@@ -1281,8 +1304,8 @@ function Resolve-NewsTranslations {
             $hit.seen = $today          # 계속 쓰이는 제목은 정리 대상에서 살아남는다
             $n.titleOriginal = $n.title
             $n.title = $hit.ko
-            # 번역본과 원문 둘 다에서 키워드를 찾도록 합쳐서 판별 (번역이 키워드를 흐리는 경우 대비)
-            $n.sentiment = Get-NewsSentiment "$($n.title) $($n.titleOriginal)"
+            # 영문 기사는 호재·악재를 표시하지 않는다(위 수집 단계와 같은 이유).
+            $n.sentiment = "neutral"
             $applied++
         }
     }
@@ -1419,7 +1442,8 @@ Write-Host "시장 띠 $($marketStrip.Count)/$($stripDefs.Count)개"
 function ConvertTo-JsonOrNull {
     param($InputObject, $Depth = 4)
     if ($null -eq $InputObject) { return "null" }
-    $json = ConvertTo-Json -InputObject $InputObject -Depth $Depth
+    # 줄바꿈·들여쓰기 없이 한 줄로(페이지에 넣는 자료라 읽기 좋은 모양이 필요 없다). 들여 쓴 모양은 종목 자료만 800KB 가 넘었다.
+    $json = ConvertTo-Json -InputObject $InputObject -Depth $Depth -Compress
     if ($null -eq $json -or $json -eq "") { return "null" }
     return $json.Replace("</", "<\/")
 }
@@ -1661,10 +1685,10 @@ function Get-StockComment {
     param($st)
     $out = @()
     $out += switch -Wildcard ([string]$st.maTrend.text) {
-        "골든크로스*" { "20일선이 60일선을 넘어 상승으로 돌아섰습니다." }
-        "데드크로스*" { "20일선이 60일선 아래로 내려가 하락으로 돌아섰습니다." }
-        "정배열*"     { "이평선이 정배열이라 상승 추세입니다." }
-        "역배열*"     { "이평선이 역배열이라 하락 추세입니다." }
+        "*골든크로스*" { "20일선이 60일선을 넘어 상승으로 돌아섰습니다." }
+        "*데드크로스*" { "20일선이 60일선 아래로 내려가 하락으로 돌아섰습니다." }
+        "*정배열*"     { "이평선이 정배열이라 상승 추세입니다." }
+        "*역배열*"     { "이평선이 역배열이라 하락 추세입니다." }
         "단기 상승"   { "단기적으로 오르는 흐름입니다." }
         "단기 하락"   { "단기적으로 내리는 흐름입니다." }
         default       { "뚜렷한 추세는 없습니다." }
@@ -1739,6 +1763,11 @@ function Get-StatGroup {
     param($st)
     if ($st.kind -eq "index") { "지수" } elseif ($st.kind -eq "crypto") { "코인" } elseif ($st.group -eq "레버리지 ETF") { "레버리지 ETF" } else { "개별 종목" }
 }
+function Get-CompareWord {
+    param($a, $b)
+    $d = [double]$a - [double]$b
+    if ($d -ge 5) { "높았습니다" } elseif ($d -le -5) { "낮았습니다" } else { "비슷했습니다" }
+}
 function Get-SignalStat {
     param($st, [string]$signal)
     if (-not $btStats -or -not $btStats.groups) { return $null }
@@ -1753,9 +1782,10 @@ function Get-SignalStat {
         since = [string]$btStats.since
         # 카드·메일: 두 문장. 주목할 점: 한 문장(short).
         # 카드에서는 굵은 '과거 10년 성적' 뒤에 붙는다.
-        text  = "$($g)에서는 이 신호 뒤 1년이 지나 $($x.n)번 중 $($x.up)번 올랐습니다(아무 날이나 샀을 때 $($x.baseHit)%)." +
-                $(if ($mae) { " 산 뒤 3개월 안에 중간값 $mae% 더 내려갔습니다." } else { "" })
-        short = "과거 10년 1년 뒤 오른 비율은 $($x.hit)%였습니다(평소 $($x.baseHit)%)."
+        # '87%(평소 71%)'처럼 숫자만 두지 않고 평소보다 높았는지 낮았는지를 말로 붙인다(차이 5%p 안은 '비슷').
+        text  = "$($g)에서 이 신호 뒤 1년 보유했을 때 $($x.n)번 중 $($x.up)번($($x.hit)%) 올라, 아무 날이나 샀을 때($($x.baseHit)%)보다 $(Get-CompareWord $x.hit $x.baseHit)." +
+                $(if ($mae) { " 산 뒤 3개월 안에 보통 $mae% 더 내려갔습니다(중간값)." } else { "" })
+        short = "이 신호 뒤 1년 보유했을 때 오른 경우가 $($x.hit)%로, 아무 날이나 샀을 때($($x.baseHit)%)보다 $(Get-CompareWord $x.hit $x.baseHit)."
     }
 }
 foreach ($st in $stocks) {
