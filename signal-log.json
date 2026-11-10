@@ -170,12 +170,35 @@
       "bench": null,
       "benchPrice": null,
       "atStart": false
+    },
+    {
+      "symbol": "ETH-USD",
+      "name": "이더리움",
+      "kind": "crypto",
+      "signal": "이평선 매수 기준(180일선)",
+      "level": 0,
+      "date": "2026-11-10",
+      "price": 2120.64,
+      "currency": "$",
+      "bench": null,
+      "benchPrice": null,
+      "atStart": false
     }
   ],
   "episodes": {
-    "ETH-USD": {
-      "start": "2026-11-08",
+    "MU": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "NVDA": {
+      "start": "2026-11-06",
       "maxLevel": 2,
+      "end": null
+    },
+    "SNDK": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
       "end": null
     },
     "^IXIC": {
@@ -183,17 +206,7 @@
       "maxLevel": 1,
       "end": "2026-11-09"
     },
-    "PLTR": {
-      "start": "2026-11-06",
-      "maxLevel": 2,
-      "end": null
-    },
-    "^KS11": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "005930.KS": {
+    "000660.KS": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -208,27 +221,27 @@
       "maxLevel": 2,
       "end": null
     },
-    "000660.KS": {
+    "005930.KS": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "NVDA": {
+    "PLTR": {
       "start": "2026-11-06",
       "maxLevel": 2,
       "end": null
     },
-    "MU": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "SNDK": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
     "GOOGL": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "ETH-USD": {
+      "start": "2026-11-08",
+      "maxLevel": 2,
+      "end": null
+    },
+    "^KS11": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
