@@ -199,7 +199,27 @@
     }
   ],
   "episodes": {
-    "005930.KS": {
+    "QLD": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
+      "end": null
+    },
+    "^IXIC": {
+      "start": "2026-11-06",
+      "maxLevel": 1,
+      "end": "2026-11-09"
+    },
+    "000660.KS": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "PLTR": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
+      "end": null
+    },
+    "NVDA": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -214,7 +234,7 @@
       "maxLevel": 3,
       "end": null
     },
-    "NVDA": {
+    "SNDK": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -224,9 +244,9 @@
       "maxLevel": 2,
       "end": null
     },
-    "QLD": {
+    "005930.KS": {
       "start": "2026-11-06",
-      "maxLevel": 2,
+      "maxLevel": 3,
       "end": null
     },
     "ETH-USD": {
@@ -234,27 +254,7 @@
       "maxLevel": 2,
       "end": null
     },
-    "PLTR": {
-      "start": "2026-11-06",
-      "maxLevel": 2,
-      "end": null
-    },
-    "000660.KS": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
     "^KS11": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "^IXIC": {
-      "start": "2026-11-06",
-      "maxLevel": 1,
-      "end": "2026-11-09"
-    },
-    "SNDK": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
