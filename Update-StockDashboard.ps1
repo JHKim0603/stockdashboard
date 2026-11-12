@@ -1418,7 +1418,7 @@ function Get-MissedDay {
 }
 foreach ($s0 in $stocks) {
     $miss = Get-MissedDay $s0.dates (Get-MarketOf $s0.symbol $s0.kind)
-    $s0 | Add-Member -NotePropertyName d1Gap -NotePropertyValue $miss -Force
+    $s0 | Add-Member -NotePropertyName d1Gap -NotePropertyValue ([string]$miss) -Force
     if ($miss) { Write-Warning "$($s0.name): $miss 시세가 빠져 하루 등락이 이틀 치입니다." }
 }
 # 장중 실행: GitHub 예약 실행이 늦어 국내 장중(09:00~15:30)에 돌면 국내 종목 값은 종가가 아니라 그 시각 가격이다.
@@ -1459,7 +1459,8 @@ $marketStrip = @(foreach ($d in $stripDefs) {
         card   = [bool]$inWatch
         rate   = [bool]$d.rate
         bp     = if ($d.rate) { [math]::Round(($sr[$n - 1] - $sr[$n - 2]) * 100, 1) } else { $null }
-        gap    = (Get-MissedDay $ds (Get-MarketOf $d.sym ""))
+        # [string] 으로 감싼다. 누락이 없을 때 함수가 아무것도 내보내지 않으면 JSON 에 {} 로 들어가 화면 스크립트가 '누락 있음'으로 읽고 멈췄다.
+        gap    = [string](Get-MissedDay $ds (Get-MarketOf $d.sym ""))
     }
 })
 Write-Host "시장 띠 $($marketStrip.Count)/$($stripDefs.Count)개"
@@ -2182,7 +2183,7 @@ for ($i = 0; $i -lt $prioList.Count; $i++) {
 if ($prioList.Count -ge 3) {
     $top = @($prioList | Select-Object -First 3)
     # 괄호 속 '과거 성적 백분위 62, 시장보다 28%p 더 빠짐' 나열은 빼고 이름과 순서 기준만 적는다(이유는 화면의 ① ② ③ 설명에 있다).
-    Add-Brief "먼저 볼 종목" "$(($top | ForEach-Object { $_.name }) -join ', ') 순서입니다. 낙폭, 시장 대비 하락, 같은 신호의 과거 성과를 합친 점수입니다."
+    Add-Brief "먼저 볼 종목" "$(($top | ForEach-Object { $_.name }) -join ', ') 순서입니다(낙폭, 시장 대비 하락, 같은 신호의 과거 성과를 합친 점수 기준)."
 }
 
 # --- 신호 실전 기록부 (2026-11-08) -------------------------------------------------------------
@@ -2285,7 +2286,7 @@ $signalLogJson = ConvertTo-JsonOrNull -InputObject $signalLogJs -Depth 6
 $fetchedAt = $nowKst.ToString("yyyy-MM-ddTHH:mm:ss") + "+09:00"  # $nowKst's DateTimeKind is still Utc after the manual +9h shift, so "zzz" would report +00:00 — append the known-fixed KST offset literally instead.
 
 $template = Get-Content -Path (Join-Path $root "template.html") -Raw -Encoding UTF8
-$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson).Replace("__BRIEF_JSON__", $briefJson).Replace("__SIGNAL_LOG_JSON__", $signalLogJson).Replace("__HEADLINE_JSON__", $headlineJson)
+$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson).Replace("__BRIEF_JSON__", $briefJson).Replace("__SIGNAL_LOG_JSON__", $signalLogJson).Replace("__HEADLINE_JSON__", $headlineJson).Replace("__KR_INTRADAY__", $(if ($krIntraday) { $krTimeTxt } else { "" }))
 
 $outPath = Join-Path $root "dashboard.html"
 Set-Content -Path $outPath -Value $output -Encoding UTF8

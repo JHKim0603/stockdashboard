@@ -5,3 +5,4 @@ email-subject.txt
 # 과거 검증용 시세(backtest/fetch.py 가 받음)
 backtest/data/
 mail-charts/
+__pycache__/

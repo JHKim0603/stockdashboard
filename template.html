@@ -598,7 +598,7 @@
   .ov-ma.near { color: var(--accent); font-weight: 600; }
   .ov-ma.touch { display: inline-block; color: #fff; background: var(--accent); font-weight: 700; padding: 1px 8px; border-radius: 10px; }
   .hm-ma { display: inline-block; width: fit-content; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--surface); padding: 0 6px; border-radius: 4px; margin-top: 2px; }
-  .hm-prio { font-size: 11.5px; font-weight: 700; color: var(--ink-primary); }
+  .hm-prio { font-size: 12px; font-weight: 700; color: var(--ink-primary); }
   /* 신호 실전 기록부 · 내 보유와 분할 매수 계획 */
   .siglog-box, .hold-box {
     max-width: var(--page-max); margin: 0 auto 18px; background: var(--surface);
@@ -616,7 +616,7 @@
   .sl-table th, .hd-table th { font-size: 12px; font-weight: 600; color: var(--ink-muted); }
   .sl-table td:first-child, .sl-table th:first-child, .sl-table td:nth-child(2), .sl-table th:nth-child(2),
   .hd-table td:first-child, .hd-table th:first-child { text-align: left; }
-  .sl-start { font-size: 11px; color: var(--ink-muted); }
+  .sl-start { font-size: 12px; color: var(--ink-muted); }
   .hd-in { width: 6.5em; padding: 3px 6px; font: inherit; font-size: 13px; text-align: right; border: 1px solid var(--border); border-radius: 6px;
     background: var(--surface-raised); color: var(--ink-primary); }
   .hd-in.wide { width: 9em; }
@@ -674,7 +674,7 @@
   .fg-hub { fill: var(--ink-primary); }
   .fg-num { font-size: 22px; font-weight: 750; fill: var(--ink-primary); }
   .fg-line { fill: none; stroke: var(--ink-primary); stroke-width: 1.6; }
-  .fg-trend { flex: 1; min-width: 0; }
+  .fg-trend { flex: 1 1 260px; min-width: 0; }
   /* 카드 차트: 분할 단계 가격, 단계 진입 표시, 거래량 */
   .stage-lb { position: absolute; right: 2px; transform: translateY(-110%); font-size: 12px; color: var(--accent); background: var(--surface); padding: 0 3px; border-radius: 3px; line-height: 1.2; pointer-events: none; opacity: .92; }
   .sig-mk { position: absolute; transform: translate(-50%, 3px); font-size: 12px; line-height: 1; color: var(--accent); cursor: default; }
@@ -1473,6 +1473,7 @@
   const usdKrwSeries = __USDKRW_SERIES_JSON__;
   const fearGreed = __FEARGREED_JSON__;
   const fetchedAt = "__FETCHED_AT__";
+  const KR_INTRADAY = "__KR_INTRADAY__";   // 국내 장중에 실행됐으면 그 시각(예: "11:15"), 아니면 빈 문자열
   const HIGHLIGHTS = __HIGHLIGHTS_JSON__;
   const SCHEDULE = __SCHEDULE_JSON__;
   const STRIP = __STRIP_JSON__;
@@ -3319,6 +3320,10 @@
   (function () {
     const nIdx = stocks.filter(st => st.kind === "index").length;
     document.getElementById("stock-count").textContent = (stocks.length - nIdx) + "개" + (nIdx ? ", 시장 지수 " + nIdx + "개" : "");
+    if (KR_INTRADAY) {
+      const sub = document.getElementById("stock-count").parentElement;
+      if (sub) sub.append(". 국내 종목은 " + KR_INTRADAY + " 장중 가격입니다");
+    }
   })();
 
   // ---- 한눈 요약 -------------------------------------------------------------------------
@@ -3364,9 +3369,12 @@
       const v = x.d1;
       const md = /^\d{4}-\d{2}-\d{2}$/.test(x.date || "") ? (+x.date.slice(5, 7)) + "/" + (+x.date.slice(8, 10)) : "";
       // 금리(미국 10년물)는 % 변화가 아니라 bp(0.01%p)로 적는다. 4.20% → 4.25% 는 '+1.19%'가 아니라 '+5bp'다.
-      const chgTxt = x.rate && typeof x.bp === "number" ? Math.abs(x.bp).toFixed(1) + "bp" : Math.abs(v).toFixed(1) + "%";
+      // 시세가 빠진 날이 끼면(gap) 이틀 치 변화라 그렇게 적는다.
+      const hasGap = typeof x.gap === "string" && x.gap.length >= 10;
+      const chgTxt = (x.rate && typeof x.bp === "number" ? Math.abs(x.bp).toFixed(1) + "bp" : Math.abs(v).toFixed(1) + "%") + (hasGap ? " (2일)" : "");
       const signed = (v > 0 ? "+" : v < 0 ? "−" : "") + chgTxt;
-      const title = x.name + " " + fmtExact(x) + ", " + md + " 기준, 직전 거래일보다 " + signed + ". 작은 그래프는 최근 1개월입니다." +
+      const gapMd = hasGap ? (+x.gap.slice(5, 7)) + "/" + (+x.gap.slice(8, 10)) : "";
+      const title = x.name + " " + fmtExact(x) + ", " + md + " 기준, " + (hasGap ? gapMd + " 시세가 없어 이틀 전보다 " : "직전 거래일보다 ") + signed + ". 작은 그래프는 최근 1개월입니다." +
         (x.card ? " 누르면 카드로 이동합니다." : fx ? " 누르면 환율 추이를 엽니다." : "");
       return '<' + tag + (tag === "button" ? ' type="button"' : "") + ' class="mk-tile" data-sym="' + esc(x.symbol) + '" title="' + esc(title) + '">' +
         '<span class="mk-name">' + esc(x.name) + '</span><span class="mk-val">' + esc(fmtV(x)) + '</span>' +
@@ -3488,7 +3496,8 @@
       const chip = t ? '<span class="ov-chip ' + esc(t.tone || "") + '">' + esc(t.text) + '</span>' : "";
       const cell = (k, label) => {
         const v = perfOf(st, k);
-        return '<td class="c-' + k + ' ' + dirCls(v) + ' ' + tintTd(v, thrOf(st, k)) + '" data-label="' + label + '">' + fmtPct(v) + '</td>';
+        const gapNote = k === "d1" && typeof st.d1Gap === "string" && st.d1Gap.length >= 10 ? '<div class="ov-sub">' + (+st.d1Gap.slice(5, 7)) + '/' + (+st.d1Gap.slice(8, 10)) + ' 시세 없음, 2일 치</div>' : "";
+        return '<td class="c-' + k + ' ' + dirCls(v) + ' ' + tintTd(v, thrOf(st, k)) + '" data-label="' + label + '">' + fmtPct(v) + gapNote + '</td>';
       };
       const rel = (st.relM1 === null || st.relM1 === undefined)
         ? '<td class="c-rel" data-label="시장 대비">–</td>'
@@ -3812,7 +3821,8 @@
       const tr = (fg.trend || []).filter(p => p && typeof p.s === "number");
       let trendSvg = "";
       if (tr.length > 10) {
-        const W = Math.max(260, Math.round(width - 200)), H = 130, L = 30, Rt = 8, T = 6, B = 22;
+        // 좁은 화면에서는 게이지 아래 줄로 내려가므로 칸 폭을 그대로 쓴다(휴대폰에서 오른쪽이 잘렸다).
+        const W = width < 520 ? Math.max(240, Math.round(width)) : Math.max(260, Math.round(width - 200)), H = 130, L = 30, Rt = 8, T = 6, B = 22;
         const X = k => L + k / (tr.length - 1) * (W - L - Rt), Y = v => T + (1 - v / 100) * (H - T - B);
         let g = '<rect x="' + L + '" y="' + Y(25).toFixed(1) + '" width="' + (W - L - Rt) + '" height="' + (Y(0) - Y(25)).toFixed(1) + '" fill="' + FG_COL[0] + '" opacity="0.13"/>' +
           '<rect x="' + L + '" y="' + Y(45).toFixed(1) + '" width="' + (W - L - Rt) + '" height="' + (Y(25) - Y(45)).toFixed(1) + '" fill="' + FG_COL[1] + '" opacity="0.10"/>';
@@ -4360,7 +4370,7 @@
           '<td>' + (r.nextPx ? esc(r.s.currency + fmtNum(r.nextPx, r.s.currency)) + ' <span class="sl-start">(' + r.nextLabel + ', ' + fmtPct(r.nextGap) + ')</span>' : "–") + '</td></tr>').join("") +
         '<tr><td><b>합계</b></td><td></td><td></td><td></td><td class="' + dirCls(totalPl) + '">' + (totalPl === null ? "–" : fmtPct(totalPl)) + '</td>' +
         '<td><b>' + (total ? won(total) : "–") + '</b></td><td></td><td></td><td></td><td><b>' + (more ? won(more) : "–") + '</b></td><td></td></tr></table></div>' +
-        '<div class="hd-note">넣은 값은 이 브라우저에만 저장되고 저장소·서버로 보내지 않습니다. 평단은 그 종목 통화로 넣습니다. 달러 종목은 오늘 원/달러 환율(' +
+        '<div class="hd-note">넣은 값은 이 PC의 브라우저에만 저장됩니다. 평단은 그 종목 통화로 넣습니다. 달러 종목은 오늘 원/달러 환율(' +
         fmtNum(usdKrw || 0, "₩") + '원)로 원화 평가했습니다. "단계까지 더 살 금액"은 종목 예산 × 지금 단계까지의 비율 합에서 이미 산 금액(수량 × 평단)을 뺀 값입니다. ' +
         '다음 단계 가격은 52주 고점 대비 하락 기준입니다(이평선 기준은 카드 참고).</div>';
     }
