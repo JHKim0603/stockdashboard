@@ -1766,7 +1766,8 @@ function Get-StatGroup {
 function Get-CompareWord {
     param($a, $b)
     $d = [double]$a - [double]$b
-    if ($d -ge 5) { "높았습니다" } elseif ($d -le -5) { "낮았습니다" } else { "비슷했습니다" }
+    # 조사까지 돌려준다. '…샀을 때(62%)보다 비슷했습니다'처럼 어색한 문장이 나갔다(2026-11-11 점검).
+    if ($d -ge 5) { "보다 높았습니다" } elseif ($d -le -5) { "보다 낮았습니다" } else { "와 비슷했습니다" }
 }
 function Get-SignalStat {
     param($st, [string]$signal)
@@ -1783,9 +1784,9 @@ function Get-SignalStat {
         # 카드·메일: 두 문장. 주목할 점: 한 문장(short).
         # 카드에서는 굵은 '과거 10년 성적' 뒤에 붙는다.
         # '87%(평소 71%)'처럼 숫자만 두지 않고 평소보다 높았는지 낮았는지를 말로 붙인다(차이 5%p 안은 '비슷').
-        text  = "$($g)에서 이 신호 뒤 1년 보유했을 때 $($x.n)번 중 $($x.up)번($($x.hit)%) 올라, 아무 날이나 샀을 때($($x.baseHit)%)보다 $(Get-CompareWord $x.hit $x.baseHit)." +
+        text  = "$($g)에서 이 신호 뒤 1년 보유했을 때 $($x.n)번 중 $($x.up)번($($x.hit)%) 올라, 아무 날이나 샀을 때($($x.baseHit)%)$(Get-CompareWord $x.hit $x.baseHit)." +
                 $(if ($mae) { " 산 뒤 3개월 안에 보통 $mae% 더 내려갔습니다(중간값)." } else { "" })
-        short = "이 신호 뒤 1년 보유했을 때 오른 경우가 $($x.hit)%로, 아무 날이나 샀을 때($($x.baseHit)%)보다 $(Get-CompareWord $x.hit $x.baseHit)."
+        short = "이 신호 뒤 1년 보유했을 때 오른 경우가 $($x.hit)%로, 아무 날이나 샀을 때($($x.baseHit)%)$(Get-CompareWord $x.hit $x.baseHit)."
     }
 }
 foreach ($st in $stocks) {
@@ -2638,6 +2639,8 @@ $dashboardUrl = "https://jhkim0603.github.io/stockdashboard/"
 # invert backgrounds more eagerly than text - which is how a card ends up dark grey with the
 # near-black heading still sitting on it. Declaring one scheme opts the message out of that
 # guesswork. Kept as a PowerShell comment rather than an HTML one so it is not mailed.
+# 메일 그림: <!--MAIL_CHARTS--> 자리에 워크플로의 mail_charts.py 가 브리핑 바로 아래 그림 두 장(매수 단계 지도,
+# 공포·탐욕지수 1년)을 끼운다(첨부 그림을 cid 로 부름). 그림을 못 만들면 주석 그대로 남아 글로만 나간다.
 $emailHtml = @"
 <!DOCTYPE html>
 <html lang="ko">
@@ -2654,6 +2657,7 @@ $emailHtml = @"
     <a href="$dashboardUrl" style="display:inline-block;background:#0f766e;color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 18px;border-radius:6px;">📊 대시보드 열기 →</a>
   </div>
   $mailBriefHtml
+  <!--MAIL_CHARTS-->
   $mailHlHtml
   $ladderHtml
   $fgBlockHtml

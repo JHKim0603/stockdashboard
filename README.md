@@ -208,6 +208,12 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
     (Prediction:, Should you buy, Jim Cramer, Motley Fool 등, `Test-ClickbaitTitle`)은 뺍니다.
   - 페이지 자료를 한 줄 JSON(`-Compress`)으로 넣어 페이지가 1.1MB(들여 쓴 모양)에서 0.5MB 로 줄었습니다.
 
+- **메일 그림 (2026-11-12)**: 메일 프로그램은 화면의 그래프를 보여 주지 않아, 메일을 보내는 실행에서 `mail_charts.py stock` 이
+  '매수 단계 지도'와 '공포·탐욕지수 1년' 그림(PNG, `mail-charts/`)을 만들어 브리핑 바로 아래 `<!--MAIL_CHARTS-->` 자리에 끼웁니다.
+  워크플로 'Draw mail charts' 단계가 나눔고딕을 설치하고 실행하며, 첨부 그림은 파일 이름이 cid 가 되어 본문에 보입니다.
+  그림을 못 만들면 메일은 글로만 나갑니다. work-dashboard 와 같은 파일이니 고칠 때 두 저장소를 같게 맞춥니다.
+  같은 날 과거 성적 문장의 '…보다 비슷했습니다'를 '…와 비슷했습니다'로 고쳤습니다.
+
 ## Usage
 
 Double-click `run.bat`, or:

@@ -106,6 +106,15 @@ jobs:
             echo "last delivery was '${last:-never}', today is $today KST - sending"
           fi
 
+      # 메일 그림: 대시보드와 같은 자료로 그래프 PNG 를 만들고 메일 본문 자리표시에 끼운다(mail_charts.py).
+      # 우분투 실행 환경에는 한글 글꼴이 없어 나눔고딕을 설치한다. 실패해도 메일은 그림 없이 글로 나간다.
+      - name: Draw mail charts
+        if: steps.mailgate.outputs.send == 'true'
+        continue-on-error: true
+        run: |
+          sudo apt-get update -qq > /dev/null && sudo apt-get install -y -qq fonts-nanum > /dev/null && fc-cache -f > /dev/null
+          python3 mail_charts.py stock
+
       # Non-blocking. 배포된 페이지가 이 실행의 주 산출물이라, 메일 실패(만료된 Gmail 앱
       # 비밀번호, SMTP 장애)가 아래 Pages 배포까지 막으면 안 된다. 예전에는 막았다 —
       # 메일이 죽으면 그날 페이지도 안 올라갔다.
@@ -123,6 +132,8 @@ jobs:
           to: jhyupkim@unid.co.kr
           from: JH 투자 DASHBOARD <${{ secrets.GMAIL_USERNAME }}>
           html_body: file://email-summary.html
+          # 첨부 그림은 파일 이름이 cid 가 되어 본문의 <img src="cid:파일이름"> 자리에 보인다.
+          attachments: mail-charts/*.png
 
       - name: Mark today as delivered
         if: steps.mail.outcome == 'success'
