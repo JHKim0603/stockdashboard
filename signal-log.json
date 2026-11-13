@@ -204,12 +204,27 @@
       "maxLevel": 2,
       "end": null
     },
+    "^IXIC": {
+      "start": "2026-11-06",
+      "maxLevel": 1,
+      "end": "2026-11-09"
+    },
+    "QLD": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
+      "end": null
+    },
     "GOOGL": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "005930.KS": {
+    "PLTR": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
+      "end": null
+    },
+    "000660.KS": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -219,24 +234,9 @@
       "maxLevel": 3,
       "end": null
     },
-    "000660.KS": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
     "BTC-KRW": {
       "start": "2026-11-08",
       "maxLevel": 2,
-      "end": null
-    },
-    "PLTR": {
-      "start": "2026-11-06",
-      "maxLevel": 2,
-      "end": null
-    },
-    "^KS11": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
       "end": null
     },
     "MU": {
@@ -249,14 +249,14 @@
       "maxLevel": 3,
       "end": null
     },
-    "^IXIC": {
+    "^KS11": {
       "start": "2026-11-06",
-      "maxLevel": 1,
-      "end": "2026-11-09"
+      "maxLevel": 3,
+      "end": null
     },
-    "QLD": {
+    "005930.KS": {
       "start": "2026-11-06",
-      "maxLevel": 2,
+      "maxLevel": 3,
       "end": null
     }
   }
