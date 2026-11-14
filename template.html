@@ -355,6 +355,20 @@
   .ld-dot { position: absolute; top: 2px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--ink-primary); box-shadow: 0 0 0 2px var(--surface); }
   .ld-ends { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
   .tp-chg { font-size: 12px; font-weight: 650; margin-left: 6px; }
+  /* 목표주가 줄이 길면 카드 밖으로 잘렸다(샌디스크). 줄바꿈을 허용한다. */
+  .meta-row > * { min-width: 0; max-width: 100%; }
+  .meta-row > .meta-btn { text-align: left; white-space: normal; }
+  .card-why > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--accent); padding: 2px 0; }
+  .card-why[open] > summary { margin-bottom: 4px; }
+  .card-why > div { margin-top: 4px; }
+  .stage-lb.left { right: auto; left: 2px; }
+  @media (max-width: 640px) { .chart-block .chart-row { height: 94px; } }
+  .sl-bar.up { fill: var(--rise); }
+  .sl-bar.down { fill: var(--fall); }
+  .sl-bar.start { opacity: .5; }
+  .sl-mk { stroke: var(--ink-primary); stroke-width: 2; opacity: .55; }
+  #siglog:not(.sl-open) tr.sl-extra { display: none; }
+  .sl-more { font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent); background: none; border: 0; padding: 6px 0; cursor: pointer; }
   .tp-chg.up { color: var(--rise); }
   .tp-chg.down { color: var(--fall); }
 
@@ -867,7 +881,7 @@
     display: flex;
     align-items: stretch;
     gap: 6px;
-    height: 82px;
+    height: 116px;
   }
   .y-axis {
     position: relative;
@@ -2700,6 +2714,12 @@
       block.appendChild(trendEl);
     }
     // 이평선과의 거리. 닿은 선은 굵게, 매수 대기(위 3% 안)는 강조색(청록).
+    // 그래프 위에 글이 네댓 줄 쌓여 그래프가 밀려 내려갔다(2026-11-14). 근거 글은 그래프 아래 접는 칸에 모은다.
+    const why = document.createElement("details");
+    why.className = "card-why m-detail";
+    const whySum = document.createElement("summary");
+    whySum.textContent = "판단 근거 (이평선 거리·분할 단계·과거 성적)";
+    why.appendChild(whySum);
     const lvs = (stock.maLevels || []).filter(Boolean);
     if (lvs.length) {
       const lvEl = document.createElement("div");
@@ -2713,7 +2733,7 @@
         sp.title = l.window + "일선 " + stock.currency + fmtNum(l.value, stock.currency) + (l.slopeUp ? ", 오르는 중" : ", 내려가는 중");
         lvEl.appendChild(sp);
       });
-      block.appendChild(lvEl);
+      why.appendChild(lvEl);
     }
     // 과거 10년 검증 성적: 지금 켜진 신호가 그 분야에서 과거에 어땠는지(생성 스크립트가 backtest-stats.json 에서 붙인다)
     const statLine = st => {
@@ -2725,21 +2745,22 @@
       el.title = st.group + ", " + st.since + "부터의 일별 시세로 같은 규칙을 다시 돌린 결과입니다. 신호가 새로 켜진 날 종가에 샀다고 보고 1년 뒤 종가와 비교했습니다. 과거 결과가 앞으로를 보장하지는 않습니다.";
       return el;
     };
-    if (stock.signalStats && stock.signalStats.ma) block.appendChild(statLine(stock.signalStats.ma));
+    if (stock.signalStats && stock.signalStats.ma) why.appendChild(statLine(stock.signalStats.ma));
     // 분할 매수 단계의 근거: 52주 고점 대비 하락률(어느 단계 기준을 넘었는지)과 120·200일선과의 거리
     const dip = stock.dip;
     if (dip && dip.level >= 1) {
       const dl = document.createElement("div");
       dl.className = "dip-line dip" + dip.level + " m-detail";
       dl.textContent = dip.label + ": " + dipDetailText(stock);
-      block.appendChild(dl);
-      if (stock.signalStats && stock.signalStats.dip) block.appendChild(statLine(stock.signalStats.dip));
+      why.appendChild(dl);
+      if (stock.signalStats && stock.signalStats.dip) why.appendChild(statLine(stock.signalStats.dip));
     }
 
     block.appendChild(slot);
     render();
     const ladder = buildLadder(stock);
     if (ladder) { ladder.classList.add("m-detail"); block.appendChild(ladder); }
+    if (why.children.length > 1) block.appendChild(why);
     return block;
   }
 
@@ -3002,6 +3023,10 @@
       lb.className = "stage-lb";
       lb.style.top = (y(p2.v) / H * 100).toFixed(1) + "%";
       lb.textContent = p2.k + "단계 −" + p2.pct + "%";
+      // 오른쪽 끝은 지금 값이 단계 가격 근처일 때 가격선과 겹쳤다. 양 끝 15% 구간의 평균값이 단계 가격에서 더 먼 쪽에 둔다.
+      const nE = Math.max(1, Math.round(data.length * 0.15));
+      const avgE = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+      if (Math.abs(avgE(data.slice(0, nE)) - p2.v) > Math.abs(avgE(data.slice(-nE)) - p2.v)) lb.classList.add("left");
       plotWrap.appendChild(lb);
     });
     let stageMarks = 0;
@@ -3210,11 +3235,11 @@
       el.style.left = p.toFixed(2) + "%";
       el.style.transform = p < 8 ? "none" : p > 92 ? "translateX(-100%)" : "translateX(-50%)";
     };
-    const merge = items => {
+    const merge = (items, gap) => {
       const out = [];
       items.slice().sort((a, b) => a.p - b.p).forEach(it => {
         const g = out[out.length - 1];
-        if (g && it.p - g.lastP <= 9) { g.names.push(it.name); g.ps.push(it.p); g.lastP = it.p; }
+        if (g && it.p - g.lastP <= (gap || 9)) { g.names.push(it.name); g.ps.push(it.p); g.lastP = it.p; }
         else out.push({ names: [it.name], ps: [it.p], lastP: it.p });
       });
       return out.map(g => ({ p: g.ps.reduce((a, b) => a + b, 0) / g.ps.length, names: g.names }));
@@ -3240,7 +3265,7 @@
     if (mas.length) {
       const top = document.createElement("div");
       top.className = "ld-row";
-      merge(mas).forEach(g => {
+      merge(mas, 17).forEach(g => {
         const sp = document.createElement("span");
         sp.textContent = g.names.slice().sort((a, b) => a - b).join("·") + "일선";
         place(sp, g.p);
@@ -3275,7 +3300,7 @@
     if (steps.length) {
       const bot = document.createElement("div");
       bot.className = "ld-row";
-      merge(steps).forEach(g => {
+      merge(steps, 12).forEach(g => {
         const sp = document.createElement("span");
         sp.textContent = g.names.join("·");
         place(sp, g.p);
@@ -3588,7 +3613,8 @@
         '고점 근처에서 닿은 경우는 \'도달(참고)\'로만 적습니다. ' +
         '이평선 칸의 막대는 왼쪽 끝이 52주 최저, 오른쪽 끝이 최고입니다. <span class="lg-dot"></span>점은 현재가이고, 세로선은 ' +
         '<span class="lg-ma" style="background:var(--ma1)"></span>' + MA_SHORT + '일선, <span class="lg-ma" style="background:var(--ma2)"></span>' + MA_MID +
-        '일선, <span class="lg-ma" style="background:var(--ma3)"></span>' + MA_LONG + '일선입니다.' +
+        '일선, <span class="lg-ma" style="background:var(--ma3)"></span>' + MA_LONG + '일선입니다. ' +
+        '최근 6개월 그래프는 6개월 전보다 올랐으면 빨강, 내렸으면 파랑입니다.' +
         (function () {
           // 분할 매수 단계의 기본 기준(buy-rules.json). 종목별로 DipSteps 를 정한 종목은 카드에 그 종목의 기준이 적힙니다.
           const r = (stocks.find(st => st.dip && st.dip.defSteps && st.dip.defSteps.length) || {}).dip;
@@ -3766,22 +3792,26 @@
       // 글자 폭 어림(한글 12.5px, 영문·숫자 7px)
       const tw = (t, fs) => [...t].reduce((a, c) => a + (/[가-힣]/.test(c) ? fs : fs * 0.58), 0);
       const placed = [];
-      const q = (x, y, a, t) => {
-        const wq = tw(t, 12);
-        placed.push({ l: a === "end" ? x - wq : x, w: wq, y });
+      const dots = pts.map(p => ({ p, cx: X(p.x.dd), cy: Y(p.m1), r: maxV ? 4 + 10 * Math.sqrt((hv[p.x.st.symbol] || 0) / maxV) : 5.5 }));
+      // 구석 설명 글자: 첫 자리(구석)에 점이 있으면 둘째 자리(0% 선 옆)로 옮긴다(샌디스크 점을 덮었다, 2026-11-14).
+      const q = (x, ys, a, t) => {
+        const wq = tw(t, 12), l = a === "end" ? x - wq : x;
+        const y = ys.find(yy => !dots.some(d => d.cx + d.r > l - 3 && d.cx - d.r < l + wq + 3 && d.cy + d.r > yy - 12 && d.cy - d.r < yy + 4)) || ys[0];
+        placed.push({ l, w: wq, y });
         return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="' + a + '" class="qd-q">' + t + '</text>';
       };
-      g += q(W - R - 4, T + 14, "end", "많이 빠졌고 최근 오름") + q(W - R - 4, H - B - 6, "end", "많이 빠졌고 아직 내림") +
-        q(L + 4, T + 14, "start", "고점 근처, 최근 오름") + q(L + 4, H - B - 6, "start", "고점 근처, 최근 내림");
-      g += '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end" class="qd-title">52주 고점 대비 하락률 →</text>' +
-        '<text x="' + L + '" y="' + (H - 6) + '" text-anchor="start" class="qd-title">세로: 최근 1개월 수익률</text>';
+      g += q(W - R - 4, [T + 14, y0 - 6], "end", "많이 빠졌고 최근 오름") + q(W - R - 4, [H - B - 6, y0 + 15], "end", "많이 빠졌고 아직 내림") +
+        q(L + 4, [T + 14, y0 - 6], "start", "고점 근처, 최근 오름") + q(L + 4, [H - B - 6, y0 + 15], "start", "고점 근처, 최근 내림");
+      g += '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end" class="qd-title">' + (W < 430 ? '고점 대비 하락률 →' : '52주 고점 대비 하락률 →') + '</text>' +
+        '<text x="' + L + '" y="' + (H - 6) + '" text-anchor="start" class="qd-title">' + (W < 430 ? '세로: 1개월 수익률' : '세로: 최근 1개월 수익률') + '</text>';
       pts.slice().sort((a, b) => Y(a.m1) - Y(b.m1)).forEach(p => {
         const cx = X(p.x.dd), cy = Y(p.m1);
         const v = hv[p.x.st.symbol] || 0;
         const r = maxV ? 4 + 10 * Math.sqrt(v / maxV) : 5.5;
         const name = p.x.st.name, wTxt = tw(name, 12.5) + 2;
         const hit = (l, y2) => l < L || l + wTxt > W - R || y2 < T + 10 || y2 > H - B - 2 ||
-          placed.some(o => Math.abs(o.y - y2) < 13 && l < o.l + o.w && l + wTxt > o.l);
+          placed.some(o => Math.abs(o.y - y2) < 13 && l < o.l + o.w && l + wTxt > o.l) ||
+          dots.some(d => d.p !== p && l < d.cx + d.r + 2 && l + wTxt > d.cx - d.r - 2 && y2 - 11 < d.cy + d.r && y2 + 3 > d.cy - d.r);
         // 오른쪽, 왼쪽, 오른쪽 아래·위, 왼쪽 아래·위, 더 멀리 순서로 빈 자리를 찾는다
         const cands = [];
         [0, 13, -13, 26, -26, 39].forEach(dy => { cands.push(["start", cx + r + 4, cy + 4 + dy]); cands.push(["end", cx - r - 4, cy + 4 + dy]); });
@@ -3814,9 +3844,9 @@
       let gauge = edges.slice(0, 5).map((a, k) => arc(a, edges[k + 1], FG_COL[k])).join("");
       const [nx, ny] = pt(R + 4, fg.score);
       gauge += '<line x1="' + cx + '" y1="' + cy + '" x2="' + nx.toFixed(1) + '" y2="' + ny.toFixed(1) + '" class="fg-needle"/><circle cx="' + cx + '" cy="' + cy + '" r="5" class="fg-hub"/>' +
-        '<text x="' + cx + '" y="' + (cy - 14) + '" text-anchor="middle" class="fg-num">' + fg.score + '</text>';
+        '<text x="' + cx + '" y="' + (cy + 27) + '" text-anchor="middle" class="fg-num">' + fg.score + '</text>';
       const band = FG_BANDS.find(b => b.key === fg.rating);
-      const gaugeSvg = '<svg width="180" height="100" viewBox="0 0 180 100" role="img" aria-label="공포·탐욕지수 ' + fg.score + '">' + gauge + '</svg>';
+      const gaugeSvg = '<svg width="180" height="118" viewBox="0 0 180 118" role="img" aria-label="공포·탐욕지수 ' + fg.score + '">' + gauge + '</svg>';
       // 추이
       const tr = (fg.trend || []).filter(p => p && typeof p.s === "number");
       let trendSvg = "";
@@ -4217,7 +4247,7 @@
     const statTxt = (s, label) => s ? label + " " + s.n + "건, 평균 " + fmtPct(s.avg) + ", 오른 비율 " + s.up + "%" + (s.rel !== null ? ", 시장 대비 " + pp(s.rel) : "") : "";
     const fmtPx = (v, ccy) => (ccy || "") + fmtNum(v, ccy);
     const head = '<tr><th>켜진 날</th><th>종목(신호)</th><th>그날 값</th><th>지금</th><th>수익률</th><th>시장 대비</th><th>지난 날</th></tr>';
-    const line = r => '<tr><td>' + esc(md(r.e.date)) + (r.e.atStart ? ' <span class="sl-start">시작일</span>' : '') + '</td>' +
+    const line = (r, i) => '<tr' + (i >= 5 ? ' class="sl-extra"' : '') + '><td>' + esc(md(r.e.date)) + (r.e.atStart ? ' <span class="sl-start">시작일</span>' : '') + '</td>' +
       '<td>' + esc(r.e.name) + '(' + esc(r.e.signal) + ')</td><td>' + esc(fmtPx(r.e.price, r.e.currency)) + '</td><td>' + esc(fmtPx(r.now, r.e.currency)) + '</td>' +
       '<td class="' + dirCls(r.ret) + '">' + fmtPct(r.ret) + '</td>' +
       '<td class="' + dirCls(r.rel) + '">' + (r.rel === null ? "–" : pp(r.rel)) + '</td><td>' + r.days + '일</td></tr>';
@@ -4232,9 +4262,37 @@
       if (b && r.e.benchPrice) bpts = alignBench(b, st.dates.slice(k0)).map(v => v ? (v / r.e.benchPrice - 1) * 100 : null);
       return { r, pts, bpts };
     }).filter(Boolean);
+    // 기록이 20거래일이 되기 전에는 선이 한데 뭉쳐 읽기 어렵다(2026-11-14). 그동안은 신호마다 지금까지의 수익률을 막대로 보인다.
+    const barsHtml = width => {
+      const list = rows.slice().sort((a, b) => b.ret - a.ret).slice(0, 20);   // 표와 같은 최근 20건
+      const W = Math.max(300, Math.round(width)), narrow = W < 560, L = narrow ? 104 : 210, R = 56, T = 6, rowH = 21, B = 24;
+      const H = T + list.length * rowH + B;
+      const vals = [].concat(...list.map(r => [r.ret, r.rel === null ? 0 : r.ret - r.rel]));
+      const xAbs = Math.max(5, Math.ceil(Math.max(...vals.map(Math.abs)) / 5) * 5);
+      const X = v => L + (v + xAbs) / (2 * xAbs) * (W - L - R);
+      let g = "";
+      [-xAbs, -xAbs / 2, 0, xAbs / 2, xAbs].forEach(v => {
+        g += '<line x1="' + X(v).toFixed(1) + '" x2="' + X(v).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '" class="' + (v ? "qd-grid" : "qd-split") + '"/>' +
+          '<text x="' + X(v).toFixed(1) + '" y="' + (H - 7) + '" text-anchor="middle" class="qd-ax">' + (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v) + '%</text>';
+      });
+      list.forEach((r, i) => {
+        const cy = T + i * rowH + rowH / 2, x0 = X(0), x1 = X(r.ret);
+        const sig = String(r.e.signal).replace(/^분할 /, "").replace(/^이평선 매수 기준\((.*)\)$/, "$1");
+        const tip = r.e.name + "(" + r.e.signal + ") " + md(r.e.date) + "부터 " + fmtPct(r.ret) + (r.rel === null ? "" : ", 시장 대비 " + pp(r.rel));
+        g += '<text x="' + (L - 8) + '" y="' + (cy + 4).toFixed(1) + '" text-anchor="end" class="qd-lb">' + esc(narrow ? r.e.name : r.e.name + " " + sig + " · " + md(r.e.date)) + '</text>' +
+          '<rect x="' + Math.min(x0, x1).toFixed(1) + '" y="' + (cy - 5).toFixed(1) + '" width="' + Math.max(1.5, Math.abs(x1 - x0)).toFixed(1) + '" height="10" rx="2" class="sl-bar ' +
+          (r.ret >= 0 ? "up" : "down") + (r.e.atStart ? " start" : "") + '"><title>' + esc(tip) + '</title></rect>' +
+          (r.rel !== null ? '<line x1="' + X(r.ret - r.rel).toFixed(1) + '" x2="' + X(r.ret - r.rel).toFixed(1) + '" y1="' + (cy - 7).toFixed(1) + '" y2="' + (cy + 7).toFixed(1) + '" class="sl-mk"/>' : "") +
+          '<text x="' + (W - R + 6) + '" y="' + (cy + 4).toFixed(1) + '" class="qd-ax">' + fmtPct(r.ret) + '</text>';
+      });
+      return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="신호별 지금까지의 수익률">' + g + '</svg>' +
+        '<div class="hd-note">막대는 신호가 켜진 날부터 지금까지의 수익률이고(옅은 막대는 기록 시작일에 이미 켜져 있던 신호), 세로 눈금은 같은 기간의 시장(코스피, 나스닥)입니다. ' +
+        '기록이 20거래일 쌓이면 날짜별 수익률 선 그래프로 바뀝니다.</div>';
+    };
     const chartHtml = width => {
       const maxN = Math.max(0, ...paths.map(p2 => p2.pts.length - 1));
       if (maxN < 1) return '<div class="hd-note">신호가 켜진 뒤 하루가 지나면 날짜별 수익률 그래프가 나옵니다.</div>';
+      if (maxN < 20) return barsHtml(width);
       const W = Math.max(300, Math.round(width)), H = 210, L = 46, R = 70, T = 10, B = 26;
       const all = [].concat(...paths.map(p2 => p2.pts), ...paths.map(p2 => (p2.bpts || []).filter(v => v !== null)));
       const yAbs = Math.max(5, Math.ceil(Math.max(...all.map(Math.abs)) / 5) * 5);
@@ -4267,10 +4325,16 @@
       '<div class="sl-sum">기록 시작 ' + esc(md(log.started)) + ', ' +
       ([statTxt(fresh, "새로 켜진 신호"), statTxt(start, "시작일에 이미 켜져 있던 신호")].filter(Boolean).join(" / ") || "아직 기록된 신호가 없습니다") + '</div>' +
       (paths.length ? '<div class="sl-chart"></div>' : "") +
-      (rows.length ? '<div class="sl-wrap"><table class="sl-table">' + head + rows.slice(0, 20).map(line).join("") + '</table></div>' : "") +
+      (rows.length ? '<div class="sl-wrap"><table class="sl-table">' + head + rows.slice(0, 20).map(line).join("") + '</table></div>' +
+        (Math.min(rows.length, 20) > 5 ? '<button type="button" class="sl-more">나머지 ' + (Math.min(rows.length, 20) - 5) + '건 더 보기</button>' : '') : "") +
       '<div class="hd-note">신호가 새로 켜진 날(분할 단계는 더 높은 단계에 처음 든 날)의 종가를 기준으로 지금까지의 수익률입니다. 시장 대비는 같은 기간 국내 종목은 코스피, ' +
       '미국 종목은 나스닥의 수익률을 뺀 값입니다. 카드의 과거 성적은 1년 뒤 기준이라 몇 주 안의 수익률과 바로 비교하지 마세요.' + (rows.length > 20 ? ' 최근 20건만 보입니다.' : '') + '</div>';
     host.hidden = false;
+    const slMore = host.querySelector(".sl-more");
+    if (slMore) slMore.addEventListener("click", () => {
+      const open = host.classList.toggle("sl-open");
+      slMore.textContent = open ? "접기" : "나머지 " + (Math.min(rows.length, 20) - 5) + "건 더 보기";
+    });
     const drawSl = () => { const c = host.querySelector(".sl-chart"); if (c) c.innerHTML = chartHtml(c.clientWidth || 600); };
     drawSl();
     let rts = null;
