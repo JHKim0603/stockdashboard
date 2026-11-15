@@ -361,7 +361,40 @@
   .card-why > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--accent); padding: 2px 0; }
   .card-why[open] > summary { margin-bottom: 4px; }
   .card-why > div { margin-top: 4px; }
-  .stage-lb.left { right: auto; left: 2px; }
+  /* 단계 이름표는 그림 오른쪽 바깥 여백에 둔다(그림 안에 두면 가격선과 겹쳤다, 2026-11-15). 날짜·거래량 줄도 같은 여백을 둔다. */
+  .chart-wrap.has-stage .chart-row, .chart-wrap.has-stage .vol-row { padding-right: 64px; }
+  .chart-wrap.has-stage .x-axis { margin-right: 64px; }
+  .chart-wrap.has-stage .stage-lb { right: auto; left: calc(100% + 5px); transform: translateY(-50%); background: none; padding: 0; white-space: nowrap; opacity: 1; }
+  /* 실적 창의 분기 막대, 목표주가 범위, 수급 막대 */
+  .fin-bars { margin: 12px 0 2px; }
+  .fb-svg { width: 100%; height: auto; display: block; }
+  .fb-rev { fill: var(--accent); }
+  .fb-op { fill: var(--ink-secondary); }
+  .fb-rev.est, .fb-op.est { opacity: .38; }
+  .fb-zero { stroke: var(--gridline); }
+  .fb-ax { font-size: 11px; fill: var(--ink-muted); }
+  .fb-legend { font-size: 12px; color: var(--ink-secondary); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .fb-key { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  .fb-key.rev { background: var(--accent); }
+  .fb-key.op { background: var(--ink-secondary); }
+  .fb-note { color: var(--ink-muted); margin-left: 6px; }
+  .tp-range { margin: 14px 0 4px; }
+  .tpr-cap { font-size: 12px; color: var(--ink-muted); margin-bottom: 4px; }
+  .tpr-now-lb { position: relative; height: 17px; font-size: 12px; color: var(--ink-primary); font-weight: 650; }
+  .tpr-now-lb span { position: absolute; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .tpr-track { position: relative; height: 14px; margin: 2px 0; }
+  .tpr-track::before { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: var(--gridline); }
+  .tpr-band { position: absolute; top: 3px; height: 8px; border-radius: 4px; background: var(--accent); opacity: .35; }
+  .tpr-avg { position: absolute; top: 0; width: 2px; height: 14px; margin-left: -1px; background: var(--accent); }
+  .tpr-now { position: absolute; top: 2px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--ink-primary); box-shadow: 0 0 0 2px var(--surface); }
+  .tpr-ends { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .fl-cell { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .fl-track { position: relative; width: 56px; height: 8px; flex: none; }
+  .fl-track::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--gridline); }
+  .fl-track i { position: absolute; top: 0; height: 8px; border-radius: 2px; }
+  .fl-track i.up { left: 50%; background: var(--rise); }
+  .fl-track i.down { right: 50%; background: var(--fall); }
+  @media (max-width: 480px) { .fl-track { width: 34px; } }
   @media (max-width: 640px) { .chart-block .chart-row { height: 94px; } }
   .sl-bar.up { fill: var(--rise); }
   .sl-bar.down { fill: var(--fall); }
@@ -1875,6 +1908,42 @@
       '기준일 수 있습니다.'
     ));
 
+    // 분기 매출·영업이익 막대(예상치는 옅게). 표만 있을 때는 성장 흐름을 숫자로 읽어야 했다(2026-11-15).
+    const finBars = (() => {
+      const num = v => { const n2 = parseFloat(String(v).replace(/,/g, "")); return Number.isFinite(n2) ? n2 : null; };
+      const pick = re => (stock.finance.rows || []).find(r => re.test(r.title));
+      const rev = pick(/^매출/), op = pick(/^영업이익/);
+      const ps = stock.finance.periods || [];
+      if (!rev || ps.length < 2) return null;
+      const series = [{ row: rev, cls: "rev", name: rev.title }].concat(op ? [{ row: op, cls: "op", name: op.title }] : []);
+      const vals = [].concat(...series.map(sr => sr.row.values.map(num))).filter(v => v !== null);
+      if (!vals.length) return null;
+      const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals) || 1;
+      const W = Math.round(Math.min(520, Math.max(280, window.innerWidth - 80))), H = 150, L = 6, R = 6, T = 10, B = 22;
+      const gw = (W - L - R) / ps.length, bw = Math.min(26, gw / (series.length + 1));
+      const Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+      let g = '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" class="fb-zero"/>';
+      ps.forEach((pd, i) => {
+        const cx = L + gw * (i + 0.5);
+        series.forEach((sr, k) => {
+          const v = num(sr.row.values[i]);
+          if (v === null) return;
+          const x0 = cx + (k - series.length / 2) * bw, y1 = Y(Math.max(0, v)), y2 = Y(Math.min(0, v));
+          g += '<rect x="' + x0.toFixed(1) + '" y="' + y1.toFixed(1) + '" width="' + Math.max(1, bw - 2).toFixed(1) + '" height="' + Math.max(1, y2 - y1).toFixed(1) +
+            '" class="fb-' + sr.cls + (pd.isEstimate ? ' est' : '') + '"><title>' + esc(pd.label + " " + sr.name + " " + fmtFinanceValue(sr.row.values[i])) + '</title></rect>';
+        });
+        const lab = String(pd.label).replace(/^20(\d\d)\.(\d\d)\.?$/, "$1.$2");
+        g += '<text x="' + cx.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" class="fb-ax">' + esc(lab) + (pd.isEstimate ? " E" : "") + '</text>';
+      });
+      const box = document.createElement("div");
+      box.className = "fin-bars";
+      box.innerHTML = '<div class="fb-legend"><span class="fb-key rev"></span>' + esc(rev.title) + (op ? ' <span class="fb-key op"></span>' + esc(op.title) : '') +
+        '<span class="fb-note">옅은 막대(E)는 증권사 예상치</span></div>' +
+        '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" class="fb-svg" role="img" aria-label="분기 매출과 영업이익">' + g + '</svg>';
+      return box;
+    })();
+    if (finBars) body.appendChild(finBars);
+
     const table = document.createElement("table");
     table.className = "finance-table";
     const thead = document.createElement("thead");
@@ -2467,6 +2536,24 @@
     });
     body.appendChild(stats);
 
+    // 최저~최고 목표가 막대와 현재가(점), 평균(세로선). 최고·최저가 있는 종목만(주로 미국 종목).
+    if (c.targetHigh && c.targetLow && c.targetHigh > c.targetLow) {
+      const lo = Math.min(c.targetLow, lastPrice), hi = Math.max(c.targetHigh, lastPrice), padR = (hi - lo) * 0.06;
+      const a = lo - padR, b = hi + padR;
+      const P = v => (v - a) / (b - a) * 100;
+      const nowP = P(lastPrice);
+      const tr = document.createElement("div");
+      tr.className = "tp-range";
+      tr.innerHTML = '<div class="tpr-cap">목표가 범위(막대), 평균(세로선), 현재가(점)</div>' +
+        '<div class="tpr-now-lb"><span style="left:' + nowP.toFixed(1) + '%;transform:' + (nowP < 12 ? "none" : nowP > 88 ? "translateX(-100%)" : "translateX(-50%)") + '">현재 ' +
+        esc(stock.currency + fmtNum(lastPrice, stock.currency)) + '</span></div>' +
+        '<div class="tpr-track"><span class="tpr-band" style="left:' + P(c.targetLow).toFixed(1) + '%;width:' + (P(c.targetHigh) - P(c.targetLow)).toFixed(1) + '%"></span>' +
+        '<span class="tpr-avg" style="left:' + P(c.targetPrice).toFixed(1) + '%"></span><span class="tpr-now" style="left:' + nowP.toFixed(1) + '%"></span></div>' +
+        '<div class="tpr-ends"><span>최저 ' + esc(stock.currency + fmtNum(c.targetLow, stock.currency)) + '</span><span>평균 ' +
+        esc(stock.currency + fmtNum(c.targetPrice, stock.currency)) + '</span><span>최고 ' + esc(stock.currency + fmtNum(c.targetHigh, stock.currency)) + '</span></div>';
+      body.appendChild(tr);
+    }
+
     const reportsBlock = document.createElement("div");
     reportsBlock.className = "consensus-reports";
     const reportsLabel = document.createElement("div");
@@ -2552,6 +2639,8 @@
     thead.innerHTML = "<tr><th>날짜</th><th>외국인</th><th>기관</th><th>개인</th></tr>";
     table.appendChild(thead);
 
+    // 칸마다 0을 가운데 둔 막대(오른쪽 빨강 순매수, 왼쪽 파랑 순매도). 길이는 이 표 안의 가장 큰 값 기준이다.
+    const fmax = Math.max(1, ...[].concat(...c.flowTrend.map(f => [f.foreigner, f.institution, f.individual].map(v => Math.abs(v || 0)))));
     const tbody = document.createElement("tbody");
     c.flowTrend.forEach(f => {
       const tr = document.createElement("tr");
@@ -2560,7 +2649,8 @@
       tr.appendChild(dateTd);
       [f.foreigner, f.institution, f.individual].forEach(v => {
         const td = document.createElement("td");
-        td.textContent = fmtShares(v);
+        td.innerHTML = '<div class="fl-cell"><span class="fl-track"><i class="' + (v >= 0 ? "up" : "down") + '" style="width:' + (Math.abs(v) / fmax * 50).toFixed(1) + '%"></i></span><span>' +
+          esc(fmtShares(v)) + '</span></div>';
         td.classList.add(v >= 0 ? "up" : "down");
         tr.appendChild(td);
       });
@@ -3017,16 +3107,17 @@
     tooltip.className = "spark-tooltip";
     plotWrap.appendChild(svg);
     plotWrap.appendChild(tooltip);
-    // 단계 가격 이름(오른쪽 끝)과 그 단계에 들어간 날(▲). 글자는 늘어나는 그림 밖 HTML 로 둔다.
-    stageShown.forEach(p2 => {
+    // 단계 가격 이름은 그림 오른쪽 바깥 여백(.has-stage)에 둔다. 그림 안에 두면 가격선과 겹쳤다(2026-11-15).
+    // 두 이름이 14px 안으로 붙으면 아래 것을 내린다. 그 단계에 들어간 날은 그림 안 ▲로 표시한다.
+    if (stageShown.length) chartWrap.classList.add("has-stage");
+    const rowH = window.matchMedia && window.matchMedia("(max-width: 640px)").matches ? 94 : 116;
+    const stageLabs = stageShown.map(p2 => ({ p2, px: y(p2.v) / H * rowH })).sort((a2, b2) => a2.px - b2.px);
+    for (let i2 = 1; i2 < stageLabs.length; i2++) if (stageLabs[i2].px - stageLabs[i2 - 1].px < 14) stageLabs[i2].px = stageLabs[i2 - 1].px + 14;
+    stageLabs.forEach(({ p2, px }) => {
       const lb = document.createElement("span");
       lb.className = "stage-lb";
-      lb.style.top = (y(p2.v) / H * 100).toFixed(1) + "%";
+      lb.style.top = (px / rowH * 100).toFixed(1) + "%";
       lb.textContent = p2.k + "단계 −" + p2.pct + "%";
-      // 오른쪽 끝은 지금 값이 단계 가격 근처일 때 가격선과 겹쳤다. 양 끝 15% 구간의 평균값이 단계 가격에서 더 먼 쪽에 둔다.
-      const nE = Math.max(1, Math.round(data.length * 0.15));
-      const avgE = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-      if (Math.abs(avgE(data.slice(0, nE)) - p2.v) > Math.abs(avgE(data.slice(-nE)) - p2.v)) lb.classList.add("left");
       plotWrap.appendChild(lb);
     });
     let stageMarks = 0;
@@ -3769,7 +3860,8 @@
       const hv = holdingValues(), maxV = Math.max(0, ...Object.values(hv));
       const pts = list.map(x => ({ x, m1: x.st.perf ? x.st.perf.m1 : null })).filter(p => p.m1 !== null && p.m1 !== undefined);
       if (!pts.length) return "";
-      const W = Math.max(300, Math.round(width)), H = 320, L = 46, R = 14, T = 12, B = 40;
+      // 휴대폰 폭에서는 구석 설명 네 개가 서로, 그리고 종목 이름과 겹쳤다(2026-11-15). 좁으면 구석 설명을 빼고 높이를 키운다.
+      const W = Math.max(300, Math.round(width)), narrow = W < 480, H = narrow ? 350 : 320, L = 46, R = 14, T = 12, B = 40;
       const xMax = Math.max(40, Math.ceil((Math.max(...pts.map(p => p.x.dd)) + 4) / 10) * 10);
       const yMax = Math.max(10, Math.ceil((Math.max(...pts.map(p => p.m1)) + 3) / 10) * 10);
       const yMin = Math.min(-10, Math.floor((Math.min(...pts.map(p => p.m1)) - 3) / 10) * 10);
@@ -3800,7 +3892,7 @@
         placed.push({ l, w: wq, y });
         return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="' + a + '" class="qd-q">' + t + '</text>';
       };
-      g += q(W - R - 4, [T + 14, y0 - 6], "end", "많이 빠졌고 최근 오름") + q(W - R - 4, [H - B - 6, y0 + 15], "end", "많이 빠졌고 아직 내림") +
+      if (!narrow) g += q(W - R - 4, [T + 14, y0 - 6], "end", "많이 빠졌고 최근 오름") + q(W - R - 4, [H - B - 6, y0 + 15], "end", "많이 빠졌고 아직 내림") +
         q(L + 4, [T + 14, y0 - 6], "start", "고점 근처, 최근 오름") + q(L + 4, [H - B - 6, y0 + 15], "start", "고점 근처, 최근 내림");
       g += '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end" class="qd-title">' + (W < 430 ? '고점 대비 하락률 →' : '52주 고점 대비 하락률 →') + '</text>' +
         '<text x="' + L + '" y="' + (H - 6) + '" text-anchor="start" class="qd-title">' + (W < 430 ? '세로: 1개월 수익률' : '세로: 최근 1개월 수익률') + '</text>';
@@ -3815,7 +3907,9 @@
         // 오른쪽, 왼쪽, 오른쪽 아래·위, 왼쪽 아래·위, 더 멀리 순서로 빈 자리를 찾는다
         const cands = [];
         [0, 13, -13, 26, -26, 39].forEach(dy => { cands.push(["start", cx + r + 4, cy + 4 + dy]); cands.push(["end", cx - r - 4, cy + 4 + dy]); });
-        let pick = cands.find(c => !hit(c[0] === "start" ? c[1] : c[1] - wTxt, c[2])) || cands[0];
+        // 빈 자리가 없으면 그림 밖으로 나가지 않는 자리라도 고른다(휴대폰에서 'SK하이닉스'가 오른쪽 끝에서 잘렸다, 2026-11-15).
+        const inside = c => { const l = c[0] === "start" ? c[1] : c[1] - wTxt; return l >= L && l + wTxt <= W - R; };
+        let pick = cands.find(c => !hit(c[0] === "start" ? c[1] : c[1] - wTxt, c[2])) || cands.find(inside) || cands[0];
         const [anchor, lx, ly] = pick;
         placed.push({ l: anchor === "start" ? lx : lx - wTxt, w: wTxt, y: ly });
         const tip = name + ": 고점 대비 −" + p.x.dd.toFixed(1) + "%, 최근 1개월 " + fmtPct(p.m1) + (p.x.lv ? ", 분할 " + p.x.lv + "단계" : "") +
