@@ -6,6 +6,8 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
 
 ## Files
 
+- `DASHBOARD-RULES.md`: 세 대시보드(stockdashboard, work-dashboard, realestate-dashboard)가 똑같이 쓰는 작업 규칙입니다(문체, 글자 12px, 숫자 표기, 메일 모양, 작업 순서, 올리기 전 점검). 고치면 세 저장소를 같이 고칩니다. 실행 때마다 다른 저장소의 파일과 비교해 다르면 경고합니다.
+- `CLAUDE.md`: 이 저장소만의 작업 안내(실행 방법, 봇이 관리하는 자료 파일, 색의 뜻). 공통 규칙을 불러옵니다.
 - `Update-StockDashboard.ps1` — fetches live quotes (Yahoo Finance chart API, no key), recent
   headlines (Google News RSS, no key), quarterly financials + analyst consensus (Naver Finance,
   no key) for the tickers listed in `watchlist.json`, then renders `template.html` into
