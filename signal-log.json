@@ -209,17 +209,35 @@
       "bench": null,
       "benchPrice": null,
       "atStart": false
+    },
+    {
+      "symbol": "PLTR",
+      "name": "팔란티어",
+      "kind": "us",
+      "signal": "이평선 매수 기준(180일선)",
+      "level": 0,
+      "date": "2026-11-17",
+      "price": 156.56,
+      "currency": "$",
+      "bench": "^IXIC",
+      "benchPrice": 24328.38,
+      "atStart": false
     }
   ],
   "episodes": {
-    "005930.KS": {
+    "GOOGL": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "PLTR": {
+    "NVDA": {
       "start": "2026-11-06",
-      "maxLevel": 2,
+      "maxLevel": 3,
+      "end": null
+    },
+    "000660.KS": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
       "end": null
     },
     "MU": {
@@ -232,12 +250,22 @@
       "maxLevel": 2,
       "end": null
     },
-    "SNDK": {
+    "ETH-USD": {
+      "start": "2026-11-08",
+      "maxLevel": 2,
+      "end": null
+    },
+    "PLTR": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
+      "end": null
+    },
+    "005930.KS": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "NVDA": {
+    "SNDK": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -253,21 +281,6 @@
       "end": null
     },
     "^KS11": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "000660.KS": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "ETH-USD": {
-      "start": "2026-11-08",
-      "maxLevel": 2,
-      "end": null
-    },
-    "GOOGL": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null

@@ -1,14 +1,14 @@
 {
   "GOOGL": {
-    "fetched": "2026-11-17",
+    "fetched": "2026-11-18",
     "data": null
   },
   "MSFT": {
-    "fetched": "2026-11-17",
+    "fetched": "2026-11-18",
     "data": null
   },
   "MU": {
-    "fetched": "2026-11-17",
+    "fetched": "2026-11-18",
     "data": {
       "date": "2026-12-16",
       "confirmed": false,
@@ -16,19 +16,15 @@
     }
   },
   "NVDA": {
-    "fetched": "2026-11-17",
-    "data": {
-      "date": "2026-11-17",
-      "confirmed": true,
-      "timing": "장 마감 후"
-    }
+    "fetched": "2026-11-18",
+    "data": null
   },
   "PLTR": {
-    "fetched": "2026-11-17",
+    "fetched": "2026-11-18",
     "data": null
   },
   "SNDK": {
-    "fetched": "2026-11-17",
+    "fetched": "2026-11-18",
     "data": null
   }
 }
