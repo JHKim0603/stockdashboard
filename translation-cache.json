@@ -119,6 +119,10 @@
     "ko": "$SanDisk (SNDK.US)$ ETF x2와 기초 주식의 비율은 같습니다",
     "seen": "2026-09-30"
   },
+  "$SPDR S&P 500 ETF (SPY.US)$ $S&P 500 Index (.SPX.US)$ good start once again": {
+    "ko": "$SPDR S&P 500 ETF (SPY.US)$ $S&P 500 Index (.SPX.US)$ 다시 한 번 좋은 시작",
+    "seen": "2026-11-19"
+  },
   "£5,000 invested in Nvidia stock 7 days ago is now worth…": {
     "ko": "7일 전에 Nvidia 주식에 투자한 £5,000의 가치는 이제…",
     "seen": "2026-11-11"
@@ -4299,6 +4303,10 @@
     "ko": "Microsoft Corporation(MSFT) 주식: Northern Trust가 AI 기반 온보딩 에이전트를 공개하면서 상승",
     "seen": "2026-11-10"
   },
+  "Microsoft Corporation (MSFT) Surged on Strong Azure Growth and AI-related Demand": {
+    "ko": "강력한 Azure 성장과 AI 관련 수요로 급증한 Microsoft Corporation(MSFT)",
+    "seen": "2026-11-19"
+  },
   "Microsoft Cost Cuts: What a 20% Reduction at Azure Could Mean for MSFT Stock": {
     "ko": "Microsoft 비용 절감: Azure의 20% 절감이 MSFT 주식에 미치는 영향",
     "seen": "2026-10-20"
@@ -4513,7 +4521,7 @@
   },
   "Microsoft Stock Hits Seven-Week Low: Is a Bigger Drop Coming?": {
     "ko": "Microsoft 주식이 7주 최저치를 기록했습니다: 더 큰 하락이 다가오고 있습니까?",
-    "seen": "2026-11-18"
+    "seen": "2026-11-19"
   },
   "Microsoft stock is on pace for its first record close in nearly a year": {
     "ko": "마이크로소프트 주식은 거의 1년 만에 처음으로 사상 최고치를 기록했다.",
@@ -8654,6 +8662,10 @@
   "Stock market outlook today,18 Nov:Sensex, Nifty prediction-DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan cues": {
     "ko": "오늘의 주식 시장 전망, 11월 18일:Sensex, Nifty 예측 - DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan 신호",
     "seen": "2026-11-18"
+  },
+  "Stock market outlook today,19 Nov:Sensex, Nifty prediction-DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan cues": {
+    "ko": "오늘의 주식 시장 전망, 11월 19일:Sensex, Nifty 예측 - DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan 신호",
+    "seen": "2026-11-19"
   },
   "Stock Market Today (Oct. 15, 2026): Dow edges higher as tech sell-off pivots": {
     "ko": "오늘 주식 시장(2026년 10월 15일): 기술 매도세가 전환되면서 다우가 상승했습니다.",
