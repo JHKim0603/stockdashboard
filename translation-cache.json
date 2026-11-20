@@ -11,6 +11,10 @@
     "ko": "'축구 팀의 주장': Alex Karp는 Palantir의 AI 매력이 급증하고 있다고 말합니다.",
     "seen": "2026-11-03"
   },
+  "‘Dean Of Valuation’ Says Nvidia Is 30% Below Fair Value, Waits For $140 — Calls Jensen Huang ‘Great CEO, But Human’": {
+    "ko": "'평가 담당관'은 엔비디아가 적정 가치보다 30% 낮으며 140달러를 기다리고 있다고 말하며 Jensen Huang을 '훌륭한 CEO이지만 인간'이라고 부릅니다.",
+    "seen": "2026-11-20"
+  },
   "‘Hard to Know If We’re in an AI Bubble’ Jeff Bezos Says, But Should a Retiree Buy AI Stocks? — ‘I Would Usually Tell a Retiree to Buy the S&P 500’": {
     "ko": "제프 베조스 \"AI 버블에 빠졌는지 알기 어렵다\" 하지만 퇴직자는 AI 주식을 사야 할까? — '저는 보통 퇴직자에게 S&P 500을 사라고 말하겠습니다.'",
     "seen": "2026-10-31"
@@ -2527,6 +2531,10 @@
     "ko": "2026년 10월 8일 목요일 미국 주요 주가 지수의 흐름",
     "seen": "2026-10-09"
   },
+  "How major US stock indexes fared Thursday 11/19/2026": {
+    "ko": "2026년 11월 19일 목요일 미국 주요 주가 지수의 흐름",
+    "seen": "2026-11-20"
+  },
   "How major US stock indexes fared Thursday 9/24/2026": {
     "ko": "2026년 9월 24일 목요일 미국 주요 주가 지수의 흐름",
     "seen": "2026-09-25"
@@ -3122,6 +3130,10 @@
   "Kevin O’Leary Says Nvidia Needs Leader Who Can Manage ‘International Pressure’ as Crypto Punters Raise Odds of NVDA Stock Hitting $180 By Month-End": {
     "ko": "Kevin O'Leary는 암호화폐 투자자들이 월말까지 NVDA 주가가 180달러를 기록할 확률을 높이면서 Nvidia에는 '국제적 압력'을 관리할 수 있는 리더가 필요하다고 말했습니다.",
     "seen": "2026-11-18"
+  },
+  "Key facts: Azure $47.2B pact; $100B revenue; $1B Anthropic shares": {
+    "ko": "주요 사실: Azure $47.2B 계약; $1000억 수익; 10억 달러 규모의 인류주식",
+    "seen": "2026-11-20"
   },
   "Key facts: Microsoft $45.2B Q1 capex; service outage hits shares": {
     "ko": "주요 사실: Microsoft 1분기 자본 지출 452억 달러; 서비스 중단으로 주가 하락",
@@ -3930,6 +3942,10 @@
   "Micron Technology (MU) Stock Price Prediction: Momentum Rebounds, but the Tape Still Needs Confirmation": {
     "ko": "Micron Technology(MU) 주가 예측: 모멘텀이 반등했지만 테이프에는 여전히 확인이 필요합니다.",
     "seen": "2026-11-12"
+  },
+  "Micron Technology (MU) Stock Price Prediction: RBC’s $1,500 target meets a technical reset after a sharp pullback": {
+    "ko": "Micron Technology(MU) 주가 예측: RBC의 $1,500 목표는 급격한 하락 후 기술적 재설정을 충족합니다.",
+    "seen": "2026-11-20"
   },
   "Micron Technology (MU) Stock Rises 2.5% on Bullish Outlook from Bank of America": {
     "ko": "마이크론 테크놀로지(MU) 주식은 Bank of America의 강세 전망에 2.5% 상승",
@@ -4958,6 +4974,10 @@
   "Modeling Alphabet, Part 1: Search, Gemini, And YouTube (GOOGL)": {
     "ko": "알파벳 모델링, 1부: 검색, Gemini 및 YouTube(GOOGL)",
     "seen": "2026-11-17"
+  },
+  "Mooers' Top Picks | Apple Beats Tech Peers—Where Are Dip Buyers Turning?": {
+    "ko": "Mooers의 최고 추천 상품 | Apple이 기술 동료를 이겼습니다. Dip 구매자는 어디로 향하고 있습니까?",
+    "seen": "2026-11-20"
   },
   "Morgan Stanley revisits Micron stock price target amid stellar growth": {
     "ko": "모건스탠리, 눈부신 성장 속에 마이크론 주가 목표 재검토",
@@ -7775,6 +7795,10 @@
     "ko": "S&P 500은 3분기에 35% 이상의 수익 성장을 보고할 가능성이 높습니다.",
     "seen": "2026-10-10"
   },
+  "S&P 500 Movers | Winners: PANW, OKTA, P | Losers: WSM, TWLO, AMD": {
+    "ko": "S&P 500 무버 | 수상자: PANW, OKTA, P | 패자: WSM, TWLO, AMD",
+    "seen": "2026-11-20"
+  },
   "S&P 500 nears 8,000 with one big problem": {
     "ko": "S&P 500이 한 가지 큰 문제로 인해 8,000에 가까워졌습니다.",
     "seen": "2026-10-20"
@@ -9101,7 +9125,7 @@
   },
   "Stock Market: Will S&P 500 Open Up or Down Today?": {
     "ko": "주식시장: 오늘 S&P 500이 상승할 것인가, 하락할 것인가?",
-    "seen": "2026-11-18"
+    "seen": "2026-11-20"
   },
   "Stock markets continue to rise as US indices gain": {
     "ko": "미국 지수가 상승하면서 주식 시장은 계속 상승하고 있습니다.",
@@ -10099,6 +10123,10 @@
     "ko": "무엇이 SanDisk 주식을 급등시킬 수 있습니까?",
     "seen": "2026-10-07"
   },
+  "What Could Stall Microsoft Stock’s Run?": {
+    "ko": "Microsoft Stock의 운영을 방해할 수 있는 것은 무엇입니까?",
+    "seen": "2026-11-20"
+  },
   "What Could Surprise Palantir Stock Investors On The Upside?": {
     "ko": "Palantir 주식 투자자를 놀라게 할 수 있는 것은 무엇입니까?",
     "seen": "2026-10-22"
@@ -10674,6 +10702,10 @@
   "Why Stock Market Plunged After US Midterm Elections": {
     "ko": "미국 중간선거 이후 주식시장이 급락한 이유",
     "seen": "2026-11-06"
+  },
+  "Why the Nasdaq and the Dow Can Move in Opposite Directions, and What It Means for FTSE 100 Investors": {
+    "ko": "Nasdaq과 Dow가 반대 방향으로 움직일 수 있는 이유와 이것이 FTSE 100 투자자에게 의미하는 바",
+    "seen": "2026-11-20"
   },
   "Why These Wall Street Analysts Think Microsoft Stock Is ‘Getting Back on Track": {
     "ko": "월스트리트 분석가들이 마이크로소프트 주식이 '정상으로 돌아오고 있다'고 생각하는 이유",
