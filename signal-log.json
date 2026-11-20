@@ -222,16 +222,39 @@
       "bench": "^IXIC",
       "benchPrice": 24328.38,
       "atStart": false
+    },
+    {
+      "symbol": "MSFT",
+      "name": "마이크로소프트",
+      "kind": "us",
+      "signal": "분할 1단계",
+      "level": 1,
+      "date": "2026-11-19",
+      "price": 498.3,
+      "currency": "$",
+      "bench": "^IXIC",
+      "benchPrice": 23879.2,
+      "atStart": false
     }
   ],
   "episodes": {
+    "^IXIC": {
+      "start": "2026-11-16",
+      "maxLevel": 1,
+      "end": null
+    },
     "SNDK": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "^IXIC": {
-      "start": "2026-11-16",
+    "^KS11": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "MSFT": {
+      "start": "2026-11-19",
       "maxLevel": 1,
       "end": null
     },
@@ -240,12 +263,7 @@
       "maxLevel": 3,
       "end": null
     },
-    "PLTR": {
-      "start": "2026-11-06",
-      "maxLevel": 2,
-      "end": null
-    },
-    "NVDA": {
+    "005930.KS": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -255,17 +273,17 @@
       "maxLevel": 2,
       "end": null
     },
-    "^KS11": {
+    "QLD": {
       "start": "2026-11-06",
-      "maxLevel": 3,
+      "maxLevel": 2,
+      "end": null
+    },
+    "PLTR": {
+      "start": "2026-11-06",
+      "maxLevel": 2,
       "end": null
     },
     "GOOGL": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "MU": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -275,12 +293,12 @@
       "maxLevel": 2,
       "end": null
     },
-    "QLD": {
+    "NVDA": {
       "start": "2026-11-06",
-      "maxLevel": 2,
+      "maxLevel": 3,
       "end": null
     },
-    "005930.KS": {
+    "MU": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
