@@ -3071,6 +3071,10 @@
     "seen": "2026-10-07",
     "ko": "S&P 500은 역사적으로 비싼가요, 아니면 저렴한가요? 대답은 당신이 그것을 어떻게 보느냐에 달려 있습니다."
   },
+  "Is the stock market down for the year? Only the Nasdaq; the S&P 500 and Dow are barely up for 2026": {
+    "seen": "2026-11-21",
+    "ko": "올해 주식시장이 하락했는가? 나스닥만; S&P 500과 다우 지수는 2026년까지 거의 상승하지 않았습니다."
+  },
   "Is the stock market in a correction? The Nasdaq is, the Dow is a step away and the S&P 500 is 8% off": {
     "seen": "2026-11-20",
     "ko": "주식시장이 조정을 받고 있는가? 나스닥은, 다우는 한 발짝 물러나고, S&P 500은 8% 할인됩니다."
@@ -6747,6 +6751,10 @@
     "seen": "2026-11-12",
     "ko": "Nvidia의 Jensen Huang이 뜨거운 자리에 있습니다. 내 Nvidia 주식으로 무엇을 하고 있는지 살펴보겠습니다."
   },
+  "NVIDIA's Market Cap Evaporates, Equaling Amazon's, Amid Tech Selloff": {
+    "seen": "2026-11-21",
+    "ko": "NVIDIA의 시가총액은 기술 매도 속에서 Amazon과 동일하게 증발합니다."
+  },
   "Nvidia's next 'holy grail' is physical AI: Dan Ives": {
     "seen": "2026-09-30",
     "ko": "엔비디아의 다음 '성배'는 물리적 AI입니다: Dan Ives"
@@ -9338,6 +9346,10 @@
   "Stocks Rise as Democrats Flip Control of Congress": {
     "seen": "2026-11-05",
     "ko": "민주당이 의회를 장악하면서 주가 상승"
+  },
+  "Stocks Skid Into a Correction, as A.I. Worries Intensify": {
+    "seen": "2026-11-21",
+    "ko": "A.I. 걱정이 심해진다"
   },
   "Stocks Slide With Dollar on Rising Blue-Wave Bets: Markets Wrap": {
     "seen": "2026-11-04",
