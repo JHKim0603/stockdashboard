@@ -1714,7 +1714,7 @@ $foreignItems = @(foreach ($t in @($tickers | Where-Object { $_.Symbol -match '^
         [PSCustomObject]@{
             symbol    = $t.Symbol
             title     = "$nmF 외국인"
-            tag       = "최근 5거래일 합계"
+            tag       = ""   # '최근 5거래일 합계'는 화면에서 큰 숫자 바로 아래에 적는다(오른쪽 위 꼬리표 자리에서는 숫자의 설명으로 읽히지 않았다)
             name      = $nmF
             d         = $dF
             f         = $fAmt
@@ -1802,6 +1802,14 @@ $indicators = [PSCustomObject]@{
     coinFg   = $coinFgItem
     failed   = @($indFailed)
     failNote = [string]$indFailNote
+}
+# 조사·발표일이 8일 넘게 지난 값은 화면과 메일에 며칠 전 값인지 적는다. DRAMeXchange 서버 모듈 값이 11/9 조사에서 2주째
+# 멈춰 있었는데 다른 카드와 똑같이 보였다(2026-11-23 검토).
+foreach ($itA in (@($indicators.memory) + @($indicators.funds) + @($indicators.foreign) + @($indicators.vix, $indicators.coinFg))) {
+    if (-not $itA -or -not $itA.date) { continue }
+    $ageI = ($nowKst.Date - [datetime]::ParseExact([string]$itA.date, "yyyy-MM-dd", $indInv)).Days
+    $itA | Add-Member -NotePropertyName ageDays -NotePropertyValue ([int]$ageI) -Force
+    $itA | Add-Member -NotePropertyName stale -NotePropertyValue ([bool]($ageI -gt 8)) -Force
 }
 Write-Host "관련 지표: 받지 못한 것 $($indFailed.Count)건$(if ($indFailed.Count) { " ($($indFailed -join ', '))" })"
 
@@ -3005,7 +3013,8 @@ $addIndRow = {
     $chgM = if ($it.chgText) { "<font color=$($indMailColor[[string]$it.dir])>$([System.Net.WebUtility]::HtmlEncode([string]$it.chgText))</font>" } else { "" }
     $valM = [System.Net.WebUtility]::HtmlEncode("$($it.valueText)$(if ($it.unit) { " $($it.unit)" })")
     $dtM = if ($it.date) { Format-IndDate ([string]$it.date) } else { "" }
-    [void]$indMailRows.Add("<tr><td>$([System.Net.WebUtility]::HtmlEncode($nameTxt))</td><td align=right nowrap>$valM</td><td align=right nowrap>$chgM</td><td align=right nowrap><font color=#898781>$dtM</font></td></tr>")
+    $dtCell = if ($it.stale) { "<font color=#a15c00>$dtM, $($it.ageDays)일 전</font>" } else { "<font color=#898781>$dtM</font>" }
+    [void]$indMailRows.Add("<tr><td>$([System.Net.WebUtility]::HtmlEncode($nameTxt))</td><td align=right nowrap>$valM</td><td align=right nowrap>$chgM</td><td align=right nowrap>$dtCell</td></tr>")
 }
 $memMail = @($indicators.memory | Where-Object { $_.valueText })
 if ($memMail.Count) {

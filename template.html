@@ -723,40 +723,56 @@
   .fg-line { fill: none; stroke: var(--ink-primary); stroke-width: 1.6; }
   .fg-trend { flex: 1 1 260px; min-width: 0; }
 
-  /* 관련 지표(2026-11-23): 메모리 가격, 국내 증시 자금, 외국인 매매, 시장 심리. 카드 2장짜리 묶음(half)은 넓은 화면에서 나란히 둔다. */
+  /* 관련 지표(2026-11-23): 메모리 가격, 국내 증시 자금, 외국인 매매, 시장 심리. 카드 2장짜리 묶음(half)은 넓은 화면에서 나란히 두고
+     카드 높이를 맞춘다(묶음과 카드를 세로 flex 로 늘림). 기간 단추는 묶음마다 하나. 휴대폰에서는 묶음 설명을 접는다. */
   .ind-groups { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 28px; }
-  .ind-group { grid-column: 1 / -1; min-width: 0; }
+  .ind-group { grid-column: 1 / -1; min-width: 0; display: flex; flex-direction: column; }
   .ind-group.half { grid-column: auto; }
-  .ind-group h4 { font-size: 14px; font-weight: 700; color: var(--ink-primary); margin: 12px 0 2px; }
-  .ind-group .vis-sub a { color: var(--accent); }
-  .ind-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .ind-ghead { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin: 12px 0 2px; }
+  .ind-ghead h4 { font-size: 14px; font-weight: 700; color: var(--ink-primary); margin: 0; }
+  .ind-ghead .ind-rng { margin-left: auto; }
+  .ind-rng[hidden] { display: none; }
+  .ind-sub-tg { display: none; font: inherit; font-size: 12px; color: var(--ink-muted); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 1px 8px; cursor: pointer; }
+  .ind-sub a { color: var(--accent); }
+  .ind-grid { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .ind-group.half .ind-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ind-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px 10px; background: var(--surface-raised); min-width: 0; }
+  .ind-card { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px 10px; background: var(--surface-raised); min-width: 0; }
   .ind-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .ind-title { font-size: 14px; font-weight: 700; color: var(--ink-primary); white-space: nowrap; }
+  button.ind-title { font: inherit; font-size: 14px; font-weight: 700; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+  button.ind-title:hover, button.ind-title:focus-visible { color: var(--accent); text-decoration: underline; }
   .ind-tag { font-size: 12px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ind-val { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--ink-primary); margin-top: 6px; }
   .ind-val small { font-size: 13px; font-weight: 600; color: var(--ink-secondary); margin-left: 5px; letter-spacing: 0; }
+  .ind-cap { font-size: 12px; color: var(--ink-muted); }
   .ind-chg { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--ink-secondary); margin-top: 1px; min-height: 19px; }
   .ind-chg .up, .ind-val small.up { color: var(--rise); }
   .ind-chg .down, .ind-val small.down { color: var(--fall); }
   .ind-basis { color: var(--ink-muted); }
-  .ind-rng { margin: 8px 0 2px; flex-wrap: wrap; }
-  .ind-rng[hidden] { display: none; }
-  .ind-plot { position: relative; width: 100%; min-height: 40px; margin-top: 4px; }
+  .ind-plot { position: relative; width: 100%; min-height: 40px; margin-top: 8px; flex: 1 1 auto; }   /* 옆 카드에 맞춰 늘어난 높이만큼 그래프를 키운다 */
+  .ind-plot.is-empty { min-height: 0; margin-top: 2px; }
+  .ind-wait { font-size: 12.5px; color: var(--ink-muted); line-height: 1.55; word-break: keep-all; }
   .ind-svg { display: block; touch-action: pan-y; }
-  .ind-line { fill: none; stroke: var(--ink-primary); stroke-width: 1.5; stroke-linejoin: round; }
+  .ind-line { fill: none; stroke: var(--ink-primary); stroke-width: 1.6; stroke-linejoin: round; }
+  .ind-line.up { stroke: var(--rise); }
+  .ind-line.down { stroke: var(--fall); }
   .ind-area { fill: var(--ink-primary); opacity: .06; }
+  .ind-area.up { fill: var(--rise); opacity: .08; }
+  .ind-area.down { fill: var(--fall); opacity: .08; }
   .ind-ref { stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 4 3; }
+  .ind-ref-lb { font-size: 12px; font-weight: 700; fill: var(--ink-secondary); }
+  .ind-ext { fill: var(--surface-raised); stroke: var(--ink-secondary); stroke-width: 1.5; }
+  .ind-ext-lb { font-size: 12px; fill: var(--ink-secondary); paint-order: stroke; stroke: var(--surface-raised); stroke-width: 3px; stroke-linejoin: round; }
   .ind-zero { stroke: var(--ink-muted); stroke-width: 1; }
+  .ind-win { fill: var(--ink-muted); opacity: .12; }
   .ind-bar.up { fill: var(--rise); }
   .ind-bar.down { fill: var(--fall); }
   .ind-guide { stroke: var(--ink-muted); stroke-width: 1; }
   .ind-hdot { fill: var(--ink-primary); }
   .ind-tip { position: absolute; top: 0; left: 0; font-size: 12px; color: var(--ink-primary); background: var(--surface-raised); border: 1px solid var(--border); border-radius: 6px; padding: 2px 7px; white-space: nowrap; pointer-events: none; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
   .ind-note { font-size: 12.5px; color: var(--ink-secondary); line-height: 1.55; margin-top: 4px; }
-  .ind-foot { font-size: 12px; color: var(--ink-muted); margin-top: 6px; }
-  .ind-empty { font-size: 12.5px; color: var(--ink-muted); line-height: 1.55; padding: 22px 4px; text-align: center; word-break: keep-all; }
+  .ind-foot { font-size: 12px; color: var(--ink-muted); margin-top: auto; padding-top: 6px; }
+  .ind-stale { color: var(--warn); font-weight: 600; margin-left: 4px; }
   .ind-fail { font-size: 12.5px; color: var(--warn); background: var(--warn-wash); border-radius: 8px; padding: 6px 10px; margin: 6px 0 4px; }
   @media (max-width: 1180px) {
     .ind-groups { grid-template-columns: minmax(0, 1fr); }
@@ -764,6 +780,8 @@
   }
   @media (max-width: 620px) {
     .ind-grid, .ind-group.half .ind-grid { grid-template-columns: minmax(0, 1fr); }
+    .ind-sub-tg { display: inline-block; }
+    .ind-group:not(.open) .ind-sub { display: none; }
   }
   /* 카드 차트: 분할 단계 가격, 단계 진입 표시, 거래량 */
   .stage-lb { position: absolute; right: 2px; transform: translateY(-110%); font-size: 12px; color: var(--accent); background: var(--surface); padding: 0 3px; border-radius: 3px; line-height: 1.2; pointer-events: none; opacity: .92; }
@@ -4057,7 +4075,10 @@
   // ---- 관련 지표 ---------------------------------------------------------------------------
   // 2026-11-23 추가. 관심 종목과 연관된 공개 지표 중 인증키 없이 받는 것: 메모리 현물가(DRAMeXchange), 국내 증시 자금
   // (금융투자협회), 외국인 매매(네이버 증권), VIX, 코인 공포·탐욕지수(Alternative.me). 큰 값, 변화, 기준일 글은 수집
-  // 스크립트가 메일과 같은 계산으로 만들어 넣었고(valueText, chgText, dateText), 여기서는 그래프와 기간 단추만 맡는다.
+  // 스크립트가 메일과 같은 계산으로 만들어 넣었고(valueText, chgText, dateText, stale), 여기서는 그래프와 기간 단추만 맡는다.
+  // 같은 날 시각 검토 반영: 기간 단추는 묶음마다 하나(같은 날짜 자료를 같은 기간으로 견줌), 선 색은 보고 있는 기간의 처음보다
+  // 올랐으면 빨강·내렸으면 파랑(한눈 요약 6개월 그래프와 같은 규칙), 기간 중 최고·최저 이름표, 기준선(VIX 20·30)의 숫자,
+  // 왼쪽 끝 눈금(3년 보기의 첫 해)도 표시, 외국인 최근 5거래일 바탕, 휴대폰은 낮은 그래프와 접는 설명, 기록 전 카드는 낮게.
   (function buildIndicators() {
     const host = document.getElementById("indicators");
     const IND = INDICATORS;
@@ -4066,12 +4087,17 @@
     const LR = [["1M", "1개월", 1], ["3M", "3개월", 3], ["1Y", "1년", 12], ["3Y", "3년", 36]];
     const BR = [["20", "1개월", 20], ["60", "3개월", 60]];
     const COIN_BANDS = [[0, 25, "#c0392b", 0.13], [25, 47, "#e67e22", 0.10]];   // Alternative.me 의 극단적 공포(0~24)와 공포(25~46)
+    // 코인 공포·탐욕 구간 색('그림으로 보기'의 CNN 게이지와 같은 다섯 색). 구간 경계는 Alternative.me 기준.
+    const COIN_COL = [[25, "#c0392b"], [47, "#e67e22"], [55, "#a8a69e"], [76, "#7cb342"], [101, "#2e7d32"]];
     const tms = s => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
-    const mdw = s => (+s.slice(5, 7)) + "/" + (+s.slice(8, 10)) + "(" + DOW[new Date(tms(s)).getUTCDay()] + ")";
+    const md = s => (+s.slice(5, 7)) + "/" + (+s.slice(8, 10));
+    const mdw = s => md(s) + "(" + DOW[new Date(tms(s)).getUTCDay()] + ")";
     const tw = (t, fs) => [...String(t)].reduce((a, c) => a + (/[가-힣]/.test(c) ? fs : fs * 0.6), 0);
     const nice = (span, n) => { const raw = span / n || 1, mag = Math.pow(10, Math.floor(Math.log10(raw))), r = raw / mag; return (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * mag; };
     const decOf = step => Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
     const arr = v => Array.isArray(v) ? v : [];
+    const narrow = () => window.innerWidth <= 620;
+    const datesOf = it => arr(it.d).length ? it.d : arr(IND.fundsD);
 
     // 마우스를 올렸을 때의 값 글. 카드 위 큰 값은 수집 스크립트의 글을 그대로 쓴다.
     function fmtV(fmt, v) {
@@ -4081,6 +4107,12 @@
       if (fmt === "idx") return s + a.toFixed(2);
       return s + Math.round(a);
     }
+    // 그림 속 최고·최저 이름표의 짧은 값(눈금처럼 '조', '억')
+    function fmtShort(fmt, v) {
+      const a = Math.abs(v);
+      if (fmt === "eok") return a >= 10000 ? (a / 10000).toFixed(2) + "조" : Math.round(a).toLocaleString("en-US") + "억";
+      return fmtV(fmt, v);
+    }
     function fmtAxis(fmt, v, step, big) {
       const a = Math.abs(v), s = v < 0 ? "−" : "";
       if (v === 0 && fmt === "eok") return "0";
@@ -4088,7 +4120,8 @@
       if (fmt === "usd") return s + "$" + (a >= 1000 ? Math.round(a).toLocaleString("en-US") : a.toFixed(decOf(step)));
       return s + a.toFixed(decOf(step));
     }
-    // 가로 눈금: 1개월은 1주 간격 날짜, 3개월은 달, 1년은 분기, 그보다 길면 해. 1월은 해로 적는다. 붙거나 잘리는 눈금은 뺀다.
+    // 가로 눈금: 1개월은 1주 간격 날짜, 3개월은 달, 1년은 분기, 그보다 길면 해. 1월은 해로 적는다.
+    // 끝에 걸리는 눈금은 버리지 않고 끝에 붙인다(3년 보기에서 첫 해 '2024'가 빠졌다). 붙는 눈금만 뺀다.
     function xTicks(t0, t1, X, xMin, xMax) {
       const span = (t1 - t0) / 864e5, out = [];
       if (span <= 50) {
@@ -4108,20 +4141,52 @@
       let lastR = -1e9;
       out.forEach(([t, lb]) => {
         const x = X(t), w = tw(lb, 12);
-        if (x - w / 2 < xMin || x + w / 2 > xMax || x - w / 2 < lastR + 10) return;
-        res.push([x, lb]); lastR = x + w / 2;
+        let l = x - w / 2, tx = x, anchor = "middle";
+        if (l < xMin) { l = xMin; tx = xMin; anchor = "start"; }
+        if (l + w > xMax) { l = xMax - w; tx = xMax; anchor = "end"; }
+        if (l < lastR + 10) return;
+        res.push([tx, lb, anchor]);
+        lastR = l + w;
       });
       return res;
     }
-    function yAxis(lo, hi, step, fmt, big) {
-      const ticks = [];
-      for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) ticks.push(Math.abs(v) < step / 1e6 ? 0 : v);
-      const labs = ticks.map(v => fmtAxis(fmt, v, step, big));
-      return { ticks, labs, R: Math.ceil(Math.max(0, ...labs.map(t => tw(t, 12)))) + 10 };
+    // 세로 눈금과 기준선 숫자. 기준선(VIX 20·30)은 숫자를 굵게 적고, 그 옆 13px 안의 보통 눈금은 뺀다.
+    function axisLabels(lo, hi, step, fmt, big, refs, Y) {
+      const refIn = arr(refs).filter(v => v > lo && v < hi), out = [];
+      for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) {
+        const vv = Math.abs(v) < step / 1e6 ? 0 : v;
+        if (refIn.some(r => Math.abs(Y(r) - Y(vv)) < 13)) continue;
+        out.push({ v: vv, t: fmtAxis(fmt, vv, step, big), ref: false });
+      }
+      refIn.forEach(r => out.push({ v: r, t: fmtAxis(fmt, r, 1, big), ref: true }));
+      return out;
+    }
+    // 이름표 자리 찾기: 점의 위(최고) 또는 아래(최저), 그다음 점 옆을 좌우로 본다. 그림 밖으로 나가면 안쪽으로 밀어 넣고
+    // (점이 가운데쯤이면 좌우 어느 쪽에도 다 들어가지 않아 이름표가 빠졌다), 선의 점을 적게 덮고 점에서 덜 밀린 자리를 고른다.
+    // strict(휴대폰): 선의 점을 하나라도 덮는 자리뿐이면 이름표를 빼고 점만 남긴다(낮은 그래프에서 이름표가 선을 가로질러 어지러웠다).
+    function placeLabel(text, x0, y0, up, px, py, box, taken, strict) {
+      const w = tw(text, 12) + 2;
+      if (w > box.r - box.l) return "";
+      let best = null, bestScore = Infinity;
+      (up ? [-7, 16, 4] : [16, -7, 4]).forEach((dy, di) => {
+        [x0 + 5, x0 - 5 - w].forEach(l0 => {
+          const l = Math.min(Math.max(l0, box.l), box.r - w), r = l + w, y = y0 + dy, t = y - 11, b = y + 3;
+          if (t < box.t || b > box.b) return;
+          if (taken.some(o => l < o.r && r > o.l && t < o.b && b > o.t)) return;
+          if (dy === 4 && l < x0 + 4 && r > x0 - 4) return;   // 점 옆 자리인데 밀려서 점을 덮으면 쓰지 않는다
+          let hit = 0;
+          for (let i = 0; i < px.length; i++) if (px[i] >= l - 1 && px[i] <= r + 1 && py[i] >= t - 2 && py[i] <= b + 2) hit++;
+          const score = hit * 10 + Math.abs(l - l0) / 20 + di;
+          if (score < bestScore) { bestScore = score; best = { l, r, t, b, y }; }
+        });
+      });
+      if (!best || (strict && bestScore >= 10)) return "";
+      taken.push(best);
+      return '<text x="' + best.l.toFixed(1) + '" y="' + best.y.toFixed(1) + '" class="ind-ext-lb">' + esc(text) + '</text>';
     }
 
-    function lineSvg(it, rk, width) {
-      const D = arr(it.d).length ? it.d : arr(IND.fundsD), V = arr(it.v);
+    function lineSvg(it, rk, width, H) {
+      const D = datesOf(it), V = arr(it.v);
       let pts = [];
       for (let k = 0; k < Math.min(D.length, V.length); k++) if (typeof V[k] === "number") pts.push([tms(D[k]), V[k], D[k]]);
       if (pts.length && rk) {
@@ -4131,7 +4196,8 @@
         pts = pts.filter(p => p[0] >= e.getTime());
       }
       if (pts.length < 2) return null;
-      const W = Math.max(220, Math.round(width)), H = 132, T = 8, B = 20, L = 2;
+      const ext = !it.fixed && pts.length >= 3;
+      const W = Math.max(220, Math.round(width)), T = ext ? 18 : 8, B = 20, L = 2;
       let lo, hi;
       if (it.fixed) { lo = it.fixed[0]; hi = it.fixed[1]; }
       else {
@@ -4140,30 +4206,44 @@
         lo -= pad; hi += pad;
         if (lo < 0) lo = 0;
       }
-      const step = it.fixed ? 25 : nice(hi - lo, 3);
-      const ax = yAxis(lo, hi, step, it.fmt, it.fmt === "eok" && Math.max(Math.abs(lo), Math.abs(hi)) >= 10000);
-      const R = ax.R, t0 = pts[0][0], t1 = pts[pts.length - 1][0];
-      const X = t => L + (t - t0) / ((t1 - t0) || 1) * (W - L - R);
       const Y = v => T + (hi - v) / ((hi - lo) || 1) * (H - T - B);
+      const step = it.fixed ? 25 : nice(hi - lo, narrow() ? 2 : 3);
+      const labs = axisLabels(lo, hi, step, it.fmt, it.fmt === "eok" && Math.max(Math.abs(lo), Math.abs(hi)) >= 10000, it.refs, Y);
+      const R = Math.ceil(Math.max(0, ...labs.map(a => tw(a.t, 12)))) + 10;
+      const t0 = pts[0][0], t1 = pts[pts.length - 1][0];
+      const X = t => L + (t - t0) / ((t1 - t0) || 1) * (W - L - R);
+      // 선 색: 보고 있는 기간의 처음보다 올랐으면 빨강, 내렸으면 파랑. 0~100 고정 눈금(코인 공포·탐욕)은 구간 색이 있어 검정.
+      const chgW = (pts[pts.length - 1][1] / pts[0][1] - 1) * 100;
+      const dirC = it.fixed || !isFinite(chgW) || Math.abs(chgW) < 0.05 ? "" : chgW > 0 ? " up" : " down";
       let g = "";
       (it.key === "coinfg" ? COIN_BANDS : []).forEach(b => {
         g += '<rect x="' + L + '" y="' + Y(b[1]).toFixed(1) + '" width="' + (W - L - R) + '" height="' + (Y(b[0]) - Y(b[1])).toFixed(1) + '" fill="' + b[2] + '" opacity="' + b[3] + '"/>';
       });
-      ax.ticks.forEach((v, i) => {
-        g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" class="qd-grid"/>' +
-          '<text x="' + (W - R + 6) + '" y="' + (Y(v) + 4).toFixed(1) + '" class="qd-ax">' + esc(ax.labs[i]) + '</text>';
+      labs.forEach(a => {
+        g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(a.v).toFixed(1) + '" y2="' + Y(a.v).toFixed(1) + '" class="' + (a.ref ? "ind-ref" : "qd-grid") + '"/>' +
+          '<text x="' + (W - R + 6) + '" y="' + (Y(a.v) + 4).toFixed(1) + '" class="' + (a.ref ? "ind-ref-lb" : "qd-ax") + '">' + esc(a.t) + '</text>';
       });
-      arr(it.refs).forEach(v => {
-        if (v > lo && v < hi) g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" class="ind-ref"/>';
-      });
-      xTicks(t0, t1, X, L, W - R).forEach(([x, lb]) => {
-        g += '<text x="' + x.toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle" class="qd-ax">' + esc(lb) + '</text>';
+      xTicks(t0, t1, X, L, W - R).forEach(([x, lb, anc]) => {
+        g += '<text x="' + x.toFixed(1) + '" y="' + (H - 5) + '" text-anchor="' + anc + '" class="qd-ax">' + esc(lb) + '</text>';
       });
       const px = pts.map(p => X(p[0])), py = pts.map(p => Y(p[1]));
       const line = px.map((x, k) => (k ? "L" : "M") + x.toFixed(1) + "," + py[k].toFixed(1)).join("");
-      if (!it.fixed) g += '<path d="' + line + "L" + px[px.length - 1].toFixed(1) + "," + (H - B) + "L" + px[0].toFixed(1) + "," + (H - B) + 'Z" class="ind-area"/>';
-      g += '<path d="' + line + '" class="ind-line"/>' +
-        '<circle cx="' + px[px.length - 1].toFixed(1) + '" cy="' + py[py.length - 1].toFixed(1) + '" r="3" class="fg-hub"/>' +
+      if (!it.fixed) g += '<path d="' + line + "L" + px[px.length - 1].toFixed(1) + "," + (H - B) + "L" + px[0].toFixed(1) + "," + (H - B) + 'Z" class="ind-area' + dirC + '"/>';
+      g += '<path d="' + line + '" class="ind-line' + dirC + '"/>';
+      // 기간 중 최고·최저: 속이 빈 점과 이름표('최고 38.63조(6/24)'). 해가 다르면 해를 붙인다.
+      if (ext) {
+        let iMax = 0, iMin = 0;
+        pts.forEach((p, k) => { if (p[1] > pts[iMax][1]) iMax = k; if (p[1] < pts[iMin][1]) iMin = k; });
+        const lastY = pts[pts.length - 1][2].slice(0, 4);
+        const when = d => (d.slice(0, 4) === lastY ? "" : d.slice(2, 4) + "년 ") + md(d);
+        const taken = [], box = { l: L, r: W - R - 2, t: 0, b: H - B };
+        [[iMax, true, "최고"], [iMin, false, "최저"]].forEach(([k, up, word]) => {
+          if (k === iMin && iMin === iMax) return;
+          g += '<circle cx="' + px[k].toFixed(1) + '" cy="' + py[k].toFixed(1) + '" r="3" class="ind-ext"/>' +
+            placeLabel(word + " " + fmtShort(it.fmt, pts[k][1]) + (narrow() ? "" : "(" + when(pts[k][2]) + ")"), px[k], py[k], up, px, py, box, taken, narrow());
+        });
+      }
+      g += '<circle cx="' + px[px.length - 1].toFixed(1) + '" cy="' + py[py.length - 1].toFixed(1) + '" r="3" class="fg-hub"/>' +
         '<line class="ind-guide" x1="0" x2="0" y1="' + T + '" y2="' + (H - B) + '" style="display:none"/><circle class="ind-hdot" r="3.5" cx="0" cy="0" style="display:none"/>';
       return {
         svg: '<svg class="ind-svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(it.title) + ' 추이">' + g + '</svg>',
@@ -4171,24 +4251,25 @@
       };
     }
 
-    // 외국인 매매: 날마다 순매수(빨강)·순매도(파랑) 금액 막대
-    function barSvg(it, n, width) {
+    // 외국인 매매: 날마다 순매수(빨강)·순매도(파랑) 금액 막대. 큰 숫자(최근 5거래일 합계)에 들어간 마지막 5일에 옅은 바탕.
+    function barSvg(it, n, width, H) {
       const all = arr(it.d), k0 = Math.max(0, all.length - n), D = all.slice(k0), V = arr(it.f).slice(k0);
       if (D.length < 2) return null;
-      const W = Math.max(220, Math.round(width)), H = 132, T = 8, B = 20, L = 2;
+      const W = Math.max(220, Math.round(width)), T = 8, B = 20, L = 2;
       let lo = Math.min(0, ...V), hi = Math.max(0, ...V);
       const pad = (hi - lo) * 0.08 || 1;
       if (hi > 0) hi += pad;
       if (lo < 0) lo -= pad;
-      const step = nice(hi - lo, 3);
-      const ax = yAxis(lo, hi, step, "eok", Math.max(Math.abs(lo), Math.abs(hi)) >= 10000);
-      const R = ax.R, bw = (W - L - R) / D.length;
-      const X = k => L + k * bw;
       const Y = v => T + (hi - v) / ((hi - lo) || 1) * (H - T - B);
-      let g = "";
-      ax.ticks.forEach((v, i) => {
-        g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" class="qd-grid"/>' +
-          '<text x="' + (W - R + 6) + '" y="' + (Y(v) + 4).toFixed(1) + '" class="qd-ax">' + esc(ax.labs[i]) + '</text>';
+      const step = nice(hi - lo, narrow() ? 2 : 3);
+      const labs = axisLabels(lo, hi, step, "eok", Math.max(Math.abs(lo), Math.abs(hi)) >= 10000, [], Y);
+      const R = Math.ceil(Math.max(0, ...labs.map(a => tw(a.t, 12)))) + 10, bw = (W - L - R) / D.length;
+      const X = k => L + k * bw;
+      const win = Math.min(5, D.length);
+      let g = '<rect x="' + X(D.length - win).toFixed(1) + '" y="' + T + '" width="' + (bw * win).toFixed(1) + '" height="' + (H - T - B) + '" class="ind-win"/>';
+      labs.forEach(a => {
+        g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(a.v).toFixed(1) + '" y2="' + Y(a.v).toFixed(1) + '" class="qd-grid"/>' +
+          '<text x="' + (W - R + 6) + '" y="' + (Y(a.v) + 4).toFixed(1) + '" class="qd-ax">' + esc(a.t) + '</text>';
       });
       V.forEach((v, k) => {
         if (!v) return;
@@ -4196,12 +4277,16 @@
         g += '<rect x="' + (X(k) + bw * 0.15).toFixed(1) + '" y="' + Math.min(y0, y1).toFixed(1) + '" width="' + Math.max(1, bw * 0.7).toFixed(1) + '" height="' + Math.max(1, Math.abs(y1 - y0)).toFixed(1) + '" class="ind-bar ' + (v > 0 ? "up" : "down") + '"/>';
       });
       g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" class="ind-zero"/>';
-      // 날짜 눈금은 맨 끝 날부터 거꾸로 4칸쯤마다(막대 수가 같으면 간격도 같다)
+      // 날짜 눈금은 맨 끝 날부터 거꾸로 4칸쯤마다(막대 수가 같으면 간격도 같다). 맨 끝 날은 오른쪽 끝에 붙인다.
       const every = Math.max(1, Math.ceil(D.length / 4));
+      let lastL = 1e9;
       for (let k = D.length - 1; k >= 0; k -= every) {
-        const x = X(k) + bw / 2, lb = (+D[k].slice(5, 7)) + "/" + (+D[k].slice(8, 10)), w = tw(lb, 12);
-        if (x - w / 2 < L || x + w / 2 > W - R) continue;
-        g += '<text x="' + x.toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle" class="qd-ax">' + esc(lb) + '</text>';
+        const lb = md(D[k]), w = tw(lb, 12);
+        let x = X(k) + bw / 2, anc = "middle", l = x - w / 2;
+        if (l + w > W - R) { x = W - R; anc = "end"; l = x - w; }
+        if (l < L || l + w > lastL - 10) continue;
+        g += '<text x="' + x.toFixed(1) + '" y="' + (H - 5) + '" text-anchor="' + anc + '" class="qd-ax">' + esc(lb) + '</text>';
+        lastL = l;
       }
       g += '<line class="ind-guide" x1="0" x2="0" y1="' + T + '" y2="' + (H - B) + '" style="display:none"/><circle class="ind-hdot" r="0" cx="0" cy="0" style="display:none"/>';
       return {
@@ -4211,45 +4296,53 @@
       };
     }
 
-    const ITEMS = [];
-    const state = {};
-    const add = (it, extra) => { ITEMS.push(Object.assign({}, it, extra)); return ITEMS.length - 1; };
-    function rangesFor(it) {
-      if (it.kind === "bar") return arr(it.d).length > 25 ? BR : [];
-      const D = arr(it.d).length ? it.d : arr(IND.fundsD);
-      if (D.length < 2) return [];
-      const span = (tms(D[D.length - 1]) - tms(D[0])) / 864e5;
+    const ITEMS = [], GROUPS = [], state = {};
+    function addGroup(key, title, sub, list, opt) {
+      const ids = list.filter(Boolean).map(x => { ITEMS.push(Object.assign({}, x, opt.extra || {})); return ITEMS.length - 1; });
+      if (ids.length) GROUPS.push({ key, title, sub, ids, half: !!opt.half, bar: !!opt.bar, defR: opt.defR });
+    }
+    function rangesFor(g) {
+      if (g.bar) return g.ids.some(id => arr(ITEMS[id].d).length > 25) ? BR : [];
+      const span = Math.max(0, ...g.ids.map(id => { const D = datesOf(ITEMS[id]); return D.length > 1 ? (tms(D[D.length - 1]) - tms(D[0])) / 864e5 : 0; }));
+      if (!span) return [];
       const out = LR.filter((r, i) => i === 0 || span > LR[i - 1][2] * 30.4 + 5);
       return out.length > 1 ? out : [];
     }
+    function coinColor(v) { return (COIN_COL.find(c => v < c[0]) || COIN_COL[COIN_COL.length - 1])[1]; }
     function cardHtml(it, id) {
-      const unitCls = it.kind === "bar" ? (it.f5 > 0 ? "up" : it.f5 < 0 ? "down" : "") : "";
+      const sIdx = it.symbol ? stocks.findIndex(s => s.symbol === it.symbol) : -1;
+      const title = sIdx >= 0 ? '<button type="button" class="ind-title ind-go" data-i="' + sIdx + '" title="' + esc(it.name || "") + ' 카드로 이동">' + esc(it.title) + '</button>'
+        : '<span class="ind-title">' + esc(it.title) + '</span>';
+      let unitAttr = "";
+      if (it.kind === "bar") unitAttr = ' class="' + (it.f5 > 0 ? "up" : it.f5 < 0 ? "down" : "") + '"';
+      else if (it.key === "coinfg" && typeof it.value === "number") unitAttr = ' style="color:' + coinColor(it.value) + '"';
       return '<div class="ind-card" data-id="' + id + '">' +
-        '<div class="ind-head"><span class="ind-title">' + esc(it.title) + '</span><span class="ind-tag">' + esc(it.tag || "") + '</span></div>' +
-        '<div class="ind-val">' + esc(it.valueText || "–") + (it.unit ? '<small class="' + unitCls + '">' + esc(it.unit) + '</small>' : "") + '</div>' +
+        '<div class="ind-head">' + title + (it.tag ? '<span class="ind-tag">' + esc(it.tag) + '</span>' : "") + '</div>' +
+        '<div class="ind-val">' + esc(it.valueText || "–") + (it.unit ? '<small' + unitAttr + '>' + esc(it.unit) + '</small>' : "") + '</div>' +
+        (it.kind === "bar" ? '<div class="ind-cap">최근 5거래일 합계</div>' : "") +
         '<div class="ind-chg">' + (it.chgText ? (it.basis ? '<span class="ind-basis">' + esc(it.basis) + '</span> ' : "") + '<span class="' + esc(it.dir || "flat") + '">' + esc(it.chgText) + '</span>' : "") + '</div>' +
-        '<div class="range-toggle ind-rng" hidden></div><div class="ind-plot"></div>' +
+        '<div class="ind-plot"></div>' +
         arr(it.lines).map(l => '<div class="ind-note">' + esc(l) + '</div>').join("") +
-        '<div class="ind-foot">' + esc(it.dateText || "") + '</div></div>';
+        '<div class="ind-foot">' + esc(it.dateText || "") + (it.stale ? '<span class="ind-stale">(' + esc(it.ageDays) + '일 전)</span>' : "") + '</div></div>';
     }
-    function groupHtml(title, sub, ids, half) {
-      if (!ids.length) return "";
-      return '<section class="ind-group' + (half ? " half" : "") + '"><h4>' + esc(title) + '</h4><div class="vis-sub">' + sub + '</div>' +
-        '<div class="ind-grid">' + ids.map(id => cardHtml(ITEMS[id], id)).join("") + '</div></section>';
+    function groupHtml(g) {
+      return '<section class="ind-group' + (g.half ? " half" : "") + '" data-g="' + g.key + '">' +
+        '<div class="ind-ghead"><h4>' + esc(g.title) + '</h4><button type="button" class="ind-sub-tg" aria-expanded="false">설명 보기</button>' +
+        '<div class="range-toggle ind-rng" role="group" aria-label="' + esc(g.title) + ' 기간" hidden></div></div>' +
+        '<div class="vis-sub ind-sub">' + g.sub + '</div>' +
+        '<div class="ind-grid">' + g.ids.map(id => cardHtml(ITEMS[id], id)).join("") + '</div></section>';
     }
-    function draw(card) {
-      const id = card.dataset.id, it = ITEMS[id];
-      const rs = rangesFor(it);
-      let rk = state[id];
-      if (!rs.some(r => r[0] === rk)) rk = rs.length ? (rs.some(r => r[0] === it.defR) ? it.defR : rs[rs.length - 1][0]) : null;
-      state[id] = rk;
-      const tg = card.querySelector(".ind-rng");
-      tg.innerHTML = rs.map(r => '<button type="button" data-r="' + r[0] + '" class="' + (r[0] === rk ? "active" : "") + '">' + r[1] + '</button>').join("");
-      tg.hidden = !rs.length;
-      const plot = card.querySelector(".ind-plot");
-      const res = it.kind === "bar" ? barSvg(it, rk ? +rk : 60, plot.clientWidth || 280) : lineSvg(it, rk, plot.clientWidth || 280);
+    function drawCard(card, g, rk) {
+      const it = ITEMS[card.dataset.id], plot = card.querySelector(".ind-plot");
+      // 그래프 높이: 기본 132px(휴대폰 112px). 나란히 놓인 옆 묶음 카드가 더 길어 이 카드가 늘어났으면 빈 높이만큼 키운다(최대 90px 더).
+      // 먼저 비워서 잰다. 그려 둔 그림이 남아 있으면 그 높이가 다시 재어져 한 줄 배치로 바뀐 뒤에도 줄지 않는다.
+      plot.innerHTML = "";
+      plot.classList.remove("is-empty");
+      const H0 = narrow() ? 112 : 132, H = Math.min(H0 + 90, Math.max(H0, plot.clientHeight - 4));
+      const res = g.bar ? barSvg(it, rk ? +rk : 60, plot.clientWidth || 280, H) : lineSvg(it, rk, plot.clientWidth || 280, H);
+      plot.classList.toggle("is-empty", !res);
       if (!res) {
-        plot.innerHTML = '<div class="ind-empty">' + esc(it.emptyText || "그래프를 그릴 자료가 아직 없습니다.") + '</div>';
+        plot.innerHTML = '<div class="ind-wait">' + esc(it.emptyText || "그래프를 그릴 자료가 아직 없습니다.") + '</div>';
         return;
       }
       plot.innerHTML = res.svg + '<div class="ind-tip" hidden></div>';
@@ -4260,7 +4353,7 @@
         let k = 0, bd = Infinity;
         for (let i = 0; i < res.px.length; i++) { const dx = Math.abs(res.px[i] - x); if (dx < bd) { bd = dx; k = i; } }
         guide.setAttribute("x1", res.px[k].toFixed(1)); guide.setAttribute("x2", res.px[k].toFixed(1)); guide.style.display = "";
-        if (it.kind !== "bar") { hdot.setAttribute("cx", res.px[k].toFixed(1)); hdot.setAttribute("cy", res.py[k].toFixed(1)); hdot.style.display = ""; }
+        if (!g.bar) { hdot.setAttribute("cx", res.px[k].toFixed(1)); hdot.setAttribute("cy", res.py[k].toFixed(1)); hdot.style.display = ""; }
         tip.textContent = res.tip(k);
         tip.hidden = false;
         const tipW = tip.offsetWidth, sx = res.px[k] * r.width / res.W;
@@ -4270,34 +4363,56 @@
       svg.addEventListener("pointerdown", show);
       svg.addEventListener("pointerleave", () => { tip.hidden = true; guide.style.display = "none"; hdot.style.display = "none"; });
     }
+    function drawGroup(g) {
+      const sec = host.querySelector('.ind-group[data-g="' + g.key + '"]');
+      if (!sec) return;
+      const rs = rangesFor(g);
+      let rk = state[g.key];
+      if (!rs.some(r => r[0] === rk)) rk = rs.length ? (rs.some(r => r[0] === g.defR) ? g.defR : rs[rs.length - 1][0]) : null;
+      state[g.key] = rk;
+      const tg = sec.querySelector(".ind-rng");
+      tg.innerHTML = rs.map(r => '<button type="button" data-r="' + r[0] + '" class="' + (r[0] === rk ? "active" : "") + '" aria-pressed="' + (r[0] === rk) + '">' + r[1] + '</button>').join("");
+      tg.hidden = !rs.length;
+      sec.querySelectorAll(".ind-card").forEach(card => drawCard(card, g, rk));
+    }
 
-    const memIds = arr(IND.memory).filter(x => x && x.valueText).map(x => add(x, { defR: "3Y", emptyText: "기록을 쌓는 중입니다. 값이 두 번 모이면 그래프가 나옵니다." }));
-    const fundIds = arr(IND.funds).filter(x => x && x.valueText).map(x => add(x, { defR: "1Y" }));
-    const forIds = arr(IND.foreign).filter(x => x && arr(x.d).length).map(x => add(x, { kind: "bar", defR: "60" }));
-    const psyIds = [IND.vix, IND.coinFg].filter(x => x && x.valueText).map(x => add(x, { defR: "1Y" }));
-    const memStart = IND.memStart && /^\d{4}-\d{2}-\d{2}$/.test(IND.memStart) ? mdw(IND.memStart) : "";
-    if (!ITEMS.length && !IND.failNote) return;
-    host.innerHTML = '<h3>관련 지표</h3><div class="vis-sub">관심 종목의 값에 영향을 주는 메모리 가격, 국내 증시 자금, 외국인 매매, 시장 심리입니다. 그래프에 마우스를 올리면 그날 값이 보입니다.</div>' +
+    addGroup("mem", "메모리 가격", 'DRAMeXchange(대만 TrendForce)가 조사한 현물 거래 가격이며 단위는 달러입니다. 칩은 평일마다, 모듈과 웨이퍼는 한 주에 한 번 값이 바뀝니다.' +
+      (IND.memStart && /^\d{4}-\d{2}-\d{2}$/.test(IND.memStart) ? ' 과거 시세는 회원만 볼 수 있어 ' + esc(mdw(IND.memStart)) + '부터 기록을 쌓고 있습니다.' : '') +
+      ' <a href="https://www.dramexchange.com/" target="_blank" rel="noopener">원본 보기</a>',
+      arr(IND.memory).filter(x => x && x.valueText), { defR: "3Y", extra: { emptyText: "기록을 쌓는 중입니다. 값이 두 번 모이면 그래프가 나옵니다." } });
+    addGroup("fund", "국내 증시 자금", '금융투자협회가 집계한 국내 증시 자금입니다. 빚투는 증권사에서 돈을 빌려 산 주식의 잔고이고, 미수금은 주식을 외상으로 사고 아직 갚지 않은 돈입니다. 발표가 이틀쯤 늦습니다.',
+      arr(IND.funds).filter(x => x && x.valueText), { defR: "1Y" });
+    addGroup("for", "외국인 매매", '네이버 증권의 투자자별 매매 자료입니다. 막대는 날마다 외국인이 순매수(빨강)하거나 순매도(파랑)한 금액이고, 수량에 그날 종가를 곱해 어림했습니다. 옅은 바탕은 최근 5거래일입니다.',
+      arr(IND.foreign).filter(x => x && arr(x.d).length), { half: true, bar: true, defR: "60", extra: { kind: "bar" } });
+    addGroup("psy", "시장 심리", 'VIX는 미국 증시의 불안 정도이며, 점선은 보통 불안(20)과 공포(30)로 보는 선입니다. 코인 공포·탐욕지수는 Alternative.me가 비트코인 시세 변동과 거래량 등으로 매긴 0~100 점수입니다.',
+      [IND.vix, IND.coinFg].filter(x => x && x.valueText), { half: true, defR: "1Y" });
+    if (!GROUPS.length && !IND.failNote) return;
+    host.innerHTML = '<h3>관련 지표</h3><div class="vis-sub">관심 종목의 값에 영향을 주는 메모리 가격, 국내 증시 자금, 외국인 매매, 시장 심리입니다. ' +
+      '그래프 선은 보고 있는 기간의 처음보다 올랐으면 빨강, 내렸으면 파랑입니다. 그래프에 마우스를 올리면 그날 값이 보입니다.</div>' +
       (IND.failNote ? '<div class="ind-fail">' + esc(IND.failNote) + '</div>' : "") +
-      '<div class="ind-groups">' +
-      groupHtml("메모리 가격", 'DRAMeXchange(대만 TrendForce)가 조사한 현물 거래 가격이며 단위는 달러입니다. 칩은 평일마다, 모듈과 웨이퍼는 한 주에 한 번 값이 바뀝니다.' +
-        (memStart ? ' 과거 시세는 회원만 볼 수 있어 ' + esc(memStart) + '부터 기록을 쌓고 있습니다.' : '') +
-        ' <a href="https://www.dramexchange.com/" target="_blank" rel="noopener">원본 보기</a>', memIds, false) +
-      groupHtml("국내 증시 자금", '금융투자협회가 집계한 국내 증시 자금입니다. 빚투는 증권사에서 돈을 빌려 산 주식의 잔고이고, 미수금은 주식을 외상으로 사고 아직 갚지 않은 돈입니다. 발표가 이틀쯤 늦습니다.', fundIds, false) +
-      groupHtml("외국인 매매", '네이버 증권의 투자자별 매매 자료입니다. 막대는 날마다 외국인이 순매수(빨강)하거나 순매도(파랑)한 금액이고, 수량에 그날 종가를 곱해 어림했습니다.', forIds, true) +
-      groupHtml("시장 심리", 'VIX는 미국 증시의 불안 정도이며, 점선은 보통 불안(20)과 공포(30)로 보는 선입니다. 코인 공포·탐욕지수는 Alternative.me가 비트코인 시세 변동과 거래량 등으로 매긴 0~100 점수입니다.', psyIds, true) +
-      '</div>';
+      '<div class="ind-groups">' + GROUPS.map(groupHtml).join("") + '</div>';
     host.hidden = false;
-    const drawAll = () => host.querySelectorAll(".ind-card").forEach(draw);
+    const drawAll = () => GROUPS.forEach(drawGroup);
     host.addEventListener("click", e => {
       const b = e.target.closest(".ind-rng button[data-r]");
-      if (!b) return;
-      const card = b.closest(".ind-card");
-      state[card.dataset.id] = b.dataset.r;
-      draw(card);
+      if (b) {
+        const g = GROUPS.find(x => x.key === b.closest(".ind-group").dataset.g);
+        if (g) { state[g.key] = b.dataset.r; drawGroup(g); }
+        return;
+      }
+      const tg = e.target.closest(".ind-sub-tg");
+      if (tg) {
+        const sec = tg.closest(".ind-group"), open = sec.classList.toggle("open");
+        tg.textContent = open ? "설명 접기" : "설명 보기";
+        tg.setAttribute("aria-expanded", String(open));
+        return;
+      }
+      const go = e.target.closest(".ind-go");
+      if (go) goCard(Number(go.dataset.i));
     });
-    let rt = null;
-    window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawAll, 150); });
+    let rt = null, lastW = window.innerWidth;
+    // 휴대폰은 스크롤할 때 주소창이 접히며 높이만 바뀌는 resize 가 잦다. 폭이 바뀐 때만 다시 그린다.
+    window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; drawAll(); } }, 150); });
     drawAll();
   })();
 
