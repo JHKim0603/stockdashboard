@@ -164,16 +164,17 @@ jobs:
       # 써서 Nasdaq 을 다시 묻지 않는다. 스크립트가 내용이 바뀔 때만 쓰므로 하루 한 번 이하로 커밋된다.
       # target-cache.json 은 증권사 목표주가 평균의 날짜별 기록이다. 전 기록과 비교해 바뀐 날을 알리므로 잃으면 그날 비교를 못 한다.
       # signal-log.json 은 신호 실전 기록부(신호가 켜진 날짜와 가격)다. 잃으면 그 뒤 수익률을 셀 기준이 사라진다.
+      # indicator-cache.json 은 메모리 현물가의 조사일별 기록이다(DRAMeXchange 과거 시세는 회원 전용이라 직접 쌓는다).
       - name: Commit translation cache and delivery marker
         continue-on-error: true
         run: |
-          if [[ -z "$(git status --porcelain translation-cache.json .last-digest earnings-cache.json target-cache.json signal-log.json)" ]]; then
+          if [[ -z "$(git status --porcelain translation-cache.json .last-digest earnings-cache.json target-cache.json signal-log.json indicator-cache.json)" ]]; then
             echo "no cache or marker change"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for f in translation-cache.json .last-digest earnings-cache.json target-cache.json signal-log.json; do
+          for f in translation-cache.json .last-digest earnings-cache.json target-cache.json signal-log.json indicator-cache.json; do
             if [[ -e "$f" ]]; then git add "$f"; fi
           done
           git commit -m "chore: accumulate translation cache $(TZ=Asia/Seoul date +%F)"

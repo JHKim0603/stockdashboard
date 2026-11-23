@@ -1406,9 +1406,10 @@ $stripDefs = @(
     @{ sym = "DX-Y.NYB"; name = "달러인덱스";       dp = 2 }
 )
 function Get-StripSeries {
-    param($sym)
+    # range 는 Yahoo 기간 값이다. 관련 지표의 VIX 3년 그래프는 5y 로 받아 자른다.
+    param($sym, [string]$range = "3mo")
     try {
-        $r = (Invoke-RestMethod -Uri "https://query1.finance.yahoo.com/v8/finance/chart/$([uri]::EscapeDataString($sym))?interval=1d&range=3mo" -Headers $headers).chart.result[0]
+        $r = (Invoke-RestMethod -Uri "https://query1.finance.yahoo.com/v8/finance/chart/$([uri]::EscapeDataString($sym))?interval=1d&range=$range" -Headers $headers).chart.result[0]
         $off = [TimeSpan]::FromSeconds([int]$r.meta.gmtoffset)
         $cl = $r.indicators.quote[0].close
         $ts = $r.timestamp
@@ -1467,10 +1468,348 @@ if ($krIntraday) {
 }
 $fmtGap ={ param([string]$d) if ($d -and $d.Length -ge 10) { "$([int]$d.Substring(5, 2))/$([int]$d.Substring(8, 2))" } else { "" } }
 
+# --- 관련 지표(2026-11-23 사용자 요청: 관심 종목과 연관된 지표 중 인증키 없이 받을 수 있는 것) -------------------------
+# 메모리 현물가(DRAMeXchange), 국내 증시 자금(금융투자협회 FreeSIS), 외국인 매매(네이버 증권), VIX 3년(Yahoo),
+# 코인 공포·탐욕지수(Alternative.me). 하나가 실패해도 나머지와 페이지는 그대로 만들고, 실패한 것은 화면과 메일에 적는다.
+# 값·변화·기준일 글은 여기서 한 번 만들어 화면과 메일이 같이 쓴다(같은 계산, 같은 문장).
+$indInv = [Globalization.CultureInfo]::InvariantCulture
+$indDow = @("일", "월", "화", "수", "목", "금", "토")
+$indUa = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" }
+$indFailed = New-Object System.Collections.ArrayList
+function Format-IndDate {
+    param([string]$d)
+    if ($d -notmatch '^\d{4}-\d{2}-\d{2}$') { return "" }
+    $dt = [datetime]::ParseExact($d, "yyyy-MM-dd", $indInv)
+    "$($dt.Month)/$($dt.Day)($($indDow[[int]$dt.DayOfWeek]))"
+}
+function Format-IndPct {
+    # 10% 이상은 정수, 미만은 소수 첫째 자리(공통 규칙 4).
+    param([double]$p)
+    $a = [math]::Abs($p)
+    if ($a -ge 10) { $a.ToString("0", $indInv) } else { $a.ToString("0.0", $indInv) }
+}
+function Format-Eok {
+    # 억원 단위 값을 '26.08조원', '9,701억원'처럼 적는다. 음수는 '−'.
+    param([double]$v)
+    $sign = if ($v -lt 0) { "−" } else { "" }
+    $a = [math]::Abs($v)
+    if ($a -ge 10000) { "$sign$(($a / 10000).ToString('N2', $indInv))조원" } else { "$sign$([math]::Round($a).ToString('N0', $indInv))억원" }
+}
+function Format-Usd {
+    param([double]$v)
+    if ($v -ge 100) { '$' + $v.ToString("N0", $indInv) } else { '$' + $v.ToString("N2", $indInv) }
+}
+function New-IndChange {
+    # pct 는 % 변화, amountText 는 단위를 붙인 변화량. 소수 첫째 자리로 0.0% 이면 보합으로 적고 색을 붙이지 않는다.
+    param($pct, [string]$amountText = "")
+    if ($null -eq $pct) { return [PSCustomObject]@{ text = $amountText; dir = "flat" } }
+    $p = [double]$pct
+    if ([math]::Abs($p) -lt 0.05) {
+        return [PSCustomObject]@{ text = $(if ($amountText) { "보합($amountText)" } else { "보합" }); dir = "flat" }
+    }
+    $s = if ($p -gt 0) { "+" } else { "−" }
+    $pt = "$s$(Format-IndPct $p)%"
+    [PSCustomObject]@{ text = $(if ($amountText) { "$amountText($pt)" } else { $pt }); dir = $(if ($p -gt 0) { "up" } else { "down" }) }
+}
+function Invoke-IndRequest {
+    # 외부 서버가 한 번 응답하지 않는 일은 흔하다. 한 번 더 묻고, 그래도 안 되면 호출한 쪽이 실패로 적는다.
+    param([scriptblock]$call)
+    for ($a = 1; $a -le 2; $a++) {
+        try { return (& $call) } catch { if ($a -eq 2) { throw }; Start-Sleep -Seconds 3 }
+    }
+}
+
+# 1) 메모리 현물가. DRAMeXchange 첫 화면 표의 그날 평균(Session Average)과 직전 조사 대비 변화(%)를 쓴다.
+# 과거 시세는 회원 전용이라 indicator-cache.json 에 조사일(표의 Last Update)별로 쌓는다(봇이 커밋). 같은 조사일은 고쳐 쓴다.
+# 공개 페이지에 싣는 것이라 품목은 넷으로 줄이고, 화면에 출처와 원본 링크를 둔다.
+$memDefs = @(
+    @{ key = "ddr5chip"; pat = '^DDR5 16Gb \(2Gx8\) 4800'; title = "DDR5 현물가"; tag = "16Gb 칩 1개";     say = "DDR5 현물가";           cadence = "day" }
+    @{ key = "ddr4chip"; pat = '^DDR4 16Gb \(2Gx8\) 3200'; title = "DDR4 현물가"; tag = "16Gb 칩 1개";     say = "DDR4 현물가";           cadence = "day" }
+    @{ key = "rdimm32";  pat = '^DDR5 RDIMM 32GB';         title = "서버 메모리 모듈"; tag = "DDR5 RDIMM 32GB"; say = "서버 메모리 모듈 가격"; cadence = "week" }
+    @{ key = "tlc512";   pat = '^512Gb TLC';               title = "NAND 웨이퍼"; tag = "512Gb TLC";       say = "NAND 웨이퍼 가격";      cadence = "week" }
+)
+$indCachePath = Join-Path $root "indicator-cache.json"
+$indCacheOriginal = if (Test-Path $indCachePath) { [System.IO.File]::ReadAllText($indCachePath) } else { "" }
+$memCache = @{}
+if ($indCacheOriginal) {
+    try {
+        ($indCacheOriginal | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $memCache[$_.Name] = @($_.Value) }
+    } catch { Write-Warning "indicator-cache.json 을 읽지 못해 새로 기록합니다: $($_.Exception.Message)" }
+}
+$memOk = $false
+try {
+    $dxHtml = Invoke-IndRequest { (Invoke-WebRequest -Uri "https://www.dramexchange.com/" -Headers $indUa -UseBasicParsing).Content }
+    $monNames = @("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    $luList = @(foreach ($m in [regex]::Matches($dxHtml, 'Last ?Update\s*:\s*([A-Z][a-z]{2})[a-z]*\.?\s*(\d{1,2}),?\s+(\d{4})')) {
+        $mo = [array]::IndexOf($monNames, $m.Groups[1].Value) + 1
+        if ($mo -ge 1) { [PSCustomObject]@{ pos = $m.Index; date = "{0}-{1:00}-{2:00}" -f [int]$m.Groups[3].Value, $mo, [int]$m.Groups[2].Value } }
+    })
+    $memFound = @{}
+    foreach ($m in [regex]::Matches($dxHtml, '(?s)<tr[^>]*>(.*?)</tr>')) {
+        $tds = @(foreach ($td in [regex]::Matches($m.Groups[1].Value, '(?s)<td[^>]*>(.*?)</td>')) {
+            (([regex]::Replace($td.Groups[1].Value, '<[^>]+>', ' ') -replace '&nbsp;', ' ') -replace '\s+', ' ').Trim()
+        })
+        if ($tds.Count -lt 7) { continue }
+        $def = @($memDefs | Where-Object { $tds[0] -match $_.pat })[0]
+        if (-not $def -or $memFound.ContainsKey($def.key)) { continue }
+        $avg = 0.0
+        if (-not [double]::TryParse(($tds[5] -replace ',', ''), [Globalization.NumberStyles]::Float, $indInv, [ref]$avg) -or $avg -le 0) { continue }
+        $pctM = if ($tds[6] -match '(-?\d+(\.\d+)?)\s*%') { [double]::Parse($Matches[1], $indInv) } else { $null }
+        $lu = @($luList | Where-Object { $_.pos -lt $m.Index }) | Select-Object -Last 1
+        if (-not $lu) { continue }
+        $memFound[$def.key] = $true
+        $hist = @(@($memCache[$def.key]) | Where-Object { $_ -and $_.d -and [string]$_.d -ne $lu.date })
+        $hist += [PSCustomObject]@{ d = $lu.date; v = [math]::Round($avg, 3); c = $pctM }
+        $memCache[$def.key] = @($hist | Sort-Object { [string]$_.d } | Select-Object -Last 1500)
+    }
+    if ($memFound.Count -eq 0) { throw "표에서 품목을 찾지 못했습니다(화면 구성이 바뀌었을 수 있습니다)" }
+    $memOk = $true
+    Write-Host "메모리 현물가 $($memFound.Count)/$($memDefs.Count)개"
+} catch {
+    Write-Warning "메모리 현물가를 받지 못했습니다: $($_.Exception.Message)"
+}
+$icLines = @(foreach ($k in ($memCache.Keys | Sort-Object)) {
+    if (@($memDefs | ForEach-Object { $_.key }) -notcontains $k) { continue }
+    $arr = @($memCache[$k] | ForEach-Object { [PSCustomObject]@{ d = [string]$_.d; v = [double]$_.v; c = $(if ($null -ne $_.c) { [double]$_.c } else { $null }) } })
+    "  $(ConvertTo-Json -InputObject ([string]$k) -Compress): $(ConvertTo-Json -InputObject $arr -Compress)"
+})
+$icJson = "{`n" + ($icLines -join ",`n") + "`n}`n"
+if ($icLines.Count -and $icJson -ne $indCacheOriginal) {
+    [System.IO.File]::WriteAllText($indCachePath, $icJson, (New-Object System.Text.UTF8Encoding $false))
+}
+$memItems = @(foreach ($def in $memDefs) {
+    $hist = @(@($memCache[$def.key]) | Where-Object { $_ -and $_.d } | Sort-Object { [string]$_.d })
+    $lastM = if ($hist.Count) { $hist[-1] } else { $null }
+    $chgM = if ($lastM) { New-IndChange $lastM.c } else { [PSCustomObject]@{ text = ""; dir = "flat" } }
+    [PSCustomObject]@{
+        key       = $def.key
+        title     = $def.title
+        tag       = $def.tag
+        say       = $def.say
+        cadence   = $def.cadence
+        fmt       = "usd"
+        d         = @($hist | ForEach-Object { [string]$_.d })
+        v         = @($hist | ForEach-Object { [double]$_.v })
+        value     = $(if ($lastM) { [double]$lastM.v } else { $null })
+        valueText = $(if ($lastM) { Format-Usd ([double]$lastM.v) } else { "" })
+        unit      = ""
+        chg       = $(if ($lastM -and $null -ne $lastM.c) { [double]$lastM.c } else { $null })
+        chgText   = $chgM.text
+        dir       = $chgM.dir
+        basis     = $(if ($def.cadence -eq "day") { "전일 대비" } else { "전주 대비" })
+        date      = $(if ($lastM) { [string]$lastM.d } else { "" })
+        dateText  = $(if ($lastM) { "$(Format-IndDate ([string]$lastM.d)) 조사" } else { "" })
+    }
+})
+# 기록을 쌓기 시작한 날. 주간 품목은 첫 기록이 그 전 조사일(예: 11/9)이라, 날마다 바뀌는 칩 가격의 첫 날로 잡는다.
+$memStart = [string](@($memItems | Where-Object { $_.cadence -eq "day" } | ForEach-Object { @($_.d)[0] } | Where-Object { $_ } | Sort-Object) | Select-Object -First 1)
+if (-not $memOk) { [void]$indFailed.Add("메모리 가격") }
+
+# 2) 국내 증시 자금(금융투자협회 FreeSIS '증시자금 추이'와 '신용공여 잔고 추이'). 단위는 백만원이라 억원으로 바꾼다.
+# 발표가 이틀쯤 늦어 기준일이 시세보다 앞선다. 3년치를 한 번에 받는다.
+$fundDefs = @(
+    @{ key = "credit";  title = "빚투";         tag = "신용융자 잔고";     say = "빚투(신용융자 잔고)" }
+    @{ key = "deposit"; title = "투자자예탁금"; tag = "주식 매수 대기 자금"; say = "투자자예탁금" }
+    @{ key = "unpaid";  title = "미수금";       tag = "위탁매매 미수금";   say = "미수금" }
+    @{ key = "futures"; title = "선물예수금";   tag = "파생상품 거래예수금"; say = "선물예수금" }
+)
+$fundsD = @()
+$fundItems = @()
+try {
+    $kFrom = $nowKst.Date.AddYears(-3).AddDays(-7).ToString("yyyyMMdd")
+    $kTo = $nowKst.ToString("yyyyMMdd")
+    $kHeaders = $indUa.Clone()
+    $kHeaders["Referer"] = "https://freesis.kofia.or.kr/"
+    $getKofia = {
+        param([string]$obj)
+        $body = '{"dmSearch":{"tmpV40":"1000000","tmpV41":"1","tmpV1":"D","tmpV45":"' + $kFrom + '","tmpV46":"' + $kTo + '","OBJ_NM":"' + $obj + '"}}'
+        @((Invoke-IndRequest { Invoke-RestMethod -Uri "https://freesis.kofia.or.kr/meta/getMetaDataList.do" -Method Post -Body $body -ContentType "application/json; charset=UTF-8" -Headers $kHeaders -TimeoutSec 40 }).ds1)
+    }
+    $r60 = @(& $getKofia "STATSCU0100000060BO" | Where-Object { $_ -and $_.TMPV1 } | Sort-Object { [string]$_.TMPV1 })
+    $r70 = @(& $getKofia "STATSCU0100000070BO" | Where-Object { $_ -and $_.TMPV1 })
+    if ($r60.Count -lt 20) { throw "증시자금 추이가 $($r60.Count)일치만 왔습니다" }
+    $creditBy = @{}
+    foreach ($x in $r70) { $creditBy[[string]$x.TMPV1] = $x.TMPV2 }
+    $fundsD = @($r60 | ForEach-Object { $s0 = [string]$_.TMPV1; "$($s0.Substring(0, 4))-$($s0.Substring(4, 2))-$($s0.Substring(6, 2))" })
+    $fundCols = @{ credit = $null; deposit = "TMPV2"; unpaid = "TMPV5"; futures = "TMPV3" }
+    $fundItems = @(foreach ($fd in $fundDefs) {
+        $vals = New-Object System.Collections.Generic.List[object]
+        foreach ($row in $r60) {
+            $raw = if ($fd.key -eq "credit") { $creditBy[[string]$row.TMPV1] } else { $row.($fundCols[$fd.key]) }
+            if ($null -eq $raw -or "$raw" -eq "") { $vals.Add($null) } else { $vals.Add([double][math]::Round([double]$raw / 100)) }
+        }
+        $idx = @(for ($i = 0; $i -lt $vals.Count; $i++) { if ($null -ne $vals[$i]) { $i } })
+        if ($idx.Count -lt 2) { continue }
+        $iL = $idx[-1]; $iP = $idx[-2]
+        $lastF = [double]$vals[$iL]; $prevF = [double]$vals[$iP]
+        $deltaF = $lastF - $prevF
+        $amtF = "$(if ($deltaF -gt 0) { '+' })$(Format-Eok $deltaF)"
+        $chgF = New-IndChange $(if ($prevF -ne 0) { ($lastF / $prevF - 1) * 100 } else { $null }) $amtF
+        $nonNull = @($idx | ForEach-Object { [double]$vals[$_] })
+        [PSCustomObject]@{
+            key       = $fd.key
+            title     = $fd.title
+            tag       = $fd.tag
+            say       = $fd.say
+            fmt       = "eok"
+            v         = $vals.ToArray()
+            value     = $lastF
+            valueText = Format-Eok $lastF
+            unit      = ""
+            chgText   = $chgF.text
+            dir       = $chgF.dir
+            basis     = "전일 대비"
+            date      = $fundsD[$iL]
+            dateText  = "$(Format-IndDate $fundsD[$iL]) 기준"
+            high3y    = [bool]($lastF -ge ($nonNull | Measure-Object -Maximum).Maximum)
+            low3y     = [bool]($lastF -le ($nonNull | Measure-Object -Minimum).Minimum)
+        }
+    })
+    Write-Host "증시 자금 $($fundItems.Count)/$($fundDefs.Count)개, $($fundsD.Count)일치"
+} catch {
+    Write-Warning "증시 자금(금융투자협회)을 받지 못했습니다: $($_.Exception.Message)"
+}
+if ($fundItems.Count -lt $fundDefs.Count) { [void]$indFailed.Add("국내 증시 자금") }
+
+# 3) 외국인 매매(네이버 증권 투자자별 매매, 최근 60거래일). 관심 종목 중 국내 개별 종목만. 수량에 그날 종가를 곱해 금액을 어림한다.
+# 국내 장중에 돌면 오늘 줄은 아직 집계 중이라 뺀다.
+$foreignItems = @(foreach ($t in @($tickers | Where-Object { $_.Symbol -match '^\d{6}\.K[SQ]$' })) {
+    $code = $t.Symbol.Substring(0, 6)
+    $stF = @($stocks | Where-Object { $_.symbol -eq $t.Symbol })[0]
+    $nmF = if ($stF) { [string]$stF.name } elseif ($t.DisplayName) { [string]$t.DisplayName } else { $code }
+    try {
+        $resp = Invoke-IndRequest { Invoke-RestMethod -Uri "https://m.stock.naver.com/api/stock/$code/trend?pageSize=60" -Headers $indUa }
+        $rowsF = @(@($resp) | Where-Object { $_ -and $_.bizdate } | Sort-Object { [string]$_.bizdate })
+        if ($krIntraday) { $rowsF = @($rowsF | Where-Object { [string]$_.bizdate -ne $nowKst.ToString("yyyyMMdd") }) }
+        if ($rowsF.Count -lt 6) { throw "$($rowsF.Count)일치만 왔습니다" }
+        $num = { param($s) [double](([string]$s) -replace '[,+%\s]', '') }
+        $dF = @(); $fAmt = @(); $oAmt = @(); $hold = @(); $fQty = @()
+        foreach ($r in $rowsF) {
+            $s0 = [string]$r.bizdate
+            $close = & $num $r.closePrice
+            $qf = & $num $r.foreignerPureBuyQuant
+            $qo = & $num $r.organPureBuyQuant
+            $dF += "$($s0.Substring(0, 4))-$($s0.Substring(4, 2))-$($s0.Substring(6, 2))"
+            $fQty += $qf
+            $fAmt += [double][math]::Round($qf * $close / 1e8)
+            $oAmt += [double][math]::Round($qo * $close / 1e8)
+            $hold += [double](& $num $r.foreignerHoldRatio)
+        }
+        # 같은 방향 연속 일수(수량 기준, 0 이면 끊김)
+        $dirF = [math]::Sign($fQty[-1]); $streak = 0
+        for ($i = $fQty.Count - 1; $i -ge 0 -and $dirF -ne 0 -and [math]::Sign($fQty[$i]) -eq $dirF; $i--) { $streak++ }
+        $n5 = [math]::Min(5, $fAmt.Count)
+        $f5 = [double](($fAmt | Select-Object -Last $n5 | Measure-Object -Sum).Sum)
+        $o5 = [double](($oAmt | Select-Object -Last $n5 | Measure-Object -Sum).Sum)
+        $word = { param($v) if ($v -gt 0) { "순매수" } elseif ($v -lt 0) { "순매도" } else { "" } }
+        # 값은 금액만 적고 방향은 옆의 '순매수/순매도'로 말한다(부호와 말이 겹치지 않게).
+        $f5Text = Format-Eok ([math]::Abs($f5))
+        $chgTextF = if ($streak -ge 2) { "${streak}거래일 연속 $(& $word $dirF)" } elseif ($fAmt[-1] -ne 0) { "전일 $(& $word $fAmt[-1]) $(Format-Eok ([math]::Abs($fAmt[-1])))" } else { "" }
+        $lines = @()
+        if ($o5 -ne 0) { $lines += "기관은 같은 기간 $(Format-Eok ([math]::Abs($o5))) $(& $word $o5)했습니다." }
+        if ($hold.Count -ge 21) {
+            $hd = $hold[-1] - $hold[-21]
+            $lines += "외국인 보유율은 $($hold[-1].ToString('0.00', $indInv))%$(if ([math]::Abs($hd) -lt 0.005) { '로 20거래일 전과 같습니다.' } else { "로 20거래일 전보다 $([math]::Abs($hd).ToString('0.00', $indInv))%p $(if ($hd -gt 0) { '높습니다' } else { '낮습니다' })." })"
+        }
+        [PSCustomObject]@{
+            symbol    = $t.Symbol
+            title     = "$nmF 외국인"
+            tag       = "최근 5거래일 합계"
+            name      = $nmF
+            d         = $dF
+            f         = $fAmt
+            valueText = $f5Text
+            f5        = $f5
+            unit      = $(& $word $f5)
+            chgText   = $chgTextF
+            dir       = $(if ($dirF -gt 0) { "up" } elseif ($dirF -lt 0) { "down" } else { "flat" })
+            basis     = ""
+            streak    = $streak
+            streakDir = $dirF
+            lines     = @($lines)
+            date      = $dF[-1]
+            dateText  = "$(Format-IndDate $dF[-1]) 기준"
+        }
+    } catch {
+        Write-Warning "$nmF 외국인 매매를 받지 못했습니다: $($_.Exception.Message)"
+        [void]$indFailed.Add("$nmF 외국인 매매")
+    }
+})
+
+# 4) VIX 3년. 맨 위 시장 띠도 이 값을 같이 쓴다(같은 숫자).
+$vixLong = Get-StripSeries "^VIX" "5y"
+$vixItem = $null
+if ($vixLong -and @($vixLong.series).Count -ge 2) {
+    $vCut = [datetime]::ParseExact([string]@($vixLong.dates)[-1], "yyyy-MM-dd", $indInv).AddYears(-3).ToString("yyyy-MM-dd")
+    $vD = @(); $vV = @()
+    for ($i = 0; $i -lt @($vixLong.dates).Count; $i++) {
+        if ([string]$vixLong.dates[$i] -ge $vCut) { $vD += [string]$vixLong.dates[$i]; $vV += [double]$vixLong.series[$i] }
+    }
+    $vL = $vV[-1]; $vP = $vV[-2]
+    $vDelta = $vL - $vP
+    $chgV = New-IndChange $(if ($vP) { ($vL / $vP - 1) * 100 } else { $null }) "$(if ($vDelta -gt 0) { '+' } elseif ($vDelta -lt 0) { '−' })$([math]::Abs($vDelta).ToString('0.00', $indInv))"
+    $vixItem = [PSCustomObject]@{
+        key = "vix"; title = "VIX 지수"; tag = "미국 증시 불안 정도"; fmt = "idx"
+        d = $vD; v = $vV; value = $vL; valueText = $vL.ToString("0.00", $indInv); unit = ""
+        chgText = $chgV.text; dir = $chgV.dir; basis = "전일 대비"
+        refs = @(20, 30)
+        date = $vD[-1]; dateText = "$(Format-IndDate $vD[-1]) 미국 종가"
+    }
+} else {
+    [void]$indFailed.Add("VIX")
+}
+
+# 5) 코인 공포·탐욕지수(Alternative.me, 0~100). 3년치.
+$coinFgItem = $null
+try {
+    $cfResp = Invoke-IndRequest { Invoke-RestMethod -Uri "https://api.alternative.me/fng/?limit=1100&format=json" }
+    $cfRows = @(@($cfResp.data) | Where-Object { $_ -and $_.timestamp } | Sort-Object { [long]$_.timestamp })
+    if ($cfRows.Count -lt 2) { throw "$($cfRows.Count)일치만 왔습니다" }
+    $cfD = @($cfRows | ForEach-Object { [DateTimeOffset]::FromUnixTimeSeconds([long]$_.timestamp).UtcDateTime.ToString("yyyy-MM-dd") })
+    $cfV = @($cfRows | ForEach-Object { [double][int]$_.value })
+    $clsKo = switch ([string]$cfRows[-1].value_classification) {
+        "Extreme Fear"  { "극단적 공포" }
+        "Fear"          { "공포" }
+        "Neutral"       { "중립" }
+        "Greed"         { "탐욕" }
+        "Extreme Greed" { "극단적 탐욕" }
+        default         { [string]$cfRows[-1].value_classification }
+    }
+    $cfDelta = $cfV[-1] - $cfV[-2]
+    $coinFgItem = [PSCustomObject]@{
+        key = "coinfg"; title = "코인 공포·탐욕지수"; tag = "비트코인 시장 심리"; fmt = "score"
+        d = $cfD; v = $cfV; value = $cfV[-1]; valueText = $cfV[-1].ToString("0", $indInv); unit = $clsKo
+        chgText = $(if ($cfDelta -eq 0) { "전일과 같음" } else { "$(if ($cfDelta -gt 0) { '+' } else { '−' })$([math]::Abs($cfDelta))" })
+        dir = "flat"; basis = $(if ($cfDelta -eq 0) { "" } else { "전일 대비" })
+        fixed = @(0, 100)
+        date = $cfD[-1]; dateText = "$(Format-IndDate $cfD[-1]) 기준"
+    }
+} catch {
+    Write-Warning "코인 공포·탐욕지수를 받지 못했습니다: $($_.Exception.Message)"
+    [void]$indFailed.Add("코인 공포·탐욕지수")
+}
+
+$indFailNote = if ($indFailed.Count) {
+    "이번 갱신에서 받지 못한 자료가 있습니다: $($indFailed -join ', ')." + $(if (-not $memOk -and @($memItems | Where-Object { $_.valueText }).Count) { " 메모리 가격은 지난 기록을 보여 줍니다." } else { "" })
+} else { "" }
+$indicators = [PSCustomObject]@{
+    memory   = @($memItems)
+    memStart = $memStart
+    fundsD   = @($fundsD)
+    funds    = @($fundItems)
+    foreign  = @($foreignItems)
+    vix      = $vixItem
+    coinFg   = $coinFgItem
+    failed   = @($indFailed)
+    failNote = [string]$indFailNote
+}
+Write-Host "관련 지표: 받지 못한 것 $($indFailed.Count)건$(if ($indFailed.Count) { " ($($indFailed -join ', '))" })"
+
 $marketStrip = @(foreach ($d in $stripDefs) {
     $inWatch = @($stocks | Where-Object { $_.symbol -eq $d.sym })[0]
     $src = if ($inWatch) { [PSCustomObject]@{ dates = $inWatch.dates; series = $inWatch.series } }
         elseif ($d.sym -eq "KRW=X") { $usdKrwSeries }
+        elseif ($d.sym -eq "^VIX" -and $vixLong) { $vixLong }
         else { Get-StripSeries $d.sym }
     if (-not $src -or @($src.series).Count -lt 2) { continue }
     $sr = @($src.series | ForEach-Object { [double]$_ })
@@ -1978,6 +2317,27 @@ foreach ($lvl in 3, 2) {
         Add-Highlight $grpLabel "$($items -join ', ')$(Get-Josa $items[-1] '이' '가') $grpLabel 구간입니다." $prioGrp $grp[0].symbol "dipGroup"
     }
 }
+# 관련 지표(2026-11-23). 메모리 현물가가 크게 움직였을 때(칩은 하루 3%, 모듈·웨이퍼는 한 주 5% 이상), 외국인이 한 종목을
+# 5거래일 이상 한쪽으로 매매했을 때, 빚투·예탁금이 최근 3년 중 가장 많거나 적을 때. 조사일이 오래된 값은 올리지 않는다.
+foreach ($mi in @($indicators.memory)) {
+    if ($null -eq $mi.chg -or -not $mi.date) { continue }
+    $ageM = ($nowKst.Date - [datetime]::ParseExact([string]$mi.date, "yyyy-MM-dd", $indInv)).Days
+    $isDay = $mi.cadence -eq "day"
+    if ($ageM -gt $(if ($isDay) { 4 } else { 8 })) { continue }
+    $c = [double]$mi.chg
+    if ([math]::Abs($c) -lt $(if ($isDay) { 3 } else { 5 })) { continue }
+    Add-Highlight "메모리 가격" "$($mi.say)$(Get-Josa $mi.say '이' '가') $($mi.valueText)$(Get-JosaRo $mi.valueText) $(if ($isDay) { '전일' } else { '전주' })보다 $(Format-IndPct $c)% $(if ($c -gt 0) { '올랐습니다' } else { '내렸습니다' })." (72 + [math]::Min(10, [math]::Abs($c) / 2)) ""
+}
+foreach ($fi in @($indicators.foreign)) {
+    if ([int]$fi.streak -lt 5) { continue }
+    $wF = if ([int]$fi.streakDir -gt 0) { "순매수" } else { "순매도" }
+    Add-Highlight "외국인" "외국인이 $($fi.name)$(Get-Josa $fi.name '을' '를') $($fi.streak)거래일 연속 ${wF}했습니다." (60 + [math]::Min(15, [int]$fi.streak)) $fi.symbol
+}
+foreach ($fu in @($indicators.funds | Where-Object { $_.key -eq "credit" -or $_.key -eq "deposit" })) {
+    if (-not ($fu.high3y -or $fu.low3y) -or -not $fu.date) { continue }
+    if (($nowKst.Date - [datetime]::ParseExact([string]$fu.date, "yyyy-MM-dd", $indInv)).Days -gt 6) { continue }
+    Add-Highlight "증시 자금" "$($fu.say)$(Get-Josa $fu.say '이' '가') $(Format-IndDate $fu.date) 기준 $($fu.valueText)으로 최근 3년 중 가장 $(if ($fu.high3y) { '많습니다' } else { '적습니다' })." 66 ""
+}
 # 왜 움직였나. Perplexity·구글 금융의 시장 요약처럼 숫자 옆에 이유를 둔다. 종목마다 가장 위에 오는 한 줄에만
 # 그 종목의 최근 3일 안 기사 제목을 하나 붙인다. 이미 받아 둔 뉴스(번역 끝난 제목)를 쓰므로 AI 를 부르지 않는다.
 # 여러 종목을 묶은 줄(dipGroup)과 일정을 알리는 실적 줄에는 붙이지 않는다.
@@ -2311,10 +2671,11 @@ $usdKrwSeriesJson = ConvertTo-JsonOrNull -InputObject $usdKrwSeries -Depth 4
 $fearGreedJson = ConvertTo-JsonOrNull -InputObject $fearGreed
 $stripJson = ConvertTo-JsonOrNull -InputObject @($marketStrip) -Depth 4
 $signalLogJson = ConvertTo-JsonOrNull -InputObject $signalLogJs -Depth 6
+$indicatorsJson = ConvertTo-JsonOrNull -InputObject $indicators -Depth 6
 $fetchedAt = $nowKst.ToString("yyyy-MM-ddTHH:mm:ss") + "+09:00"  # $nowKst's DateTimeKind is still Utc after the manual +9h shift, so "zzz" would report +00:00 — append the known-fixed KST offset literally instead.
 
 $template = Get-Content -Path (Join-Path $root "template.html") -Raw -Encoding UTF8
-$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson).Replace("__BRIEF_JSON__", $briefJson).Replace("__SIGNAL_LOG_JSON__", $signalLogJson).Replace("__HEADLINE_JSON__", $headlineJson).Replace("__KR_INTRADAY__", $(if ($krIntraday) { $krTimeTxt } else { "" }))
+$output = $template.Replace("__STOCKS_JSON__", $stocksJson).Replace("__USDKRW_JSON__", $usdKrwJson).Replace("__USDKRW_SERIES_JSON__", $usdKrwSeriesJson).Replace("__FEARGREED_JSON__", $fearGreedJson).Replace("__FETCHED_AT__", $fetchedAt).Replace("__HIGHLIGHTS_JSON__", $highlightsJson).Replace("__SCHEDULE_JSON__", $scheduleJson).Replace("__STRIP_JSON__", $stripJson).Replace("__BRIEF_JSON__", $briefJson).Replace("__SIGNAL_LOG_JSON__", $signalLogJson).Replace("__HEADLINE_JSON__", $headlineJson).Replace("__INDICATORS_JSON__", $indicatorsJson).Replace("__KR_INTRADAY__", $(if ($krIntraday) { $krTimeTxt } else { "" }))
 
 $outPath = Join-Path $root "dashboard.html"
 Set-Content -Path $outPath -Value $output -Encoding UTF8
@@ -2632,6 +2993,48 @@ $(Get-MailLabel '기간별 등락')
 </div>
 "@
 
+# 관련 지표(2026-11-23). 화면 '관련 지표'와 같은 값·변화·기준일 글을 표 하나로 싣는다. 그래프는 화면에서 본다.
+$indMailColor = @{ up = "#c62828"; down = "#1f5fcc"; flat = "#52514e" }
+$indMailRows = New-Object System.Collections.ArrayList
+$addIndGroup = {
+    param([string]$g, [string]$note = "")
+    [void]$indMailRows.Add("<tr><td colspan=4 style='padding:9px 0 2px;font-size:12px;font-weight:700;color:#6e6c66;'>$([System.Net.WebUtility]::HtmlEncode($g))$(if ($note) { "<span style='font-weight:400;'> $([System.Net.WebUtility]::HtmlEncode($note))</span>" })</td></tr>")
+}
+$addIndRow = {
+    param($it, [string]$nameTxt)
+    $chgM = if ($it.chgText) { "<font color=$($indMailColor[[string]$it.dir])>$([System.Net.WebUtility]::HtmlEncode([string]$it.chgText))</font>" } else { "" }
+    $valM = [System.Net.WebUtility]::HtmlEncode("$($it.valueText)$(if ($it.unit) { " $($it.unit)" })")
+    $dtM = if ($it.date) { Format-IndDate ([string]$it.date) } else { "" }
+    [void]$indMailRows.Add("<tr><td>$([System.Net.WebUtility]::HtmlEncode($nameTxt))</td><td align=right nowrap>$valM</td><td align=right nowrap>$chgM</td><td align=right nowrap><font color=#898781>$dtM</font></td></tr>")
+}
+$memMail = @($indicators.memory | Where-Object { $_.valueText })
+if ($memMail.Count) {
+    & $addIndGroup "메모리 가격(DRAMeXchange 현물가, 달러)" "칩은 전일 대비, 모듈과 웨이퍼는 전주 대비입니다."
+    foreach ($it in $memMail) { & $addIndRow $it "$($it.title)($($it.tag))" }
+}
+if (@($indicators.funds).Count) {
+    & $addIndGroup "국내 증시 자금(금융투자협회)" "전일 대비입니다."
+    foreach ($it in @($indicators.funds)) { & $addIndRow $it "$($it.title)" }
+}
+if (@($indicators.foreign).Count) {
+    & $addIndGroup "외국인 매매(최근 5거래일 합계)" "금액은 수량에 종가를 곱해 어림했습니다."
+    foreach ($it in @($indicators.foreign)) { & $addIndRow $it "$($it.name)" }
+}
+if ($indicators.vix -or $indicators.coinFg) {
+    & $addIndGroup "시장 심리" "전일 대비입니다."
+    foreach ($it in @($indicators.vix, $indicators.coinFg | Where-Object { $_ })) { & $addIndRow $it "$($it.title)" }
+}
+$indMailHtml = if ($indMailRows.Count) { @"
+$(Get-MailLabel '관련 지표')
+<div style="$mailCard">
+  <table width="100%" cellpadding=3 cellspacing=0 style="font-size:12.5px;color:#0b0b0b;">
+    <tr style="font-size:12px;color:#898781;"><td>지표</td><td align=right>값</td><td align=right>변화</td><td align=right>기준일</td></tr>
+    $($indMailRows -join "")
+  </table>
+  $(if ($indicators.failNote) { "<div style='font-size:12px;color:#a15c00;margin-top:8px;line-height:1.5;'>$([System.Net.WebUtility]::HtmlEncode([string]$indicators.failNote))</div>" })
+</div>
+"@ } elseif ($indicators.failNote) { "$(Get-MailLabel '관련 지표')<div style='$mailCard'><div style='font-size:12.5px;color:#a15c00;'>$([System.Net.WebUtility]::HtmlEncode([string]$indicators.failNote))</div></div>" } else { "" }
+
 # 다가오는 일정(14일). 페이지 '다가오는 일정'(120일)에서 가까운 것만 싣는다(실적 발표, FOMC, CPI, 금통위, 휴장).
 $schedLines = @(foreach ($ev in $scheduleItems) {
     $d0 = [datetime]::ParseExact([string]$ev.date, "yyyy-MM-dd", $inv)
@@ -2764,11 +3167,12 @@ $emailHtml = @"
   <!--FALLBACK_START-->$ladderHtml
   $fgBlockHtml<!--FALLBACK_END-->
   $perfHtml
+  $indMailHtml
   $scheduleMailHtml
   $(Get-MailLabel '종목별 상세')
   $detailHtml
   <div style="margin-top:22px;font-size:12px;color:#898781;line-height:1.6;">
-    출처: 시세 Yahoo Finance, 뉴스 Google 뉴스(영문 기사는 자동 번역). 개인 투자 판단의 참고용 요약입니다.<br>
+    출처: 시세 Yahoo Finance, 뉴스 Google 뉴스(영문 기사는 자동 번역), 메모리 가격 DRAMeXchange(TrendForce), 증시 자금 금융투자협회, 외국인 매매 네이버 증권, 코인 공포·탐욕지수 Alternative.me. 개인 투자 판단의 참고용 요약입니다.<br>
     실적, 목표주가, 이동평균선, 전체 차트는 <a href="$dashboardUrl" style="color:#0f766e;">대시보드</a>에서 확인하시기 바랍니다.
   </div>
 </div>
@@ -2808,7 +3212,7 @@ if ($emailKb -gt 90) {
 $problems = New-Object System.Collections.Generic.List[string]
 
 $renderedHtml = Get-Content -Path $outPath -Raw -Encoding UTF8
-foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__", "__HIGHLIGHTS_JSON__", "__SCHEDULE_JSON__", "__STRIP_JSON__", "__BRIEF_JSON__", "__SIGNAL_LOG_JSON__")) {
+foreach ($token in @("__STOCKS_JSON__", "__USDKRW_JSON__", "__USDKRW_SERIES_JSON__", "__FEARGREED_JSON__", "__FETCHED_AT__", "__HIGHLIGHTS_JSON__", "__SCHEDULE_JSON__", "__STRIP_JSON__", "__BRIEF_JSON__", "__SIGNAL_LOG_JSON__", "__INDICATORS_JSON__")) {
     if ($renderedHtml -like "*$token*") { $problems.Add("템플릿 치환 누락: $token") }
 }
 

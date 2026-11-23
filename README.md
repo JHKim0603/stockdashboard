@@ -30,6 +30,8 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
 - `news-filter.ps1` — 뉴스 제목 거르기(`Test-SpamHeadline`). work-dashboard 와 같은 파일이며 워크플로가 서로 비교합니다.
 - `target-cache.json` — 증권사 목표주가 평균의 날짜별 기록(종목마다 한 줄, 400일치). 전 기록과 비교해 바뀐 날을 알리는 데
   쓰므로 workflow 가 다른 캐시와 함께 커밋합니다. 로컬 실행 뒤에는 지우거나 `git checkout` 합니다.
+- `indicator-cache.json` — 메모리 현물가(DRAMeXchange)의 조사일별 기록(품목마다 한 줄). 과거 시세가 회원 전용이라 직접 쌓으며,
+  workflow 가 다른 캐시와 함께 커밋합니다. 로컬 실행 뒤에는 `git checkout` 합니다.
 - `run.bat` — double-click launcher (bypasses PowerShell execution-policy prompts).
 - `dashboard.html` — generated output, opened automatically after each run. Not tracked in git.
 - `email-summary.html` / `email-subject.txt` — generated daily email body/subject. Written every run for local
@@ -257,6 +259,19 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   - 국내 장중 실행이면 국내 종목 거래량 배수를 빼고 '11:15 장중'으로 적습니다(그날 일부만 쌓인 거래량을 평균과 견주면 작게 나옴). 거래량 급증 알림도 함께 빠집니다.
   - 메일: 이름을 화면 제목·보내는 사람과 같은 'JH 투자 DASHBOARD'로(제목, 머리). 모양을 업무 메일과 같게: 구역 제목은 상자 밖 작은 회색 글씨,
     상자는 흰 바탕, 오늘 방향·매수 구간·공포탐욕 구간은 상자 왼쪽 띠 색으로만.
+- **관련 지표 (2026-11-23)**: 사용자 요청("D램 가격, 낸드 가격 등 내 주식과 연관된 지표, 인증키 없이 바로 넣을 수 있는 것만").
+  다른 시황 사이트의 '시장 온도계'를 참고했고, 그 사이트와 같은 원본에서 받아 숫자가 같은 것을 확인했습니다. '그림으로 보기' 아래 구역입니다.
+  - 메모리 가격: DRAMeXchange 첫 화면 표의 DDR5·DDR4 16Gb 칩 현물가(평일), DDR5 RDIMM 32GB 서버 모듈과 NAND 512Gb TLC 웨이퍼(주 1회).
+    값은 그날 평균, 변화는 표에 적힌 직전 조사 대비 %. 과거 시세는 회원 전용이라 `indicator-cache.json` 에 조사일별로 쌓고(봇이 커밋),
+    값이 두 번 모이면 그래프가 나옵니다. 공개 페이지라 품목은 넷으로 줄이고 출처와 원본 링크를 둡니다.
+  - 국내 증시 자금: 금융투자협회 FreeSIS(빚투 = 신용융자 잔고, 투자자예탁금, 위탁매매 미수금, 장내파생상품 거래예수금). 3년치를 실행마다 받습니다. 발표가 이틀쯤 늦습니다.
+  - 외국인 매매: 네이버 증권 투자자별 매매(관심 종목 중 국내 개별 종목, 60거래일). 금액은 수량 × 그날 종가로 어림합니다. 국내 장중 실행이면 오늘 줄은 뺍니다.
+  - 시장 심리: VIX 3년(맨 위 띠와 같은 값, 점선 20·30), 코인 공포·탐욕지수(Alternative.me) 3년.
+  - 카드마다 기간 단추(1개월·3개월·1년·3년, 자료가 짧으면 줄어듦)와 마우스를 올리면 그날 값. 큰 값·변화·기준일 글은 스크립트가 만들어 화면과 메일이 같이 씁니다.
+  - 지금 주목할 점: 칩 현물가 하루 3%·모듈과 웨이퍼 한 주 5% 이상 변화, 외국인 5거래일 이상 연속 순매수·순매도, 빚투·예탁금의 최근 3년 최고·최저.
+    우선순위는 종목 신호보다 낮아(66~82) 종목 신호가 많은 날에는 8개 안에 들지 않습니다.
+  - 메일: '기간별 등락' 다음에 '관련 지표' 표(값, 변화, 기준일). 받지 못한 자료는 화면과 메일에 적고, 메모리 가격은 지난 기록을 보여 줍니다.
+  - 그대로 둔 것: 한국은행 D램·플래시메모리 수출물가(무료 인증키 필요), 반도체 수출액(공공데이터포털 키 필요), DRAM 고정거래가격(첫 화면 표에 숫자 없음), HBM 가격(공개 시세 없음).
 
 ## Usage
 
