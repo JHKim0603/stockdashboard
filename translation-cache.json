@@ -327,6 +327,10 @@
     "seen": "2026-10-28",
     "ko": "168의 P/E 대 83억 달러 분기: Palantir(NASDAQ: PLTR)와 RTX(NYSE: RTX) 사이에서 어느 방산 주식이 승리합니까?"
   },
+  "A proposed sale by a Sandisk (SNDK) officer covers shares valued at $2.37M.": {
+    "seen": "2026-11-24",
+    "ko": "Sandisk(SNDK) 임원이 제안한 매각에는 237만 달러 상당의 주식이 포함됩니다."
+  },
   "A Retiree Who Bought 1,000 Nvidia Shares at $122 Just Watched Chips Have Their Worst Day Since 2020": {
     "seen": "2026-11-07",
     "ko": "122달러에 Nvidia 주식 1,000주를 구입한 은퇴자는 칩이 2020년 이후 최악의 날을 보내는 것을 방금 지켜보았습니다."
@@ -370,6 +374,10 @@
   "After a stock award, Palantir (PLTR) CFO David A. Glazer holds 468,150 shares directly.": {
     "seen": "2026-10-02",
     "ko": "주식 상장 후 Palantir(PLTR) CFO David A. Glazer는 468,150주를 직접 보유하고 있습니다."
+  },
+  "After converting Class B shares, the Palantir (PLTR) tech chief sold the resulting Class A stock.": {
+    "seen": "2026-11-24",
+    "ko": "클래스 B 주식을 전환한 후 Palantir(PLTR) 기술 책임자는 결과 클래스 A 주식을 매각했습니다."
   },
   "After Its Worst Week in 18 Years, Nvidia Now Faces an SEC Investigation. What It Means for Investors": {
     "seen": "2026-11-21",
@@ -587,10 +595,6 @@
     "seen": "2026-11-17",
     "ko": "Alphabet Inc 클래스 A 주식(GOOGL)은 11월 16일에 3.52% 하락했습니다: 움직임 뒤에 있는 사실"
   },
-  "Alphabet Inc Class A Stock (GOOGL) Moved Down by 3.73% on Sep 23: Key Drivers Unveiled": {
-    "seen": "2026-09-24",
-    "ko": "Alphabet Inc 클래스 A 주식(GOOGL)은 9월 23일에 3.73% 하락했습니다: 주요 동인 공개"
-  },
   "Alphabet Inc Class A Stock (GOOGL) Opened Up by 3.17% on Nov 19: Facts Behind the Movement": {
     "seen": "2026-11-20",
     "ko": "Alphabet Inc 클래스 A 주식(GOOGL)은 11월 19일 3.17% 개장: 움직임 뒤에 있는 사실"
@@ -599,13 +603,13 @@
     "seen": "2026-10-23",
     "ko": "Alphabet Inc 클래스 C 주식(GOOG)은 10월 22일에 3.02% 하락했습니다: 투자자가 알아야 할 사항"
   },
+  "Alphabet Inc Class C Stock (GOOG) Opened Up by 4.22% on Nov 23: What Investors Need To Know": {
+    "seen": "2026-11-24",
+    "ko": "Alphabet Inc 클래스 C 주식(GOOG)은 11월 23일 4.22% 상승: 투자자가 알아야 할 사항"
+  },
   "Alphabet Inc: Wells Fargo Update & Stock Analysis": {
     "seen": "2026-10-08",
     "ko": "Alphabet Inc: Wells Fargo 업데이트 및 주식 분석"
-  },
-  "Alphabet Inc. (GOOG) Dips More Than Broader Market: What You Should Know": {
-    "seen": "2026-09-24",
-    "ko": "Alphabet Inc.(GOOG)는 더 넓은 시장보다 더 하락합니다: 알아야 할 사항"
   },
   "Alphabet Inc. (GOOG) Stock Price, News, Quote & History": {
     "seen": "2026-11-12",
@@ -650,6 +654,10 @@
   "Alphabet reportedly pulls in $5B in orders for landmark Hong Kong and Singapore dollar bond sale": {
     "seen": "2026-11-12",
     "ko": "알파벳, 홍콩·싱가포르 달러 채권 매각 주문 50억 달러 유치"
+  },
+  "Alphabet rises 6% as broad market rally lifts shares (GOOG:NASDAQ)": {
+    "seen": "2026-11-24",
+    "ko": "광범위한 시장 랠리가 주가를 높이면서 알파벳은 6% 상승합니다. (GOOG:NASDAQ)"
   },
   "Alphabet Rises as Google Debuts Universal Gemini Agent for Enterprise": {
     "seen": "2026-10-09",
@@ -715,6 +723,10 @@
     "seen": "2026-11-05",
     "ko": "알파벳 주가는 중간 선거 랠리로 인해 Google 주가가 상승함에 따라 5% 상승했습니다."
   },
+  "Alphabet Stock Jumps 6.8% as Nvidia's Huang Return Reignites AI Trade": {
+    "seen": "2026-11-24",
+    "ko": "Nvidia의 Huang 반환으로 AI 거래가 다시 시작되면서 Alphabet 주가는 6.8% 상승했습니다."
+  },
   "Alphabet Stock Jumps as Google Releases Gemini 4 Argon": {
     "seen": "2026-10-01",
     "ko": "Google, Gemini 4 Argon 출시로 Alphabet 주가 급등"
@@ -722,6 +734,10 @@
   "Alphabet Stock Jumps: What's Going On?": {
     "seen": "2026-11-05",
     "ko": "알파벳 주식 급등: 무슨 일이 일어나고 있나요?"
+  },
+  "Alphabet Stock Pops: What's Going On?": {
+    "seen": "2026-11-24",
+    "ko": "알파벳 주식 팝: 무슨 일이 일어나고 있나요?"
   },
   "Alphabet stock price prediction: Upward move targets $307.95 resistance amid bullish momentum": {
     "seen": "2026-11-14",
@@ -746,10 +762,6 @@
   "Alphabet stock slips on report of internal doubts over Gemini 4": {
     "seen": "2026-10-01",
     "ko": "Gemini 4에 대한 내부 의심 보고로 알파벳 주가 하락"
-  },
-  "Alphabet Stock Surges as Google Search Makes a Major Comeback": {
-    "seen": "2026-09-24",
-    "ko": "Google 검색의 대대적인 복귀로 알파벳 주가 급등"
   },
   "Alphabet Stock: 3 Reasons Why GOOGL Is a Buy Ahead of Q3 Results": {
     "seen": "2026-10-27",
@@ -1687,10 +1699,6 @@
     "seen": "2026-10-21",
     "ko": "다우지수는 수익, 석유 하락으로 1.02% 상승; 나스닥은 소폭 하락"
   },
-  "Dow tumbles more than 300 points, Nasdaq drops 1% as Treasury yields surge: Live updates": {
-    "seen": "2026-09-24",
-    "ko": "다우지수는 300포인트 이상 하락하고, 나스닥은 국채수익률 급등으로 1% 하락: 실시간 업데이트"
-  },
   "Dow, S&P 500, Nasdaq Futures Edge Higher After Red-Hot Inflation Data And Nvidia Losses: CRWV, TTWO, NLST, NBIS In Focus": {
     "seen": "2026-11-11",
     "ko": "Dow, S&P 500, Nasdaq 선물은 뜨거운 인플레이션 데이터 및 Nvidia 손실 이후 상승: CRWV, TTWO, NLST, NBIS 초점"
@@ -1910,10 +1918,6 @@
   "Fear in global markets eases as AI concerns cool, Middle East remains calm": {
     "seen": "2026-11-10",
     "ko": "AI 우려가 진정되면서 글로벌 시장의 두려움은 완화되고 중동은 평온함을 유지"
-  },
-  "Fewer stocks are carrying the market than at any time since the dot-com peak": {
-    "seen": "2026-09-24",
-    "ko": "닷컴 정점 이후 어느 때보다 시장을 주도하는 주식이 적습니다."
   },
   "Find Strong Cloud Stocks With This Zacks Tool": {
     "seen": "2026-10-27",
@@ -2139,10 +2143,6 @@
     "seen": "2026-10-29",
     "ko": "GOOGL 주가 시간 외 11% 하락: 알파벳의 AI 지출 급증으로 3분기 이익 및 현금 흐름 압박"
   },
-  "GOOGL Stock Steadies After Worst Drop In A Month As DeepMind Chief Says Gemini 4 Is Coming 'Much Earlier'": {
-    "seen": "2026-09-24",
-    "ko": "DeepMind 최고 책임자가 Gemini 4가 '훨씬 일찍' 출시될 것이라고 말하면서 GOOGL 주식은 한 달 만에 최악의 하락세를 보인 후 안정되었습니다."
-  },
   "GOOGL Stock Ticks Up After Alphabet Picks Jeff Bezos’ Blue Origin to Launch AI Satellites in 2029": {
     "seen": "2026-11-20",
     "ko": "알파벳이 2029년에 AI 위성을 발사하기 위해 Jeff Bezos의 Blue Origin을 선택한 후 GOOGL 주가 상승"
@@ -2324,7 +2324,7 @@
     "ko": "데이터 센터 피벗(Data Center Pivot)이 계속 매도세를 보이면서 Gorilla는 9% 하락했습니다. BigBear.ai 딥, Palantir 슬립"
   },
   "Gov't prepares market stabilization fund due to sharp downturns in domestic, global stocks": {
-    "seen": "2026-11-23",
+    "seen": "2026-11-24",
     "ko": "정부, 국내·글로벌 증시 급락으로 시장안정기금 준비 안 해"
   },
   "Has MSFT Stock Run Out Of Steam?": {
@@ -2647,10 +2647,6 @@
     "seen": "2026-11-05",
     "ko": "2026년 11월 4일 수요일 미국 주요 주가 지수의 흐름"
   },
-  "How major US stock indexes fared Wednesday 9/23/2026": {
-    "seen": "2026-09-24",
-    "ko": "2026년 9월 23일 수요일 미국 주요 주가 지수의 흐름"
-  },
   "How major US stock indexes fared Wednesday 9/30/2026": {
     "seen": "2026-10-01",
     "ko": "2026년 9월 30일 수요일 미국 주요 주가 지수의 흐름"
@@ -2823,6 +2819,10 @@
     "seen": "2026-11-13",
     "ko": "IJH 보유자는 $300,000로 $116,670의 이익을 얻었지만 프로모션 규칙에 따라 최고의 우승자가 팔렸습니다."
   },
+  "Individual Investors Lose 563 Trillion, Foreigners Sell 224 Trillion": {
+    "seen": "2026-11-24",
+    "ko": "개인투자자는 563조 손실, 외국인은 224조 매도"
+  },
   "Ingram Micro jumps after securing spot in S&P SmallCap 600": {
     "seen": "2026-11-12",
     "ko": "Ingram Micro, S&P SmallCap 600 편입 후 점프"
@@ -2967,6 +2967,10 @@
     "seen": "2026-11-06",
     "ko": "마이크론 테크놀로지(MU)는 배당 업데이트와 AI 메모리 스토리에서 저평가되어 있습니까?"
   },
+  "Is Micron Technology Stock a Buy at $700?": {
+    "seen": "2026-11-24",
+    "ko": "Micron Technology 주식은 700달러에 매수됩니까?"
+  },
   "Is Microsoft Stock Paying You Enough For The Swings?": {
     "seen": "2026-10-03",
     "ko": "Microsoft 주식은 귀하에게 스윙에 대한 충분한 비용을 지불하고 있습니까?"
@@ -3038,10 +3042,6 @@
   "Is Sandisk (SNDK) Cheap Following AI Infrastructure Optimism And SK Hynix Results?": {
     "seen": "2026-10-28",
     "ko": "AI 인프라 낙관론과 SK하이닉스 결과에 따라 Sandisk(SNDK)가 저렴합니까?"
-  },
-  "Is SanDisk Stock Amplifying A Risk You Already Own?": {
-    "seen": "2026-09-24",
-    "ko": "SanDisk 주식이 귀하가 이미 갖고 있는 위험을 증폭시키고 있습니까?"
   },
   "Is SanDisk Stock Worth More Than Its Competitors?": {
     "seen": "2026-11-11",
@@ -3122,6 +3122,10 @@
   "Jensen Huang's Nvidia Lost $200 Billion in Value After OpenAI's Revenue Run Rate Came Up $18 Billion Below Expectations. Is This AI-Jitters Sell-Off a Buying Opportunity?": {
     "seen": "2026-10-17",
     "ko": "Jensen Huang의 Nvidia는 OpenAI의 수익 실행 속도가 예상보다 180억 달러 낮은 후 2,000억 달러의 가치를 잃었습니다. 이 AI-Jitters 매도가 구매 기회입니까?"
+  },
+  "Jensen Huang’s Return Gives NVDA Stock Biggest Single-Day Gain Since 2003: Nvidia Senior Leaders Were Reportedly Not Consulted On Reinstatement": {
+    "seen": "2026-11-24",
+    "ko": "Jensen Huang의 복귀로 NVDA 주식은 2003년 이래 최대 일일 이익을 얻었습니다: Nvidia 고위 리더들은 복직에 대해 협의하지 않은 것으로 알려졌습니다"
   },
   "Jensen Huang’s wife is a co-trustee to more than 500M of his Nvidia shares. Here’s what his affair could cost him": {
     "seen": "2026-11-10",
@@ -3275,9 +3279,17 @@
     "seen": "2026-11-23",
     "ko": "코스피는 2.77% 하락하며 4,800 아래로 하락"
   },
+  "KOSPI Opens Lower in 3% Range at 4,700 Level; KOSDAQ Drops Over 1%": {
+    "seen": "2026-11-24",
+    "ko": "코스피, 4,700선에서 3%대 하락 출발. 코스닥 1% 넘게 하락"
+  },
   "KOSPI Opens Over 3% Lower in 4,700 Range... KOSDAQ Down Over 1%": {
     "seen": "2026-11-23",
     "ko": "코스피, 4700대 3% 이상 하락 출발…코스닥 1% 이상 하락"
+  },
+  "KOSPI Plummets Below 4,900 as AI Investment Frenzy Falters": {
+    "seen": "2026-11-24",
+    "ko": "AI 투자 열풍이 주춤하면서 코스피가 4,900 아래로 급락"
   },
   "KOSPI Plummets Below 4,900 as Analysts Warn of 4,000 Bottom": {
     "seen": "2026-11-23",
@@ -3463,10 +3475,6 @@
     "seen": "2026-10-28",
     "ko": "META_TITLE_QUOTE"
   },
-  "Meta, Tech Stocks Lift S&P 500 to Best Day Since August": {
-    "seen": "2026-09-24",
-    "ko": "메타, 기술주, S&P 500 지수를 8월 이후 최고의 날로 상승"
-  },
   "Michael Burry Buys Put Options on Nvidia, Micron, and Palantir as \"The Big Short\" Investor Predicts a 1987-Style Market Crash": {
     "seen": "2026-10-01",
     "ko": "Michael Burry는 \"The Big Short\" 투자자가 1987년 스타일 시장 붕괴를 예측함에 따라 Nvidia, Micron 및 Palantir에 대한 풋 옵션을 매입합니다."
@@ -3478,10 +3486,6 @@
   "Michael Burry Donates Alphabet Shares, Then Buys the Software Stock Wall Street Fears Most": {
     "seen": "2026-11-18",
     "ko": "마이클 버리(Michael Burry), 알파벳 주식 기부 후 월스트리트가 가장 두려워하는 소프트웨어 주식 매입"
-  },
-  "Michael Burry Doubles Down On Palantir Bear Case: ‘A Lot Of’ Money Still To Be Made Shorting PLTR": {
-    "seen": "2026-09-24",
-    "ko": "Michael Burry가 Palantir Bear Case에 대해 두 배로 강조: PLTR을 단락시켜 여전히 '많은' 돈을 벌 수 있습니다"
   },
   "Michael Burry Jokes About Joining Nvidia, Lululemon Boards": {
     "seen": "2026-11-23",
@@ -3618,6 +3622,10 @@
   "Micron (NASDAQ:MU) Stock Jumps 4% as Wall Street Sets Stunning US$3,000 Price Target": {
     "seen": "2026-10-08",
     "ko": "월스트리트가 놀라운 US$3,000 목표 가격을 설정함에 따라 Micron(NASDAQ:MU) 주가는 4% 상승"
+  },
+  "Micron (NASDAQ:MU) Stock Soars Nearly 20% as Nvidia’s Comeback Sparks AI Memory Rally": {
+    "seen": "2026-11-24",
+    "ko": "Nvidia의 복귀로 AI 메모리 랠리가 촉발되면서 Micron(NASDAQ:MU) 주가가 약 20% 급등"
   },
   "Micron & SanDisk Stocks Look Oversold: Time to Buy the Dip?": {
     "seen": "2026-10-16",
@@ -3979,10 +3987,6 @@
     "seen": "2026-09-30",
     "ko": "Micron Technology(MU)는 엔터프라이즈 메모리 내러티브에서 47% 저평가될 수 있습니다."
   },
-  "Micron Technology (MU) Draws Michael Burry Short As Memory Price Warning Grows": {
-    "seen": "2026-09-24",
-    "ko": "Micron Technology(MU)는 메모리 가격 경고가 커지면서 Michael Burry를 단기로 끌어들였습니다."
-  },
   "Micron Technology (MU) Dropped, What Is Driving Attention Now?": {
     "seen": "2026-10-14",
     "ko": "마이크론 테크놀로지(MU) 하락, 지금 주목받는 것은?"
@@ -4303,6 +4307,10 @@
     "seen": "2026-10-03",
     "ko": "마이크론: 더 큰 수익이 우리 마음을 바꾸지 않습니다"
   },
+  "Micron: Sell As This May Be The Long-Awaited Cyclical Downturn (Rating Downgrade)": {
+    "seen": "2026-11-24",
+    "ko": "마이크론: 오랫동안 기다려온 경기 침체일 수 있으므로 매도(등급 하향)"
+  },
   "Micron: The 5x P/E Isn't As Cheap As It Looks, But The Upside Remains (NASDAQ:MU)": {
     "seen": "2026-10-30",
     "ko": "마이크론: 5배 P/E는 보기만큼 저렴하지는 않지만 상승 여력은 남아 있습니다. (NASDAQ:MU)"
@@ -4326,6 +4334,10 @@
   "Micron: Wishful Thinking At Its Finest": {
     "seen": "2026-10-07",
     "ko": "마이크론: 최고의 희망찬 생각"
+  },
+  "Micron: You Can't Argue With The Price (NASDAQ:MU)": {
+    "seen": "2026-11-24",
+    "ko": "마이크론: 가격으로는 논쟁할 수 없습니다(NASDAQ:MU)"
   },
   "Micron's AI-fueled revenue forecast blows past estimates, backlog swells": {
     "seen": "2026-10-01",
@@ -4370,6 +4382,10 @@
   "Microsoft (MSFT) Exceeds Market Returns: Some Facts to Consider": {
     "seen": "2026-10-06",
     "ko": "Microsoft(MSFT)가 시장 수익률을 초과함: 고려해야 할 몇 가지 사실"
+  },
+  "Microsoft (MSFT) Expands Quantum Cybersecurity Push with a New AI Team in Israel": {
+    "seen": "2026-11-24",
+    "ko": "Microsoft(MSFT), 이스라엘의 새로운 AI 팀으로 Quantum Cybersecurity 추진 확대"
   },
   "Microsoft (MSFT) Expected to Maintain Strong Growth Amid AI Mome": {
     "seen": "2026-10-02",
@@ -4603,6 +4619,10 @@
     "seen": "2026-09-26",
     "ko": "Microsoft Corp Stock(MSFT)은 9월 25일 3.21% 상승: 투자자가 알아야 할 사항"
   },
+  "Microsoft Corp Stock (MSFT) Opened Up by 3.39% on Nov 23: A Full Analysis": {
+    "seen": "2026-11-24",
+    "ko": "11월 23일 Microsoft Corp Stock(MSFT)은 3.39% 상승: 전체 분석"
+  },
   "Microsoft Corporation (MSFT) Delivers Strong Azure Growth as AI Demand Exceeds Supply": {
     "seen": "2026-11-03",
     "ko": "Microsoft Corporation(MSFT), AI 수요가 공급을 초과함에 따라 강력한 Azure 성장 제공"
@@ -4803,6 +4823,10 @@
     "seen": "2026-10-10",
     "ko": "Microsoft Stock(NASDAQ:MSFT)은 제품군 OneDrive 스토리지를 대폭 축소한 후 이익을 얻었습니다."
   },
+  "Microsoft Stock (NASDAQ:MSFT) Gains as it Warns About More Tech Disruptions": {
+    "seen": "2026-11-24",
+    "ko": "Microsoft Stock(NASDAQ:MSFT)은 더 많은 기술 중단에 대해 경고하면서 이익을 얻었습니다."
+  },
   "Microsoft Stock (NASDAQ:MSFT) Notches Up Despite Huge New Project Helix Price Tag": {
     "seen": "2026-10-22",
     "ko": "Microsoft 주식(NASDAQ:MSFT)은 엄청난 새 프로젝트 Helix 가격표에도 불구하고 상승세를 보이고 있습니다."
@@ -4918,10 +4942,6 @@
   "Microsoft Stock: Azure Drives Growth (NASDAQ:MSFT)": {
     "seen": "2026-11-08",
     "ko": "Microsoft Stock: Azure가 성장을 주도합니다(NASDAQ:MSFT)"
-  },
-  "Microsoft Stock: Buy This Early Recovery (NASDAQ:MSFT)": {
-    "seen": "2026-09-24",
-    "ko": "Microsoft 주식: 조기 회복세 구매(NASDAQ:MSFT)"
   },
   "Microsoft Stock: Finally, Found Its AI Angle (NASDAQ:MSFT)": {
     "seen": "2026-10-13",
@@ -5331,10 +5351,6 @@
     "seen": "2026-10-20",
     "ko": "나스닥은 칩과 AI 관련 주식이 반등하면서 상승"
   },
-  "NASDAQ Composite (^IXIC) Charts, Data & News": {
-    "seen": "2026-09-24",
-    "ko": "NASDAQ Composite (^IXIC) 차트, 데이터 및 뉴스"
-  },
   "NASDAQ Composite (^IXIC) charts, data and news": {
     "seen": "2026-11-21",
     "ko": "NASDAQ Composite(^IXIC) 차트, 데이터 및 뉴스"
@@ -5431,10 +5447,6 @@
     "seen": "2026-10-15",
     "ko": "뜨거운 인플레이션 데이터가 금리 인상 우려를 불러일으키면서 나스닥은 급락세로 마감했습니다."
   },
-  "Nasdaq ETF (ONEQ) Hits New 52-Week High": {
-    "seen": "2026-09-24",
-    "ko": "나스닥 ETF(ONEQ)가 52주 최고가를 경신했습니다."
-  },
   "NASDAQ Europe Retail Index (^NQEU4040) interactive stock chart": {
     "seen": "2026-10-22",
     "ko": "NASDAQ 유럽 소매 지수(^NQEU4040) 대화형 주식 차트"
@@ -5463,10 +5475,6 @@
     "seen": "2026-11-14",
     "ko": "나스닥은 월스트리트의 부진한 주에 2% 상승했습니다. Nvidia는 ~13% 손실"
   },
-  "Nasdaq Hit a Record High. Is This a Dip or a Trap?": {
-    "seen": "2026-09-24",
-    "ko": "나스닥이 사상 최고치를 기록했다. 이것은 하락인가 함정인가?"
-  },
   "Nasdaq Hits Record High as AI Stocks Surge": {
     "seen": "2026-10-06",
     "ko": "나스닥, AI 주식 급등으로 사상 최고치 경신"
@@ -5482,6 +5490,10 @@
   "Nasdaq Index and S&P500: Hot CPI Reverses Monday’s Tech-Led Rally": {
     "seen": "2026-11-11",
     "ko": "나스닥 지수 및 S&P500: CPI 상승으로 월요일 기술 주도 랠리 반전"
+  },
+  "Nasdaq Index and S&P500: Nvidia Leads US Stocks Higher on Huang’s Return": {
+    "seen": "2026-11-24",
+    "ko": "Nasdaq 지수 및 S&P500: Nvidia는 Huang의 복귀로 미국 주식을 더 높게 이끌었습니다."
   },
   "Nasdaq Index and S&P500: Nvidia Rally Fades as Traders Brace for Fed Minutes": {
     "seen": "2026-11-19",
@@ -5510,6 +5522,10 @@
   "NASDAQ Index, SP500, Dow Jones Forecasts – NASDAQ Rallies As CoreWeave Soars 24%": {
     "seen": "2026-11-12",
     "ko": "NASDAQ 지수, SP500, Dow Jones 예측 – CoreWeave가 24% 급등하면서 NASDAQ 반등"
+  },
+  "NASDAQ Index, SP500, Dow Jones Forecasts – NASDAQ Rallies As Nvidia Soars 31%": {
+    "seen": "2026-11-24",
+    "ko": "NASDAQ 지수, SP500, Dow Jones 예측 – Nvidia가 31% 급등하면서 NASDAQ 랠리"
   },
   "NASDAQ Index, SP500, Dow Jones Forecasts – NASDAQ Retreats Ahead Of Nvidia’s Report": {
     "seen": "2026-11-18",
@@ -5731,6 +5747,10 @@
     "seen": "2026-11-03",
     "ko": "Nasdaq-100은 AI 우려가 커지면서 올해 세 번째 조정을 받았습니다."
   },
+  "Nasdaq, Dow, S&P 500 Futures Gain As Jensen Huang’s Return To Nvidia Sparks $3T Market Rally: SOXS, IBRX, HPE, TSM In Focus": {
+    "seen": "2026-11-24",
+    "ko": "Nasdaq, Dow, S&P 500 선물은 Jensen Huang의 Nvidia 복귀로 3조 달러 시장 랠리를 촉발합니다: SOXS, IBRX, HPE, TSM In Focus"
+  },
   "Nasdaq, Dow, S&P 500 Futures Jump Nearly 2% After Brutal Tech Selloff Last Week: GME, JNJ, ALNY, GAP In Focus": {
     "seen": "2026-11-23",
     "ko": "Nasdaq, Dow, S&P 500 선물은 지난주 Brutal Tech 매도 이후 거의 2% 상승했습니다: GME, JNJ, ALNY, GAP In Focus"
@@ -5742,10 +5762,6 @@
   "Nasdaq, S&P 500 Futures Rise Despite Surging Treasury Yields: AMD, TSLA, SPCX, AKAM, BE Stocks In Focus": {
     "seen": "2026-09-25",
     "ko": "국채 수익률 급증에도 불구하고 Nasdaq, S&P 500 선물 상승: AMD, TSLA, SPCX, AKAM, BE 주식에 집중"
-  },
-  "Nasdaq, S&P 500 Futures Slide As Treasury Yields, Trump-Xi Summit Keep Traders On Edge: META, GOOGL, SPCX, VKTX, SNAP, MCD, BB Stocks In Focus": {
-    "seen": "2026-09-24",
-    "ko": "Nasdaq, S&P 500 선물 하락, 국채 수익률 상승, Trump-Xi 정상회담으로 거래자들의 불안 유지: META, GOOGL, SPCX, VKTX, SNAP, MCD, BB 주식에 집중"
   },
   "Nasdaq, S&P 500, Dow Futures Mixed Even As Micron Fuels AI Rally: ORCL, NKE, TSLA, RKLB, ASTS, PSKY In Focus": {
     "seen": "2026-10-01",
@@ -6207,10 +6223,6 @@
     "seen": "2026-11-10",
     "ko": "NVIDIA Corporation (NVDA.TO) 주가, 뉴스, 시세 및 역사"
   },
-  "NVIDIA Corporation (NVDA) Is a Trending Stock: Facts to Know Before Betting on It": {
-    "seen": "2026-09-24",
-    "ko": "NVIDIA Corporation(NVDA)은 인기 주식입니다: 베팅하기 전에 알아야 할 사실"
-  },
   "NVIDIA Corporation (NVDA) Remains a Key AI Growth Driver Despite Benchmark Headwinds": {
     "seen": "2026-10-23",
     "ko": "NVIDIA Corporation(NVDA)은 벤치마크 역풍에도 불구하고 주요 AI 성장 동력으로 남아 있습니다."
@@ -6322,6 +6334,10 @@
   "Nvidia Flashes Sell Signals As Earnings Loom; Is Nvidia A Buy Now?": {
     "seen": "2026-11-03",
     "ko": "Nvidia는 실적이 밝아지면서 판매 신호를 깜박입니다. Nvidia는 지금 구매인가요?"
+  },
+  "Nvidia gains nearly $1T as Trump says nobody could 'revive the stock like it's being revived'": {
+    "seen": "2026-11-24",
+    "ko": "트럼프가 누구도 '주식이 되살아나는 것처럼 되살릴 수 없다'고 말하면서 Nvidia는 거의 1조 달러를 얻었습니다."
   },
   "Nvidia Growth Could Slow to 20% But Its Stock Can Still Double, Expert Says": {
     "seen": "2026-10-24",
@@ -6487,6 +6503,10 @@
     "seen": "2026-11-10",
     "ko": "NVIDIA는 CEO 의혹에 대한 이사회 조사로 인해 4% 하락했습니다(NVDA:NASDAQ)."
   },
+  "Nvidia soars 31% as board reinstates Jensen Huang as CEO, chip stocks jump": {
+    "seen": "2026-11-24",
+    "ko": "이사회가 Jensen Huang을 CEO로 복귀시키고 칩 주식이 급등하면서 Nvidia는 31% 급등했습니다."
+  },
   "NVIDIA sparks valuation debate after selloff (NVDA:NASDAQ)": {
     "seen": "2026-11-08",
     "ko": "엔비디아, 매도 이후 가치 평가 논쟁 촉발 (NVDA:NASDAQ)"
@@ -6570,6 +6590,10 @@
   "Nvidia Stock Has a Massive AI Tailwind. Here’s the Bull Case": {
     "seen": "2026-10-14",
     "ko": "Nvidia 주식에는 대규모 AI 순풍이 있습니다. 황소 사건은 다음과 같습니다"
+  },
+  "Nvidia stock has best day since May 2003, gaining nearly $1T in market cap after Jensen Huang is reinstated as CEO": {
+    "seen": "2026-11-24",
+    "ko": "Nvidia 주식은 2003년 5월 이후 가장 좋은 날을 보냈으며 Jensen Huang이 CEO로 복귀한 후 시가총액이 거의 1조 달러에 달했습니다."
   },
   "Nvidia Stock Has Dropped Nearly 6% in a Month; Now Jim Cramer Is Asking Why ‘Anything Negative in Tech’ I": {
     "seen": "2026-10-29",
@@ -6778,6 +6802,10 @@
   "Nvidia's Jensen Huang Is on the Hot Seat. Here's What I'm Doing With My Nvidia Stock": {
     "seen": "2026-11-12",
     "ko": "Nvidia의 Jensen Huang이 뜨거운 자리에 있습니다. 내 Nvidia 주식으로 무엇을 하고 있는지 살펴보겠습니다."
+  },
+  "Nvidia's Jensen Huang Reinstatement Sparks AI Rally, Lifting Palantir (NASDAQ: PLTR) Stock Price 10.6%": {
+    "seen": "2026-11-24",
+    "ko": "Nvidia의 Jensen Huang 복직으로 AI 랠리가 촉발되어 Palantir(NASDAQ: PLTR) 주가 10.6% 상승"
   },
   "NVIDIA's Market Cap Evaporates, Equaling Amazon's, Amid Tech Selloff": {
     "seen": "2026-11-21",
@@ -7103,6 +7131,10 @@
     "seen": "2026-10-14",
     "ko": "Palantir CRO 및 CLO Ryan Taylor, PLTR 주식 362만 달러 매도"
   },
+  "Palantir CTO Shyam Sankar sells $47.9M in PLTR shares": {
+    "seen": "2026-11-24",
+    "ko": "Palantir CTO Shyam Sankar, PLTR 주식 4,790만 달러 매각"
+  },
   "Palantir director Alexander Moore sells $2.69M in PLTR stock By Investing.com": {
     "seen": "2026-11-18",
     "ko": "Palantir 이사 Alexander Moore, PLTR 주식 269만 달러 매도 부터 Investing.com"
@@ -7382,6 +7414,10 @@
   "Palantir Technologies Inc (PLTR) Stock Down 6.5% -- Now Undervalued? GF Score: 84/100": {
     "seen": "2026-11-21",
     "ko": "Palantir Technologies Inc(PLTR) 주가 6.5% 하락 - 현재 저평가되어 있습니까? GF 점수: 84/100"
+  },
+  "Palantir Technologies Inc (PLTR) Stock Up 11.1% and Still Underv": {
+    "seen": "2026-11-24",
+    "ko": "Palantir Technologies Inc(PLTR) 주가는 11.1% 상승했지만 여전히 부족합니다."
   },
   "Palantir Technologies Inc (PLTR) Stock Up 5.2% but GF Value Says Overvalued -- GF Score: 82/100": {
     "seen": "2026-10-10",
@@ -7679,10 +7715,6 @@
     "seen": "2026-10-06",
     "ko": "예측: Micron 주가는 2028년 이전에 두 배로 증가할 것입니다. 그 이유는 1조 7천억 가지입니다."
   },
-  "Prediction: Micron Stock Will Go Parabolic After Sept. 30. Here Are 31.6 Trillion Reasons Why": {
-    "seen": "2026-09-24",
-    "ko": "예측: Micron 주식은 9월 30일 이후 포물선이 될 것입니다. 그 이유는 다음과 같습니다. 31.6조 가지 이유"
-  },
   "Prediction: Micron Will Do a Stock-Split Before the End of the Year. And It Could Come on Wednesday": {
     "seen": "2026-09-30",
     "ko": "예측: Micron은 연말 이전에 주식 분할을 실시할 것입니다. 그리고 수요일에 올 수도 있어요"
@@ -7743,10 +7775,6 @@
     "seen": "2026-09-26",
     "ko": "예측: 2028년 말까지 Palantir Technologies의 주가가 될 것입니다."
   },
-  "Prediction: This Will Be Palantir’s Stock Price in a Year (Hint: It Implies Upside)": {
-    "seen": "2026-09-24",
-    "ko": "예측: 이는 1년 후 Palantir의 주가가 될 것입니다(힌트: 상승 가능성을 암시함)"
-  },
   "President Trump Sells Millions in Microsoft and Amazon, Buys Nvidia Stock": {
     "seen": "2026-09-25",
     "ko": "트럼프 대통령, 마이크로소프트와 아마존 수백만 달러 매도, 엔비디아 주식 매입"
@@ -7770,6 +7798,10 @@
   "QQQ Retests Support: Can It Stabilize and Bounce?": {
     "seen": "2026-11-18",
     "ko": "QQQ 재테스트 지원: 안정화되고 바운스될 수 있습니까?"
+  },
+  "Quantum Computing News: Mastercard (MA) and Microsoft (MSFT) Lead Quantum Security Push": {
+    "seen": "2026-11-24",
+    "ko": "양자 컴퓨팅 뉴스: Mastercard(MA)와 Microsoft(MSFT)가 양자 보안 추진 주도"
   },
   "RBC Capital Sticks to Its Buy Rating for Microsoft (MSFT)": {
     "seen": "2026-10-14",
@@ -8022,6 +8054,10 @@
   "S&P 500 Sell-Off: Is Now the Right Time to Buy the Dip?": {
     "seen": "2026-10-30",
     "ko": "S&P 500 매도: 지금이 하락장을 매수할 적절한 시기인가?"
+  },
+  "S&P 500 sinks 3.7% and Nasdaq composite goes negative for the year as tech sell-off worsens": {
+    "seen": "2026-11-24",
+    "ko": "기술 매도세가 악화되면서 S&P 500 지수는 3.7% 하락하고 나스닥 종합지수는 올해 마이너스를 기록했습니다."
   },
   "S&P 500 sinks 3.7% and Nasdaq composite goes negative for the year as tech sell-off worsens - The Frederick News-Post": {
     "seen": "2026-11-21",
@@ -8279,6 +8315,10 @@
     "seen": "2026-11-21",
     "ko": "Sandisk(SNDK), 8대 1 주식 분할 시행"
   },
+  "Sandisk (SNDK) On Its Stock Split And Selloff Is It A Bargain Or Fully Valued": {
+    "seen": "2026-11-24",
+    "ko": "주식 분할 및 매도에 대한 Sandisk(SNDK)는 할인인가, 아니면 완전히 가치가 있는 것인가?"
+  },
   "Sandisk (SNDK) Posted an 84.6% Margin Quarter. Is its P/E a Bargain or a Peak?": {
     "seen": "2026-10-10",
     "ko": "Sandisk(SNDK)는 84.6%의 분기 마진을 기록했습니다. PER은 헐값인가, 정점인가?"
@@ -8323,6 +8363,10 @@
     "seen": "2026-10-24",
     "ko": "SanDisk(SNDK) 주식 예측 및 분석가 등급"
   },
+  "Sandisk (SNDK) Stock Looks Below Fair Value After Its 179% Run": {
+    "seen": "2026-11-24",
+    "ko": "Sandisk(SNDK) 주식은 179% 상승 후 적정 가치 아래로 보입니다."
+  },
   "SanDisk (SNDK) Stock Looks Priced Above Its Cash Flow Value": {
     "seen": "2026-10-01",
     "ko": "SanDisk(SNDK) 주식은 현금 흐름 가치보다 높은 가격으로 보입니다"
@@ -8334,10 +8378,6 @@
   "SanDisk (SNDK) Stock May Be Overvalued After Its Huge One Year Run": {
     "seen": "2026-10-13",
     "ko": "SanDisk(SNDK) 주식은 1년 동안 엄청난 상승세를 보인 후 과대평가될 수 있습니다."
-  },
-  "Sandisk (SNDK) Stock May Be Undervalued On Fresh AI Slowdown Fears": {
-    "seen": "2026-09-24",
-    "ko": "Sandisk(SNDK) 주식은 새로운 AI 둔화 우려로 인해 저평가될 수 있습니다."
   },
   "Sandisk (SNDK) Stock May Still Look Reasonable After AI Slowdown Fears": {
     "seen": "2026-09-26",
@@ -8775,6 +8815,10 @@
     "seen": "2026-11-05",
     "ko": "Sandisk: 0.12x의 PEG는 너무 저렴합니다(NASDAQ:SNDK)"
   },
+  "Sandisk: Armageddon Has Been Priced-In (NASDAQ:SNDK)": {
+    "seen": "2026-11-24",
+    "ko": "Sandisk: 아마겟돈 가격이 책정되었습니다(NASDAQ:SNDK)"
+  },
   "Sandisk: Buy Into 10/29 Earnings": {
     "seen": "2026-10-24",
     "ko": "Sandisk: 10/29 수익으로 구매"
@@ -8902,6 +8946,14 @@
   "Setting New Price Targets for Nvidia, S&P 500, Nasdaq Composite": {
     "seen": "2026-10-08",
     "ko": "Nvidia, S&P 500, Nasdaq Composite의 새로운 가격 목표 설정"
+  },
+  "SharkNinja Stock to Join the S&P 500 as AES Leaves": {
+    "seen": "2026-11-24",
+    "ko": "SharkNinja 주식, AES 탈퇴로 S&P 500에 합류"
+  },
+  "SharkNinja To Join S&P 500 Index": {
+    "seen": "2026-11-24",
+    "ko": "SharkNinja, S&P 500 지수에 합류"
   },
   "Should Copilot Relaunch Require Action From Microsoft (MSFT) Investors?": {
     "seen": "2026-09-29",
@@ -9291,10 +9343,6 @@
     "seen": "2026-09-30",
     "ko": "오늘의 주식 시장: 국채 수익률이 더욱 상승함에 따라 주요 지수는 하락했습니다. 유가 하락"
   },
-  "Stock market today: Nasdaq surges 2% to record high, Dow and S&P 500 gain as chip stocks rally, oil falls": {
-    "seen": "2026-09-24",
-    "ko": "오늘 주식 시장: 나스닥은 2% 급등하여 사상 최고치를 기록했고, 다우와 S&P 500은 칩 주가 상승, 유가 하락으로 상승했습니다."
-  },
   "Stock Market Today: Nvidia (NVDA) Loses Jensen Huang, and the Chip Sector Starts Picking Winners": {
     "seen": "2026-11-13",
     "ko": "오늘의 주식 시장: Nvidia(NVDA)가 Jensen Huang을 잃고 칩 부문에서 승자를 고르기 시작했습니다."
@@ -9511,10 +9559,6 @@
     "seen": "2026-11-19",
     "ko": "Micron 주식에 가장 중요한 날짜"
   },
-  "The Economy Is Booming, So the Market Indexes Fell. Go Figure.": {
-    "seen": "2026-09-24",
-    "ko": "경제가 호황이어서 시장지수가 하락했다. 그림으로 이동합니다."
-  },
   "The fight to reinstate Jensen Huang overshadows Nvidia earnings (NVDA:NASDAQ)": {
     "seen": "2026-11-17",
     "ko": "Jensen Huang을 복직시키려는 싸움은 Nvidia 수익을 무색하게 합니다(NVDA:NASDAQ)"
@@ -9603,10 +9647,6 @@
     "seen": "2026-10-16",
     "ko": "S&P 500은 뭔가 특별한 것을 기대하고 있습니다. 역사는 투자자들이 원하는 것에 주의해야 한다고 말합니다."
   },
-  "The S&P 500 Is Flashing The Same Warning Signs Seen In 2018 And 2022": {
-    "seen": "2026-09-24",
-    "ko": "S&P 500은 2018년과 2022년에 나타난 것과 동일한 경고 신호를 깜박이고 있습니다."
-  },
   "The S&P 500 is hitting record highs, yet hundreds of stocks are falling in price. What is happening, and is it worth investing?": {
     "seen": "2026-10-27",
     "ko": "S&P 500 지수는 사상 최고치를 경신하고 있지만 수백 개의 주식 가격이 하락하고 있습니다. 무슨 일이 일어나고 있으며, 투자할 가치가 있나요?"
@@ -9678,10 +9718,6 @@
   "The Stock Market Is Flashing a Warning Sign Seen Only Once Before. History Is Clear About What Comes Next.": {
     "seen": "2026-11-18",
     "ko": "주식시장은 이전에 한 번만 본 경고 신호를 깜박이고 있습니다. 역사는 다음에 무엇이 올 것인지에 대해 분명합니다."
-  },
-  "The Stock Market Is Flashing Multiple Warning Signs. Is Now the Time to Pull Money Out of S&P 500 Index Funds?": {
-    "seen": "2026-09-24",
-    "ko": "주식 시장은 여러 경고 신호를 깜박이고 있습니다. 지금이 S&P 500 인덱스 펀드에서 자금을 회수할 때입니까?"
   },
   "The Stock Market Is Repeating a Pattern Seen Only Once Since 1871. Here's What History Says Comes Next.": {
     "seen": "2026-10-13",
@@ -9990,6 +10026,10 @@
   "US Memory Stocks Rebound Overnight as Western Digital, Micron Rise Over 5%, SanDisk Gains Over 6%": {
     "seen": "2026-11-11",
     "ko": "미국 메모리 주식은 Western Digital, Micron이 5% 이상 상승하고 SanDisk가 6% 이상 상승하면서 밤새 반등했습니다."
+  },
+  "US Semiconductor Stocks Stage Rebound; 00412A Surges Nearly 30% at Open, Premium to NAV Briefly Tops 20%": {
+    "seen": "2026-11-24",
+    "ko": "미국 반도체주 반등 단계; 00412A는 공개 시 거의 30% 급등하고 프리미엄부터 NAV까지 잠시 동안 20%를 넘어섰습니다."
   },
   "US senators seek answers from Google over AI use in schools (GOOG:NASDAQ)": {
     "seen": "2026-10-22",
@@ -10387,10 +10427,6 @@
     "seen": "2026-11-20",
     "ko": "목요일에 알파벳 주식에 무슨 일이 일어나고 있나요?"
   },
-  "What Is Going on With Micron Stock on Tuesday?": {
-    "seen": "2026-09-24",
-    "ko": "화요일에 마이크론 주식에 무슨 일이 일어나고 있나요?"
-  },
   "What Is Going on With Nvidia Stock on Tuesday?": {
     "seen": "2026-10-28",
     "ko": "화요일에 Nvidia 주식에 무슨 일이 일어나고 있나요?"
@@ -10474,10 +10510,6 @@
   "What's Going On With Micron Technology Stock Thursday?": {
     "seen": "2026-10-09",
     "ko": "목요일 마이크론 테크놀로지 주식에 무슨 일이 일어나고 있나요?"
-  },
-  "What's Going On With Microsoft Stock Monday?": {
-    "seen": "2026-09-24",
-    "ko": "월요일 Microsoft 주식에 무슨 일이 일어나고 있습니까?"
   },
   "What's Going On With NVIDIA Stock Tuesday?": {
     "seen": "2026-09-29",
