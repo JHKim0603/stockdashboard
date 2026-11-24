@@ -4251,7 +4251,8 @@
         g += '<rect x="' + L + '" y="' + Y(b[1]).toFixed(1) + '" width="' + (W - L - R) + '" height="' + (Y(b[0]) - Y(b[1])).toFixed(1) + '" fill="' + b[2] + '" opacity="' + b[3] + '"/>';
       });
       labs.forEach(a => {
-        const hide = Math.abs(Y(a.v) - tagY) < tagH * 0.9;   // 이름표와 같은 높이의 눈금 숫자는 뺀다(선은 둔다)
+        // 이름표와 같은 높이의 눈금 숫자는 뺀다(선은 둔다). 눈금 글자는 기준선(y+4)에 놓여 가운데가 y−2 쯤이라 그 자리로 잰다.
+        const hide = Math.abs(Y(a.v) - 2 - tagY) < tagH / 2 + 8;
         g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(a.v).toFixed(1) + '" y2="' + Y(a.v).toFixed(1) + '" class="' + (a.ref ? "ind-ref" : "qd-grid") + '"/>' +
           (hide ? "" : '<text x="' + (W - R + 6) + '" y="' + (Y(a.v) + 4).toFixed(1) + '" class="' + (a.ref ? "ind-ref-lb" : "qd-ax") + '">' + esc(a.t) + '</text>');
       });
