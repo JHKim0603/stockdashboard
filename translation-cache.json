@@ -1036,7 +1036,7 @@
     "ko": "애널리스트, 삼성·SK하이닉스 주가 폭락 경고"
   },
   "Analysts Are Bullish on Top Technology Stocks: Microsoft (MSFT), STMicroelectronics (STM)": {
-    "seen": "2026-11-21",
+    "seen": "2026-11-24",
     "ko": "분석가들은 Microsoft(MSFT), STMicroelectronics(STM) 등 최고의 기술 주식에 대해 낙관적입니다."
   },
   "Analysts expect sustained cloud momentum for Microsoft in Q1 (MSFT:NASDAQ)": {
@@ -2975,6 +2975,10 @@
     "seen": "2026-10-03",
     "ko": "Microsoft 주식은 귀하에게 스윙에 대한 충분한 비용을 지불하고 있습니까?"
   },
+  "Is Microsoft Stock Stronger Than It Looks?": {
+    "seen": "2026-11-24",
+    "ko": "Microsoft 주식은 보기보다 강합니까?"
+  },
   "Is Microsoft Stock Worth More Than Its Competitors?": {
     "seen": "2026-11-10",
     "ko": "Microsoft 주식은 경쟁사보다 가치가 더 높습니까?"
@@ -4636,7 +4640,7 @@
     "ko": "Microsoft Corporation(MSFT)은 AI에 수십억 달러를 쏟아 붓고 있습니다. 막대한 지출이 향후 수익에 영향을 미칠 수 있습니까?"
   },
   "Microsoft Corporation (MSFT) Stock Forecasts": {
-    "seen": "2026-10-30",
+    "seen": "2026-11-24",
     "ko": "마이크로소프트사(MSFT) 주식 예측"
   },
   "Microsoft Corporation (MSFT) Stock Price, News, Quote & History": {
@@ -8028,7 +8032,7 @@
     "ko": "S&P 500은 필수 소비재, 유틸리티 주도로 주간 상승세를 기록했습니다."
   },
   "S&P 500 Quietly Shrugs Off the Bitcoin and Silver Selloff": {
-    "seen": "2026-11-18",
+    "seen": "2026-11-24",
     "ko": "S&P 500은 조용히 비트코인과 은 매도세를 꺾었습니다."
   },
   "S&P 500 Reaches New Record High": {
@@ -8134,6 +8138,10 @@
   "S&P 500, Nasdaq Drop As Capex Concerns Grip Tech Investors, Outweighing US-Iran Diplomacy Hope — ORCL, META, PLTR, AAPL In Focus": {
     "seen": "2026-11-03",
     "ko": "S&P 500, Nasdaq 하락, Capex 우려로 기술 투자자 장악, 미국-이란 외교 희망보다 중요 — ORCL, META, PLTR, AAPL 집중"
+  },
+  "S&P 500, Nasdaq End Best Session Since April Last Year On Optimism Led By Jensen Huang’s Reinstatement — NVDA, NASA, TTWO, AMZN In Focus": {
+    "seen": "2026-11-24",
+    "ko": "S&P 500, Nasdaq은 Jensen Huang의 복귀가 이끄는 낙관론에 대한 작년 4월 이후 최고의 세션을 종료합니다 — NVDA, NASA, TTWO, AMZN In Focus"
   },
   "S&P 500, Nasdaq end lower as crude prices jump, chip stocks weigh": {
     "seen": "2026-10-09",
@@ -8675,6 +8683,10 @@
     "seen": "2026-10-16",
     "ko": "SanDisk 주식 및 939억 달러 규모의 계약 장부"
   },
+  "Sandisk Stock Climbs After Jensen Huang's Comeback at Nvidia": {
+    "seen": "2026-11-24",
+    "ko": "Jensen Huang의 Nvidia 복귀 이후 Sandisk 주가 상승"
+  },
   "Sandisk Stock Could Be Worth $4,128 in the Next Year": {
     "seen": "2026-10-16",
     "ko": "Sandisk 주식은 내년에 4,128달러의 가치가 있을 수 있습니다"
@@ -8882,6 +8894,10 @@
   "Sandisk: The Next NAND Downturn Could Prove Bulls Right (NASDAQ:SNDK)": {
     "seen": "2026-11-12",
     "ko": "Sandisk: 다음 NAND 침체는 강세가 옳다는 것을 증명할 수 있습니다. (NASDAQ:SNDK)"
+  },
+  "Sandisk: The Numbers Are Still Ridiculous (NASDAQ:SNDK)": {
+    "seen": "2026-11-24",
+    "ko": "Sandisk: 숫자는 여전히 우스꽝스럽습니다(NASDAQ:SNDK)"
   },
   "Sandisk: The Rally Isn't Coming (NASDAQ:SNDK)": {
     "seen": "2026-11-19",
@@ -9415,6 +9431,10 @@
     "seen": "2026-11-04",
     "ko": "상승하는 블루 웨이브 베팅으로 주식이 달러와 함께 하락: 시장 랩"
   },
+  "Stocks Surge After Jensen Huang Is Reinstated as Nvidia CEO": {
+    "seen": "2026-11-24",
+    "ko": "Jensen Huang이 Nvidia CEO로 복귀한 후 주가 급등"
+  },
   "Stocks tumble, erasing post-midterm gains as markets weigh future of AI build-out": {
     "seen": "2026-11-06",
     "ko": "시장이 AI 구축의 미래를 가늠함에 따라 주가가 하락하고 중기 이후 이익이 지워졌습니다."
@@ -9582,6 +9602,10 @@
   "The Nasdaq has tested its lows again—what key levels should investors watch in the short term?": {
     "seen": "2026-11-18",
     "ko": "나스닥은 다시 최저점을 테스트했습니다. 투자자들이 단기적으로 어떤 주요 수준을 주목해야 할까요?"
+  },
+  "The Nasdaq Just Had 1 of Its 10 Worst Weeks in the Past 45 Years. Here's What History Says Comes Next.": {
+    "seen": "2026-11-24",
+    "ko": "나스닥은 지난 45년 동안 최악의 10주 중 1주를 보냈습니다. 역사가 말하는 내용은 다음과 같습니다."
   },
   "The Nasdaq Just Hit Correction Territory. History Says the Stock Market Will Do This Next (Hint: It May Stun You)": {
     "seen": "2026-11-06",
@@ -9906,6 +9930,10 @@
   "U.S. stocks close | Plunged 5.28%! The Nasdaq turned lower for the year, and the VIX rose above 35; the Philadelphia Semiconductor Index tumbled 11%, and NVIDIA posted its seventh consecutive weekly decline after hitting a record high; gold narrowly held": {
     "seen": "2026-11-21",
     "ko": "미국 주식 마감 | 5.28% 급락! 나스닥은 올해 하락세를 보였고 VIX는 35를 넘어섰습니다. 필라델피아 반도체 지수는 11% 하락했고 NVIDIA는 사상 최고치를 기록한 후 7주 연속 하락세를 기록했습니다. 금을 가까스로 쥐고 있다"
+  },
+  "U.S. stocks close higher": {
+    "seen": "2026-11-24",
+    "ko": "미국 증시는 상승 마감"
   },
   "U.S. stocks close lower": {
     "seen": "2026-11-13",
