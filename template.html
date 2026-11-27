@@ -703,10 +703,19 @@
   .bm-axis-in { grid-column: 2; position: relative; height: 18px; }
   .bm-axis-in span { position: absolute; top: 2px; transform: translateX(-50%); font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
   .bm-axis-in span:first-child { transform: none; }
+  .bm-axis-in span:last-child { transform: translateX(-100%); }
   @media (max-width: 640px) {
     .bm-row, .bm-axis { grid-template-columns: 86px minmax(0, 1fr) 92px; gap: 6px; }   /* '마이크로소프트'가 들어가는 폭 */
     .bm-name { font-size: 12px; }
-    .bm-axis-in span:nth-child(even) { display: none; }   /* 좁은 화면은 20% 간격만 */
+    .bm-axis-in span.o { display: none; }   /* 좁은 화면은 20% 간격만 */
+  }
+  @media (max-width: 560px) {
+    .bm-axis-in span:not(.mj) { display: none; }   /* 휴대폰은 처음·가운데·끝 */
+    /* 신호 기록 표: 휴대폰 폭에 들어가게 그날 값·지금·지난 날 열을 뺀다(오른쪽 열이 잘려 보였다, 2026-11-27) */
+    .sl-table th:nth-child(3), .sl-table td:nth-child(3), .sl-table th:nth-child(4), .sl-table td:nth-child(4),
+    .sl-table th:nth-child(7), .sl-table td:nth-child(7) { display: none; }
+    .sl-table th, .sl-table td { padding: 6px 5px; }
+    .sl-table td:nth-child(2) { white-space: normal; }
   }
   .qd-wrap, .fg-wrap { width: 100%; overflow: hidden; }
   .qd-svg { display: block; }
@@ -719,7 +728,8 @@
   .qd-pt { cursor: pointer; }
   .qd-dot { fill: var(--ink-muted); fill-opacity: .55; stroke: var(--surface); stroke-width: 1.5; }
   .qd-dot.l1 { fill: var(--accent); fill-opacity: .5; } .qd-dot.l2 { fill: var(--accent); fill-opacity: .75; } .qd-dot.l3 { fill: var(--accent); fill-opacity: 1; }
-  .qd-lb { font-size: 12.5px; fill: var(--ink-primary); }
+  .qd-lb { font-size: 12.5px; fill: var(--ink-primary); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+  .qd-lead { stroke: var(--ink-muted); stroke-width: 1; opacity: .7; }
   .qd-pt:hover .qd-lb { fill: var(--accent); font-weight: 700; }
   .fg-row { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
   .fg-gauge { flex: none; text-align: center; }
@@ -1013,6 +1023,9 @@
     min-width: 0;
   }
   .plot-wrap svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .plot-wrap .end-dot, .plot-wrap .cross-dot { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+  .plot-wrap .end-dot { width: 6px; height: 6px; background: var(--dc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 18%, transparent); }
+  .plot-wrap .cross-dot { width: 7px; height: 7px; background: var(--surface); border: 2px solid var(--dc); opacity: 0; }
   .x-axis {
     position: relative;
     height: 16px;
@@ -2353,18 +2366,13 @@
     line.setAttribute("vector-effect", "non-scaling-stroke");
     svg.appendChild(line);
 
+    // 끝점은 HTML 점으로(늘어나는 SVG 안의 원은 타원이 된다, 2026-11-27)
     const last = points[n - 1];
-    const halo = document.createElementNS(svgNS, "circle");
-    halo.setAttribute("cx", last[0].toFixed(1)); halo.setAttribute("cy", last[1].toFixed(1));
-    halo.setAttribute("r", "6.5");
-    halo.setAttribute("fill", lineColor);
-    halo.setAttribute("opacity", "0.14");
-    svg.appendChild(halo);
-    const dot = document.createElementNS(svgNS, "circle");
-    dot.setAttribute("cx", last[0].toFixed(1)); dot.setAttribute("cy", last[1].toFixed(1));
-    dot.setAttribute("r", "3");
-    dot.setAttribute("fill", lineColor);
-    svg.appendChild(dot);
+    const endDot = document.createElement("span");
+    endDot.className = "end-dot";
+    endDot.style.left = (last[0] / W * 100).toFixed(2) + "%";
+    endDot.style.top = (last[1] / H * 100).toFixed(2) + "%";
+    endDot.style.setProperty("--dc", lineColor);
 
     const crossLine = document.createElementNS(svgNS, "line");
     crossLine.setAttribute("y1", String(pad)); crossLine.setAttribute("y2", String(baseline));
@@ -2375,17 +2383,15 @@
     crossLine.setAttribute("vector-effect", "non-scaling-stroke");
     svg.appendChild(crossLine);
 
-    const crossDot = document.createElementNS(svgNS, "circle");
-    crossDot.setAttribute("r", "3.5");
-    crossDot.setAttribute("fill", "var(--surface)");
-    crossDot.setAttribute("stroke", lineColor);
-    crossDot.setAttribute("stroke-width", "2");
-    crossDot.setAttribute("opacity", "0");
-    svg.appendChild(crossDot);
+    const crossDot = document.createElement("span");
+    crossDot.className = "cross-dot";
+    crossDot.style.setProperty("--dc", lineColor);
 
     const tooltip = document.createElement("div");
     tooltip.className = "spark-tooltip";
     plotWrap.appendChild(svg);
+    plotWrap.appendChild(endDot);
+    plotWrap.appendChild(crossDot);
     plotWrap.appendChild(tooltip);
 
     plotWrap.addEventListener("mousemove", (e) => {
@@ -2397,16 +2403,16 @@
       crossLine.setAttribute("x1", px.toFixed(1));
       crossLine.setAttribute("x2", px.toFixed(1));
       crossLine.setAttribute("opacity", "1");
-      crossDot.setAttribute("cx", px.toFixed(1));
-      crossDot.setAttribute("cy", py.toFixed(1));
-      crossDot.setAttribute("opacity", "1");
+      crossDot.style.left = ((px / W) * 100) + "%";
+      crossDot.style.top = ((py / H) * 100) + "%";
+      crossDot.style.opacity = "1";
       tooltip.innerHTML = '<span class="d">' + dates[idx] + '</span>' + fmtNum(data[idx], "");
       tooltip.style.left = ((px / W) * 100) + "%";
       tooltip.classList.add("visible");
     });
     plotWrap.addEventListener("mouseleave", () => {
       crossLine.setAttribute("opacity", "0");
-      crossDot.setAttribute("opacity", "0");
+      crossDot.style.opacity = "0";
       tooltip.classList.remove("visible");
     });
 
@@ -3161,19 +3167,14 @@
     }
     svg.appendChild(line);
 
-    const haloR = 6.5, dotR = 3;
+    // 끝점과 마우스 점은 그림 위에 HTML 점으로 둔다. 그림은 칸에 맞춰 가로로 늘어나서(preserveAspectRatio="none")
+    // SVG 원이 넓은 카드(QLD 등)에서 옆으로 퍼진 타원이 됐다(2026-11-27). ▲ 표시와 같은 방식으로 자리만 비율로 잡는다.
     const last = points[n - 1];
-    const halo = document.createElementNS(svgNS, "circle");
-    halo.setAttribute("cx", last[0].toFixed(1)); halo.setAttribute("cy", last[1].toFixed(1));
-    halo.setAttribute("r", String(haloR));
-    halo.setAttribute("fill", lineColor);
-    halo.setAttribute("opacity", "0.14");
-    svg.appendChild(halo);
-    const dot = document.createElementNS(svgNS, "circle");
-    dot.setAttribute("cx", last[0].toFixed(1)); dot.setAttribute("cy", last[1].toFixed(1));
-    dot.setAttribute("r", String(dotR));
-    dot.setAttribute("fill", lineColor);
-    svg.appendChild(dot);
+    const endDot = document.createElement("span");
+    endDot.className = "end-dot";
+    endDot.style.left = (last[0] / W * 100).toFixed(2) + "%";
+    endDot.style.top = (last[1] / H * 100).toFixed(2) + "%";
+    endDot.style.setProperty("--dc", lineColor);
 
     const crossLine = document.createElementNS(svgNS, "line");
     crossLine.setAttribute("y1", String(pad)); crossLine.setAttribute("y2", String(baseline));
@@ -3184,17 +3185,15 @@
     crossLine.setAttribute("vector-effect", "non-scaling-stroke");
     svg.appendChild(crossLine);
 
-    const crossDot = document.createElementNS(svgNS, "circle");
-    crossDot.setAttribute("r", "3.5");
-    crossDot.setAttribute("fill", "var(--surface)");
-    crossDot.setAttribute("stroke", lineColor);
-    crossDot.setAttribute("stroke-width", "2");
-    crossDot.setAttribute("opacity", "0");
-    svg.appendChild(crossDot);
+    const crossDot = document.createElement("span");
+    crossDot.className = "cross-dot";
+    crossDot.style.setProperty("--dc", lineColor);
 
     const tooltip = document.createElement("div");
     tooltip.className = "spark-tooltip";
     plotWrap.appendChild(svg);
+    plotWrap.appendChild(endDot);
+    plotWrap.appendChild(crossDot);
     plotWrap.appendChild(tooltip);
     // 단계 가격 이름은 그림 오른쪽 바깥 여백(.has-stage)에 둔다. 그림 안에 두면 가격선과 겹쳤다(2026-11-15).
     // 두 이름이 14px 안으로 붙으면 아래 것을 내린다. 그 단계에 들어간 날은 그림 안 ▲로 표시한다.
@@ -3259,9 +3258,9 @@
       crossLine.setAttribute("x1", px.toFixed(1));
       crossLine.setAttribute("x2", px.toFixed(1));
       crossLine.setAttribute("opacity", "1");
-      crossDot.setAttribute("cx", px.toFixed(1));
-      crossDot.setAttribute("cy", py.toFixed(1));
-      crossDot.setAttribute("opacity", "1");
+      crossDot.style.left = ((px / W) * 100) + "%";
+      crossDot.style.top = ((py / H) * 100) + "%";
+      crossDot.style.opacity = "1";
       tooltip.innerHTML = '<span class="d">' + dates[idx] + '</span>' + ccy + fmtNum(data[idx], ccy) +
         (mkt && mkt.raw[idx] ? '<span class="m">시작일보다 ' + esc(stock.name) + ' ' + fmtPct((data[idx] / data[0] - 1) * 100) + ', ' +
           esc(mkt.name) + ' ' + fmtPct((mkt.raw[idx] / mkt.raw[0] - 1) * 100) + '</span>' : "");
@@ -3270,7 +3269,7 @@
     });
     plotWrap.addEventListener("mouseleave", () => {
       crossLine.setAttribute("opacity", "0");
-      crossDot.setAttribute("opacity", "0");
+      crossDot.style.opacity = "0";
       tooltip.classList.remove("visible");
     });
 
@@ -3953,7 +3952,9 @@
           '<span class="bm-val"><b>−' + x.dd.toFixed(1) + '%</b> ' + (x.lv ? x.lv + "단계" : "단계 전") + '<span class="bm-next">' + esc(nextTxt) + '</span></span></div>';
       }).join("");
       const ax = [];
-      for (let v = 0; v <= axisMax; v += 10) ax.push('<span style="left:' + P(v) + '">' + (v ? "−" + v + "%" : "0") + '</span>');
+      // 좁은 화면은 처음·가운데·끝만 남긴다(휴대폰에서 '−20%−40%−60%'처럼 붙었다, 2026-11-27).
+      const midV = Math.round(axisMax / 20) * 10;
+      for (let v = 0; v <= axisMax; v += 10) ax.push('<span class="' + (v === 0 || v === midV || v === axisMax ? "mj" : v % 20 ? "o" : "e") + '" style="left:' + P(v) + '">' + (v ? "−" + v + "%" : "0") + '</span>');
       return rows + '<div class="bm-axis"><span class="bm-axis-in">' + ax.join("") + '</span></div>';
     }
 
@@ -3972,9 +3973,11 @@
       const split = 20;
       const xs = X(split), y0 = Y(0);
       let g = '<rect x="' + xs.toFixed(1) + '" y="' + T + '" width="' + (W - R - xs).toFixed(1) + '" height="' + (y0 - T).toFixed(1) + '" class="qd-hot"/>';
+      // 눈금 숫자는 10% 칸이 40px 보다 좁으면 20% 간격으로(휴대폰에서 '−10%−20%−30%'처럼 붙었다, 2026-11-27)
+      const lStep = (W - L - R) / (xMax / 10) >= 40 ? 10 : 20;
       for (let v = 0; v <= xMax; v += 10) {
         g += '<line x1="' + X(v).toFixed(1) + '" x2="' + X(v).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '" class="qd-grid"/>' +
-          '<text x="' + X(v).toFixed(1) + '" y="' + (H - B + 16) + '" text-anchor="middle" class="qd-ax">' + (v ? "−" + v + "%" : "0") + '</text>';
+          (v % lStep ? "" : '<text x="' + X(v).toFixed(1) + '" y="' + (H - B + 16) + '" text-anchor="middle" class="qd-ax">' + (v ? "−" + v + "%" : "0") + '</text>');
       }
       const yStep = (yMax - yMin) > 60 ? 20 : 10;
       for (let v = yMin; v <= yMax; v += yStep) {
@@ -4007,17 +4010,21 @@
           placed.some(o => Math.abs(o.y - y2) < 13 && l < o.l + o.w && l + wTxt > o.l) ||
           dots.some(d => d.p !== p && l < d.cx + d.r + 2 && l + wTxt > d.cx - d.r - 2 && y2 - 11 < d.cy + d.r && y2 + 3 > d.cy - d.r);
         // 오른쪽, 왼쪽, 오른쪽 아래·위, 왼쪽 아래·위, 더 멀리 순서로 빈 자리를 찾는다
+        // 점이 몰리면 이름표가 남의 점 옆에 붙어 어느 점인지 헷갈렸다(2026-11-27). 후보를 위아래·옆으로 더 넓히고, 점에서 떨어진 이름표는 가는 선으로 잇는다.
         const cands = [];
-        [0, 13, -13, 26, -26, 39].forEach(dy => { cands.push(["start", cx + r + 4, cy + 4 + dy]); cands.push(["end", cx - r - 4, cy + 4 + dy]); });
+        [0, 13, -13, 26, -26, 39, -39, 52, -52, 65, -65].forEach(dy => { cands.push(["start", cx + r + 4, cy + 4 + dy]); cands.push(["end", cx - r - 4, cy + 4 + dy]); });
+        [24, 48].forEach(dx => [0, 13, -13, 26, -26].forEach(dy => { cands.push(["start", cx + r + 4 + dx, cy + 4 + dy]); cands.push(["end", cx - r - 4 - dx, cy + 4 + dy]); }));
         // 빈 자리가 없으면 그림 밖으로 나가지 않는 자리라도 고른다(휴대폰에서 'SK하이닉스'가 오른쪽 끝에서 잘렸다, 2026-11-15).
         const inside = c => { const l = c[0] === "start" ? c[1] : c[1] - wTxt; return l >= L && l + wTxt <= W - R; };
         let pick = cands.find(c => !hit(c[0] === "start" ? c[1] : c[1] - wTxt, c[2])) || cands.find(inside) || cands[0];
         const [anchor, lx, ly] = pick;
         placed.push({ l: anchor === "start" ? lx : lx - wTxt, w: wTxt, y: ly });
+        const ex = anchor === "start" ? lx - 2 : lx + 2, ey = ly - 4, far = Math.hypot(ex - cx, ey - cy) > r + 9;
+        const lead = far ? '<line x1="' + cx.toFixed(1) + '" y1="' + cy.toFixed(1) + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) + '" class="qd-lead"/>' : "";
         const tip = name + ": 고점 대비 −" + p.x.dd.toFixed(1) + "%, 최근 1개월 " + fmtPct(p.m1) + (p.x.lv ? ", 분할 " + p.x.lv + "단계" : "") +
           (v ? ", 내 보유 " + Math.round(v).toLocaleString("en-US") + "원" : "");
         g += '<g class="qd-pt" data-i="' + p.x.i + '"><title>' + esc(tip) + '</title>' +
-          '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '" class="qd-dot l' + p.x.lv + '"/>' +
+          lead + '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '" class="qd-dot l' + p.x.lv + '"/>' +
           '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '" class="qd-lb">' + esc(name) + '</text></g>';
       });
       return '<svg class="qd-svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="고점 대비 하락률과 최근 1개월 수익률">' + g + '</svg>';
