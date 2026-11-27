@@ -277,14 +277,19 @@
     }
   ],
   "episodes": {
-    "^KS11": {
+    "GOOGL": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "ETH-USD": {
-      "start": "2026-11-08",
-      "maxLevel": 2,
+    "SNDK": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "005930.KS": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
       "end": null
     },
     "MSFT": {
@@ -297,7 +302,12 @@
       "maxLevel": 3,
       "end": null
     },
-    "GOOGL": {
+    "MU": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "NVDA": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -307,14 +317,14 @@
       "maxLevel": 3,
       "end": null
     },
-    "^IXIC": {
-      "start": "2026-11-16",
-      "maxLevel": 1,
-      "end": null
-    },
-    "MU": {
+    "000660.KS": {
       "start": "2026-11-06",
       "maxLevel": 3,
+      "end": null
+    },
+    "ETH-USD": {
+      "start": "2026-11-08",
+      "maxLevel": 2,
       "end": null
     },
     "BTC-KRW": {
@@ -322,14 +332,9 @@
       "maxLevel": 2,
       "end": null
     },
-    "SNDK": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "000660.KS": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
+    "^IXIC": {
+      "start": "2026-11-16",
+      "maxLevel": 1,
       "end": null
     },
     "^GSPC": {
@@ -337,12 +342,7 @@
       "maxLevel": 1,
       "end": "2026-11-25"
     },
-    "005930.KS": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "NVDA": {
+    "^KS11": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
