@@ -2190,7 +2190,7 @@ function Get-SignalStat {
         # 카드·메일: 두 문장. 주목할 점: 한 문장(short).
         # 카드에서는 굵은 '과거 10년 성적' 뒤에 붙는다.
         # '87%(평소 71%)'처럼 숫자만 두지 않고 평소보다 높았는지 낮았는지를 말로 붙인다(차이 5%p 안은 '비슷').
-        text  = "$($g)에서 같은 신호는 $($x.n)번 나왔고 1년 뒤 $($x.up)번($($x.hit)%) 올랐습니다. 평소(아무 날이나 샀을 때 $($x.baseHit)%)$(Get-CompareWord $x.hit $x.baseHit)." +
+        text  = "$($g)에서 같은 신호는 $($x.n)번 나왔고 1년 뒤 $($x.up)번($($x.hit)%) 올랐습니다. 평소(날마다 샀을 때 $($x.baseHit)%)$(Get-CompareWord $x.hit $x.baseHit)." +
                 $(if ($mae) { " 산 뒤 3개월 안에 보통 $mae% 더 내려갔습니다." } else { "" })
         short = "같은 신호 뒤 1년 보유하면 $($x.hit)%가 올랐습니다(평소 $($x.baseHit)%)."
     }
@@ -2579,7 +2579,7 @@ for ($i = 0; $i -lt $prioList.Count; $i++) {
 if ($prioList.Count -ge 3) {
     $top = @($prioList | Select-Object -First 3)
     # 괄호 속 '과거 성적 백분위 62, 시장보다 28%p 더 빠짐' 나열은 빼고 이름과 순서 기준만 적는다(이유는 화면의 ① ② ③ 설명에 있다).
-    Add-Brief "먼저 볼 종목" "$(($top | ForEach-Object { $_.name }) -join ', ') 순서입니다(낙폭, 시장 대비 하락, 같은 신호의 과거 성과를 합친 점수 기준)."
+    Add-Brief "먼저 볼 종목" "$(($top | ForEach-Object { $_.name }) -join ', ') 순서입니다. 낙폭과 시장 대비 하락폭, 같은 신호의 과거 성과를 합친 점수로 정했습니다."
 }
 
 # --- 신호 실전 기록부 (2026-11-08) -------------------------------------------------------------

@@ -922,6 +922,7 @@
   }
   .delta-pill.up   { color: var(--rise); background: var(--rise-wash); }
   .delta-pill.down { color: var(--fall); background: var(--fall-wash); }
+  .delta-pill.flat { color: var(--ink-secondary); background: var(--gridline); }
 
   .cross-badge {
     display: inline-flex;
@@ -1711,10 +1712,13 @@
     return koCount(v) + " 주";
   }
 
-  function fmtAxisPrice(v, ccy) {
-    if (ccy === "₩" && Math.abs(v) >= 1e8) return (v / 1e8).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "억";
+  // 눈금 숫자: 한 그림 안에서는 같은 단위와 자릿수로 쓴다(ref = 그 그림의 가장 큰 값). 원화는 억 또는 만, 그 밖은 1,000 넘으면 쉼표.
+  // 예전에는 '1.16억 / 9,767.2만', '27600', '236 / 155 / 73.6'처럼 섞였다(2026-11-27).
+  function fmtAxisPrice(v, ccy, ref) {
+    const big = Math.abs(ref === undefined ? v : ref);
+    if (ccy === "₩" && big >= 1e8) return (v / 1e8).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "억";
     if (ccy === "₩") return (v / 10000).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "만";
-    return v >= 100 ? v.toFixed(0) : v.toFixed(1);
+    return big >= 100 ? Math.round(v).toLocaleString("en-US") : v.toFixed(1);
   }
 
   function fmtDateLabel(isoDate) {
@@ -1787,8 +1791,12 @@
     if (priceLen >= 11) priceEl.classList.add("xlong");
     else if (priceLen >= 9) priceEl.classList.add("long");
     const deltaEl = document.createElement("div");
-    deltaEl.className = "delta-pill " + (up ? "up" : "down");
-    deltaEl.textContent = (up ? "▲ " : "▼ ") + (up ? "+" : "") + fmtNum(diff, stock.currency) + " (" + (up ? "+" : "") + pct.toFixed(2) + "%)";
+    // 부호는 빼기 기호(−), 변화율은 10% 이상 정수·그 밖 소수 첫째 자리(공통 규칙 4). 예전에는 '▼ -20.78 (-22.02%)'로 표와 달랐다.
+    // 변화율은 표의 '오늘' 칸과 같은 값(수집 스크립트의 perf.d1)을 쓴다. 따로 계산하면 반올림이 갈려 +4.6%와 +4.5%가 함께 보였다.
+    const pc = stock.perf && typeof stock.perf.d1 === "number" ? stock.perf.d1 : pct;
+    const pa = Math.abs(pc), pTxt = pa >= 9.95 ? String(Math.round(pa)) : pa.toFixed(1);
+    deltaEl.className = "delta-pill " + (pa < 0.05 ? "flat" : up ? "up" : "down");
+    deltaEl.textContent = pa < 0.05 ? "보합" : (up ? "▲ +" : "▼ −") + fmtNum(Math.abs(diff), stock.currency) + " (" + (up ? "+" : "−") + pTxt + "%)";
     priceRow.appendChild(priceEl);
     priceRow.appendChild(deltaEl);
     // 아홉 자리 원화(비트코인)는 정확한 값 옆에 읽는 단위를 함께 적는다.
@@ -1911,10 +1919,14 @@
       item.append("목표주가(평균)");
       item.title = "증권사 목표주가 평균입니다. 누르면 자세히 볼 수 있습니다.";
       const val = document.createElement("span");
-      val.className = "val " + (up ? "up" : "down");
+      // 평균이 지금 값의 4배를 넘거나 5분의 1에 못 미치면 액면분할 전 값처럼 자료가 맞지 않는 경우라 숫자 대신 '자료 확인 필요'로 적는다
+      // (샌디스크 '지금보다 2641% 위', 2026-11-27, 공통 규칙 3 '앞뒤가 맞지 않는 숫자').
+      const odd = upside > 300 || upside < -80;
+      val.className = "val " + (odd ? "" : up ? "up" : "down");
       const upTxt = Math.abs(upside) >= 10 ? Math.round(Math.abs(upside)) : Math.abs(upside).toFixed(1);
-      val.textContent = stock.currency + fmtNum(stock.consensus.targetPrice, stock.currency) +
+      val.textContent = odd ? "자료 확인 필요" : stock.currency + fmtNum(stock.consensus.targetPrice, stock.currency) +
         " (지금보다 " + upTxt + "% " + (up ? "위" : "아래") + ")";
+      if (odd) item.title = "증권사 목표주가 평균(" + stock.currency + fmtNum(stock.consensus.targetPrice, stock.currency) + ")이 지금 값과 너무 달라 자료가 맞지 않을 수 있습니다. 누르면 자세히 볼 수 있습니다.";
       item.appendChild(val);
       // 목표주가 평균이 1% 넘게 바뀐 날(2주 안). 기록은 PS 가 target-cache.json 에 날마다 남긴다.
       const tc = stock.targetChange;
@@ -2317,7 +2329,7 @@
     [max, mid, min].forEach(v => {
       const label = document.createElement("span");
       label.style.top = ((y(v) / H) * 100) + "%";
-      label.textContent = fmtAxisPrice(v, "");
+      label.textContent = fmtAxisPrice(v, "", max);
       yAxis.appendChild(label);
     });
 
@@ -3047,7 +3059,7 @@
     [max, mid, min].forEach(v => {
       const label = document.createElement("span");
       label.style.top = ((y(v) / H) * 100) + "%";
-      label.textContent = fmtAxisPrice(v, ccy);
+      label.textContent = fmtAxisPrice(v, ccy, max);
       yAxis.appendChild(label);
     });
 
@@ -3817,7 +3829,7 @@
           return ' 청록색 \'분할 n단계\'는 분할 매수 단계입니다(파랑은 가격이 내린 것만 뜻합니다). ' + parts.join(", ") + '입니다. 지수는 고점 대비 하락만 봅니다.' +
             (coin ? ' 코인은 ' + coin.dip.steps.slice(0, 3).join("%, ") + '% 기준입니다.' : '') +
             ' 카드의 \'과거 성적\'은 같은 규칙을 지난 10년 시세에 적용했을 때 그 분야(지수, 개별 종목, 레버리지 ETF, 코인)의 결과입니다.' +
-            ' 지수와 대형주의 3단계, 이평선 매수 기준은 아무 날이나 산 것보다 나았고, 1·2단계와 코인 신호는 비슷했습니다.';
+            ' 지수와 대형주의 3단계, 이평선 매수 기준은 날마다 샀을 때보다 1년 뒤 오른 비율이 높았고, 1·2단계와 코인 신호는 비슷했습니다.';
         })() +
         ' 시장 대비는 최근 1개월 수익률에서 국내 종목은 코스피, 미국 종목은 나스닥의 수익률을 뺀 값입니다. 타일이나 행을 누르면 해당 카드로 이동합니다.</p></details></div>' +
         '<div class="ov-scroll">' + tableHtml() + '</div>';
@@ -4084,7 +4096,7 @@
       host.innerHTML = '<h3>그림으로 보기</h3><div class="vis-grid">' +
         '<div class="vis-panel"><h4>매수 단계 지도</h4><div class="vis-sub">막대는 52주 고점보다 내려온 정도이고, 배경 칸은 그 종목의 분할 매수 1·2·3단계 구간입니다. 깊이 내려온 순서입니다.</div>' +
         '<div class="bm-list">' + mapHtml() + '</div></div>' +
-        '<div class="vis-panel" id="vis-quad"><h4>하락폭과 최근 흐름</h4><div class="vis-sub">오른쪽일수록 고점에서 많이 빠졌고, 위쪽일수록 최근 1개월에 올랐습니다. 색칠한 칸(고점 대비 20% 넘게 빠졌고 최근 오름)이 반등을 살펴볼 자리입니다.' +
+        '<div class="vis-panel" id="vis-quad"><h4>하락폭과 최근 흐름</h4><div class="vis-sub">오른쪽일수록 고점에서 많이 빠졌고, 위쪽일수록 최근 1개월에 올랐습니다. 색칠한 칸에는 고점보다 20% 넘게 내려온 뒤 최근 1개월에 오른 종목이 놓입니다.' +
         (Object.keys(holdingValues()).length ? ' 점 크기는 내 보유 금액입니다.' : '') + '</div><div class="qd-wrap"></div></div>' +
         (fearGreed ? '<div class="vis-panel vis-wide" id="vis-fg"><h4>시장 심리 (CNN 공포·탐욕지수)</h4><div class="fg-wrap"></div></div>' : '') + '</div>';
       drawSized();
@@ -4799,7 +4811,8 @@
     };
     const fresh = statOf(rows.filter(r => !r.e.atStart)), start = statOf(rows.filter(r => r.e.atStart));
     const pp = v => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "%p";
-    const statTxt = (s, label) => s ? label + " " + s.n + "건, 평균 " + fmtPct(s.avg) + ", 오른 비율 " + s.up + "%" + (s.rel !== null ? ", 시장 대비 " + pp(s.rel) : "") : "";
+    // '새로 켜진 신호 9건, 평균 −2.8%, 오른 비율 44%, 시장 대비 +2.8%p / …'처럼 이어 붙인 통계 줄을 문장으로 쓴다(2026-11-27).
+    const statTxt = (s, label) => s ? label + " " + s.n + "건은 평균 " + fmtPct(s.avg) + "이고, " + s.up + "%가 올랐습니다" + (s.rel !== null ? "(시장 대비 " + pp(s.rel) + ")" : "") + "." : "";
     const fmtPx = (v, ccy) => (ccy || "") + fmtNum(v, ccy);
     const head = '<tr><th>켜진 날</th><th>종목(신호)</th><th>그날 값</th><th>지금</th><th>수익률</th><th>시장 대비</th><th>지난 날</th></tr>';
     const line = (r, i) => '<tr' + (i >= 5 ? ' class="sl-extra"' : '') + '><td>' + esc(md(r.e.date)) + (r.e.atStart ? ' <span class="sl-start">시작일</span>' : '') + '</td>' +
@@ -4841,7 +4854,7 @@
           '<text x="' + (W - R + 6) + '" y="' + (cy + 4).toFixed(1) + '" class="qd-ax">' + fmtPct(r.ret) + '</text>';
       });
       return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="신호별 지금까지의 수익률">' + g + '</svg>' +
-        '<div class="hd-note">막대는 신호가 켜진 날부터 지금까지의 수익률이고(옅은 막대는 기록 시작일에 이미 켜져 있던 신호), 세로 눈금은 같은 기간의 시장(코스피, 나스닥)입니다. ' +
+        '<div class="hd-note">막대는 신호가 켜진 날부터 지금까지의 수익률이고(옅은 막대는 기록 시작일에 이미 켜져 있던 신호), 막대 위 짧은 세로선은 같은 기간 시장의 수익률입니다(국내 종목은 코스피, 미국 종목은 나스닥). ' +
         '기록이 20거래일 쌓이면 날짜별 수익률 선 그래프로 바뀝니다.</div>';
     };
     const chartHtml = width => {
@@ -4877,13 +4890,13 @@
         '<div class="hd-note">가는 선은 신호마다의 수익률(점선은 기록 시작일에 이미 켜져 있던 신호), 굵은 청록 선은 평균, 회색 점선은 같은 날짜들의 시장(코스피, 나스닥) 평균입니다. 평균은 그날까지 온 신호가 ' + need + '건 넘을 때까지만 잇습니다.</div>';
     };
     host.innerHTML = '<h3>신호 실전 기록</h3>' +
-      '<div class="sl-sum">기록 시작 ' + esc(md(log.started)) + ', ' +
-      ([statTxt(fresh, "새로 켜진 신호"), statTxt(start, "시작일에 이미 켜져 있던 신호")].filter(Boolean).join(" / ") || "아직 기록된 신호가 없습니다") + '</div>' +
+      '<div class="sl-sum">' + esc(md(log.started)) + '부터 기록했습니다. ' +
+      ([statTxt(fresh, "새로 켜진 신호"), statTxt(start, "시작일에 이미 켜져 있던 신호")].filter(Boolean).join(" ") || "아직 기록된 신호가 없습니다.") + '</div>' +
       (paths.length ? '<div class="sl-chart"></div>' : "") +
       (rows.length ? '<div class="sl-wrap"><table class="sl-table">' + head + rows.slice(0, 20).map(line).join("") + '</table></div>' +
         (Math.min(rows.length, 20) > 5 ? '<button type="button" class="sl-more">나머지 ' + (Math.min(rows.length, 20) - 5) + '건 더 보기</button>' : '') : "") +
       '<div class="hd-note">신호가 새로 켜진 날(분할 단계는 더 높은 단계에 처음 든 날)의 종가를 기준으로 지금까지의 수익률입니다. 시장 대비는 같은 기간 국내 종목은 코스피, ' +
-      '미국 종목은 나스닥의 수익률을 뺀 값입니다. 카드의 과거 성적은 1년 뒤 기준이라 몇 주 안의 수익률과 바로 비교하지 마세요.' + (rows.length > 20 ? ' 최근 20건만 보입니다.' : '') + '</div>';
+      '미국 종목은 나스닥의 수익률을 뺀 값입니다. 카드의 과거 성적은 1년 뒤 기준이라 몇 주 안의 수익률과 바로 견줄 수 없습니다.' + (rows.length > 20 ? ' 최근 20건만 보입니다.' : '') + '</div>';
     host.hidden = false;
     const slMore = host.querySelector(".sl-more");
     if (slMore) slMore.addEventListener("click", () => {
