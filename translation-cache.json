@@ -163,6 +163,10 @@
     "ko": "S&P 500이 선정한 주식시장 역사상 최악의 10일",
     "seen": "2026-10-23"
   },
+  "13F Filings Show Big Investors Bought the Sandisk Stock Dip. It Kept Dipping. Time to Load Up?": {
+    "ko": "13F 자료에 따르면 대규모 투자자들이 Sandisk 주가 하락세를 매수한 것으로 나타났습니다. 계속 담그고 있었어요. 충전할 시간인가요?",
+    "seen": "2026-11-27"
+  },
   "2 S&P 500 Stocks to Consider Right Now and 1 We Question": {
     "ko": "지금 고려해야 할 S&P 500 주식 2개와 질문 1개",
     "seen": "2026-09-30"
@@ -1931,6 +1935,10 @@
     "ko": "ETF는 11월 4일 마이크로소프트(MSFT)의 순매도자로 등극했습니다.",
     "seen": "2026-11-06"
   },
+  "ETFs Are Net Sellers of NVIDIA (NVDA) on Nov. 24": {
+    "ko": "ETF는 11월 24일 NVIDIA(NVDA)의 순매도자입니다",
+    "seen": "2026-11-27"
+  },
   "ETFs Are Net Sellers of NVIDIA (NVDA) on Oct. 23": {
     "ko": "ETF는 10월 23일 엔비디아(NVDA)의 순매도자로 등극했습니다.",
     "seen": "2026-10-28"
@@ -2871,6 +2879,10 @@
     "ko": "2027년에 약세장이 다가온다면 역사에 따르면 이 간단한 조치로 투자를 보호할 수 있습니다",
     "seen": "2026-11-20"
   },
+  "If a Market Correction Is Around the Corner, I'm Making This 1 Easy Move": {
+    "ko": "시장 조정이 코앞에 다가왔다면, 나는 이렇게 쉽게 움직일 것입니다",
+    "seen": "2026-11-27"
+  },
   "If a Stock Market Crash Is Coming, History Says Following These 6 Words From Warren Buffett Is the Smartest Move You Can Make": {
     "ko": "주식 시장 붕괴가 다가오고 있다면 워렌 버핏의 6가지 말을 따르는 것이 가장 현명한 행동이라고 역사는 말합니다.",
     "seen": "2026-10-30"
@@ -3714,6 +3726,10 @@
   "Micron (MU) Has Next Year’s High-Bandwidth Memory Mostly Sold. Can That Anchor a Decade-Long Case?": {
     "ko": "마이크론(MU) 내년 고대역폭 메모리 대부분 팔려 그 앵커가 10년 동안 지속될 수 있을까?",
     "seen": "2026-11-12"
+  },
+  "Micron (MU) Has Secured $32 Billion in Customer Commitments. Here’s Why That Matters": {
+    "ko": "Micron(MU)은 고객 약속에서 320억 달러를 확보했습니다. 이것이 중요한 이유는 다음과 같습니다.",
+    "seen": "2026-11-27"
   },
   "Micron (MU) Highlights Tech Earnings to Watch This Week": {
     "ko": "Micron (MU), 이번 주 주목해야 할 기술 수익 강조",
@@ -5355,6 +5371,10 @@
     "ko": "분석가는 Microsoft의 엄청난 주식 복귀가 거의 끝나지 않았다고 말합니다.",
     "seen": "2026-10-06"
   },
+  "Microsoft's Cloud Inference Deal with Cerebras Reshapes AI Strategy": {
+    "ko": "마이크로소프트와 Cerebras의 클라우드 추론 계약으로 AI 전략 재편",
+    "seen": "2026-11-27"
+  },
   "Microsoft’s MAI-DxO Beats Human Doctors Over Two to One in Diagnoses; Microsoft Stock (NASDAQ:MSFT) Notches Up": {
     "ko": "Microsoft의 MAI-DxO는 진단에서 인간 의사를 2대1로 이겼습니다. Microsoft 주식(NASDAQ:MSFT)이 한 단계 상승했습니다.",
     "seen": "2026-10-24"
@@ -5637,7 +5657,7 @@
   },
   "Nasdaq 100 teeters comes close to bear market as Wall Street tech stocks fall further": {
     "ko": "나스닥 100 시소는 월스트리트 기술주가 추가 하락함에 따라 약세장에 가까워졌습니다.",
-    "seen": "2026-11-26"
+    "seen": "2026-11-27"
   },
   "Nasdaq 100 teeters on brink of bear market as Wall Street tech stocks fall further": {
     "ko": "월스트리트 기술주 추가 하락으로 나스닥 100 지수 약세장 위기",
@@ -7953,7 +7973,7 @@
   },
   "Palantir: Already Off To A Strong 2027 (NASDAQ:PLTR)": {
     "ko": "Palantir: 이미 2027년에 강력한 성과를 거두었습니다(NASDAQ:PLTR)",
-    "seen": "2026-11-26"
+    "seen": "2026-11-27"
   },
   "Palantir: Bullish AI Case Has Never Looked More Exciting (NASDAQ:PLTR)": {
     "ko": "Palantir: 완고한 AI 사례가 이보다 더 흥미진진해 보였던 적이 없습니다(NASDAQ:PLTR)",
@@ -8073,7 +8093,7 @@
   },
   "Peter Thiel Sold $2.6B of Palantir Stock. Now He's Buying.": {
     "ko": "Peter Thiel은 26억 달러 규모의 Palantir 주식을 매각했습니다. 이제 그는 구매 중입니다.",
-    "seen": "2026-11-26"
+    "seen": "2026-11-27"
   },
   "Peter Thiel's entity buys Palantir stock in three open-market purchases at $142.91 to $144.61 a share, Form 4 shows": {
     "ko": "Peter Thiel의 법인은 세 번의 공개 시장 구매를 통해 주당 $142.91~$144.61에 Palantir 주식을 매입합니다(양식 4).",
@@ -8307,6 +8327,10 @@
     "ko": "S&P 500 및 Nasdaq 종합: 연준 및 수익 위험이 예상됨에 따라 칩 제조업체가 지수를 상승",
     "seen": "2026-10-28"
   },
+  "S&P 500 and Nasdaq Slip Back Into the Red After One-Day Rebound; History Points to Staying Put": {
+    "ko": "S&P 500과 나스닥은 하루 반등 후 다시 적자로 돌아섰습니다. 역사는 계속 유지되어야 한다는 점을 시사합니다",
+    "seen": "2026-11-27"
+  },
   "S&P 500 and Nasdaq: Rising Yields and Oil Test Buyers Ahead of Earnings": {
     "ko": "S&P 500과 나스닥: 실적보다 수익률 상승과 원유 테스트 매수자",
     "seen": "2026-10-09"
@@ -8386,6 +8410,10 @@
   "S&P 500 Forecast: SPX set for a weekly decline led lower by tech as AI worries linger": {
     "ko": "S&P 500 예측: SPX는 AI 우려가 지속됨에 따라 기술 부문으로 인해 주간 하락세를 보일 것으로 예상됩니다.",
     "seen": "2026-10-29"
+  },
+  "S&P 500 Forecast: Tech Selloff May Near End, Index Poised to Rise 25% to Hit 9,000 by 2027": {
+    "ko": "S&P 500 예측: 기술주 매도세가 거의 끝나가는 5월, 지수는 2027년까지 25% 상승하여 9,000을 기록할 것으로 예상",
+    "seen": "2026-11-27"
   },
   "S&P 500 forecast: Why US stocks have largely defied gravity and what could trigger a correction": {
     "ko": "S&P 500 예측: 미국 주식이 중력을 크게 거스른 이유와 조정을 촉발할 수 있는 요인",
@@ -9803,6 +9831,10 @@
     "ko": "2026년 9월 30일 주식 시장 뉴스",
     "seen": "2026-09-30"
   },
+  "Stock market outlook today, 27 Nov: Sensex, Nifty prediction-DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan cues": {
+    "ko": "11월 27일 오늘의 주식 시장 전망: Sensex, Nifty 예측 - DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan 신호",
+    "seen": "2026-11-27"
+  },
   "Stock market outlook today,17 Nov:Sensex, Nifty prediction-DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan cues": {
     "ko": "오늘의 주식 시장 전망, 11월 17일:Sensex, Nifty 예측 - DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan 신호",
     "seen": "2026-11-17"
@@ -9938,6 +9970,10 @@
   "Stock split reset: SanDisk stock crashes 87.5% overnight? Here's what investors need to know about its 8-for-1 split": {
     "ko": "주식 분할 재설정: SanDisk 주가가 하룻밤 사이에 87.5% 폭락한다고요? 투자자들이 8:1 분할에 대해 알아야 할 사항은 다음과 같습니다.",
     "seen": "2026-11-23"
+  },
+  "Stocks Are Plunging Right Now. Here's What History Says Investors Should Do.": {
+    "ko": "지금 주가가 폭락하고 있습니다. 역사가 말하는 투자자들이 해야 할 일은 다음과 같습니다.",
+    "seen": "2026-11-27"
   },
   "Stocks drop as booming Nvidia results drowned by spy scandal": {
     "ko": "호황을 누리고 있는 엔비디아 실적이 스파이 스캔들에 빠져들면서 주가 하락",
