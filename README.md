@@ -338,7 +338,9 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   - 뉴스 번역: 'a SpaceX Share'를 'SpaceX 공유'로, 'Palantir shares technical analysis'를 '…를 공유합니다'로 옮긴 것처럼, 번역기가
     주식(shares)을 동사로 읽은 제목이 캐시 3,071건 중 5건 있었습니다. 번역에 '공유'가 있고 'shares'가 그 종목 이름이나 종목 코드 바로 뒤에 붙은
     제목만 'stock'으로 바꿔 한 번 더 번역합니다. 'Jensen Huang shares vision'(사람 뒤), 'to share data', 'Nvidia shares its plan'(뒤에 목적어)은 그대로 둡니다.
-  - 점검: 메일 없는 시험 실행 두 번(가지), 1440·390px, 밝은·어두운 화면 JS 오류 0건, 가로 넘침 없음. 카드를 펼친 글까지 읽었습니다.
+  - 같은 기사 두 줄: 반영 뒤 스페이스X 카드에 TradingView 와 Benzinga 가 함께 실은 같은 제목이 두 줄 나왔습니다. 카드 뉴스를 최신순으로 세운 뒤
+    제목이 같으면 가장 최근 것 하나만 둡니다(자르기 전에 거르므로 기사 수는 그대로 4건). work-dashboard 는 이미 거르고 있었습니다.
+  - 점검: 메일 없는 시험 실행 두 번(가지)과 반영 뒤 두 번, 1440·390px, 밝은·어두운 화면 JS 오류 0건, 가로 넘침 없음. 카드를 펼친 글까지 읽었습니다.
 
 ## Usage
 

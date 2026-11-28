@@ -472,7 +472,13 @@ function Get-NewsHeadlines {
                 link    = $it.link
             }
         })
-        $parsed = @($parsed | Sort-Object { $_.pubDate.UtcDateTime } -Descending | Select-Object -First $max)
+        # 같은 기사를 여러 매체가 그대로 실으면(스페이스X 카드에 TradingView·Benzinga 의 같은 제목) 한 카드에 같은 제목이 두 줄 나온다.
+        # 최신순으로 세운 뒤 제목이 같으면 가장 최근 것 하나만 둔다. 자르기 전에 걸러야 기사 수가 줄지 않는다(2026-11-28, work-dashboard 는 이미 거름).
+        $seenTitle = @{}
+        $parsed = @($parsed | Sort-Object { $_.pubDate.UtcDateTime } -Descending | Where-Object {
+            $tk = ($_.title -replace '\s+', ' ').Trim().ToLowerInvariant()
+            if ($seenTitle.ContainsKey($tk)) { $false } else { $seenTitle[$tk] = 1; $true }
+        } | Select-Object -First $max)
         if ($parsed.Count -eq 0) { Write-Host "    (최근 ${withinDays}일 내 '$query' 기사 없음)" }
 
         # 여기서는 번역하지 않는다. 종목마다 요청을 내면 20회가 되고, 그 20회가 러너 IP 에서
