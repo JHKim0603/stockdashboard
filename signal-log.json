@@ -277,32 +277,7 @@
     }
   ],
   "episodes": {
-    "^GSPC": {
-      "start": "2026-11-20",
-      "maxLevel": 1,
-      "end": "2026-11-25"
-    },
-    "000660.KS": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "MU": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "005930.KS": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "SNDK": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "^KS11": {
+    "NVDA": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -312,27 +287,12 @@
       "maxLevel": 1,
       "end": null
     },
-    "ETH-USD": {
-      "start": "2026-11-08",
-      "maxLevel": 2,
-      "end": null
-    },
-    "BTC-KRW": {
-      "start": "2026-11-08",
-      "maxLevel": 2,
-      "end": null
-    },
-    "^IXIC": {
-      "start": "2026-11-16",
-      "maxLevel": 1,
-      "end": null
-    },
-    "PLTR": {
+    "^KS11": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "NVDA": {
+    "000660.KS": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -342,9 +302,49 @@
       "maxLevel": 3,
       "end": null
     },
+    "MU": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "^GSPC": {
+      "start": "2026-11-20",
+      "maxLevel": 1,
+      "end": "2026-11-25"
+    },
+    "ETH-USD": {
+      "start": "2026-11-08",
+      "maxLevel": 2,
+      "end": null
+    },
+    "005930.KS": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "^IXIC": {
+      "start": "2026-11-16",
+      "maxLevel": 1,
+      "end": null
+    },
     "QLD": {
       "start": "2026-11-06",
       "maxLevel": 3,
+      "end": null
+    },
+    "PLTR": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "SNDK": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "BTC-KRW": {
+      "start": "2026-11-08",
+      "maxLevel": 2,
       "end": null
     }
   }
