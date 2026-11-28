@@ -274,6 +274,19 @@
       "bench": "^IXIC",
       "benchPrice": 22617.73,
       "atStart": false
+    },
+    {
+      "symbol": "SPCX",
+      "name": "스페이스X",
+      "kind": "us",
+      "signal": "분할 3단계",
+      "level": 3,
+      "date": "2026-11-27",
+      "price": 133.59,
+      "currency": "$",
+      "bench": "^IXIC",
+      "benchPrice": 24129.5,
+      "atStart": true
     }
   ],
   "episodes": {
@@ -282,57 +295,12 @@
       "maxLevel": 1,
       "end": null
     },
-    "QLD": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "000660.KS": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "NVDA": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "SNDK": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "BTC-KRW": {
-      "start": "2026-11-08",
-      "maxLevel": 2,
-      "end": null
-    },
-    "^KS11": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
     "PLTR": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "ETH-USD": {
-      "start": "2026-11-08",
-      "maxLevel": 2,
-      "end": null
-    },
-    "^GSPC": {
-      "start": "2026-11-20",
-      "maxLevel": 1,
-      "end": "2026-11-25"
-    },
-    "GOOGL": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "005930.KS": {
+    "MU": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -342,7 +310,57 @@
       "maxLevel": 1,
       "end": null
     },
-    "MU": {
+    "SNDK": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "^KS11": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "000660.KS": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "ETH-USD": {
+      "start": "2026-11-08",
+      "maxLevel": 2,
+      "end": null
+    },
+    "QLD": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "^GSPC": {
+      "start": "2026-11-20",
+      "maxLevel": 1,
+      "end": "2026-11-25"
+    },
+    "BTC-KRW": {
+      "start": "2026-11-08",
+      "maxLevel": 2,
+      "end": null
+    },
+    "005930.KS": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "SPCX": {
+      "start": "2026-11-27",
+      "maxLevel": 3,
+      "end": null
+    },
+    "GOOGL": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "NVDA": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null

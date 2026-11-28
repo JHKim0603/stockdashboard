@@ -26,5 +26,13 @@
   "SNDK": {
     "fetched": "2026-11-28",
     "data": null
+  },
+  "SPCX": {
+    "fetched": "2026-11-28",
+    "data": {
+      "date": "2027-01-19",
+      "confirmed": false,
+      "timing": null
+    }
   }
 }

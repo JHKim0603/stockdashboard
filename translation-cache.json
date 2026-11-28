@@ -3315,6 +3315,10 @@
     "ko": "AI 인프라 낙관론과 SK하이닉스 결과에 따라 Sandisk(SNDK)가 저렴합니까?",
     "seen": "2026-10-28"
   },
+  "Is Sandisk Stock a Buy After Kioxia and Nvidia Tested Flash Drives as Extra AI Memory?": {
+    "ko": "Kioxia와 Nvidia가 플래시 드라이브를 추가 AI 메모리로 테스트한 후 Sandisk 주식을 매수할 수 있나요?",
+    "seen": "2026-11-28"
+  },
   "Is SanDisk Stock Worth More Than Its Competitors?": {
     "ko": "SanDisk 주식은 경쟁사보다 더 가치가 있나요?",
     "seen": "2026-11-11"
@@ -5399,6 +5403,10 @@
     "ko": "AI 순환이 칩 제조업체로 돌아가면서 Microsoft 주식은 0.80% 하락했습니다.",
     "seen": "2026-11-07"
   },
+  "Microsoft Stocks Rise 0.26% as Code Red Targets One-Hour Outage Recovery": {
+    "ko": "Code Red가 1시간 정전 복구를 목표로 하여 Microsoft 주가 0.26% 상승",
+    "seen": "2026-11-28"
+  },
   "Microsoft Stocks Rise 3.16% as Anthropic Commits $47.2 Billion Minimum to Azure": {
     "ko": "Anthropic이 Azure에 최소 472억 달러를 투자하면서 Microsoft 주식은 3.16% 상승했습니다.",
     "seen": "2026-11-20"
@@ -5790,6 +5798,11 @@
   "MU: SEC Form DEFA14A filed by Micron Technology Inc.": {
     "ko": "MU: Micron Technology Inc.에서 제출한 SEC 양식 DEFA14A",
     "seen": "2026-11-25"
+  },
+  "Musk Will Give Every U.S. Child a SpaceX Share “Every Year.” That’s About $9 Billion a Year at Today’s Price": {
+    "fix": 1,
+    "ko": "머스크는 모든 미국 어린이에게 “매년” SpaceX 주식을 제공할 것입니다. 현재 가격으로 환산하면 연간 약 90억 달러에 달합니다.",
+    "seen": "2026-11-28"
   },
   "My Current View Of The SP 500 Index: October 2026 Edition (SPY)": {
     "ko": "SP 500 지수에 대한 나의 현재 견해: 2026년 10월판(SPY)",
@@ -7213,6 +7226,10 @@
   },
   "Nvidia Stock Gains. It’s Still Finding Its Floor With Huang 2.0.": {
     "ko": "엔비디아 주식 이익. Huang 2.0으로 여전히 바닥을 찾고 있습니다.",
+    "seen": "2026-11-28"
+  },
+  "Nvidia Stock Had Its Best Day in 23 Years. Huang’s Return Revives the AI Bull Case.": {
+    "ko": "엔비디아 주식은 23년 만에 최고의 날을 보냈습니다. Huang의 복귀로 AI Bull 사건이 부활했습니다.",
     "seen": "2026-11-28"
   },
   "Nvidia Stock Has a Massive AI Tailwind. Here’s the Bull Case": {
@@ -9191,6 +9208,10 @@
     "ko": "Sandisk(SNDK) 주식은 데이터 센터 규제에 대한 우려로 인해 적정 가치보다 42% 낮을 수 있습니다.",
     "seen": "2026-11-18"
   },
+  "Sandisk (SNDK) Stock Could Trade Below Fair Value Despite Its 206% Run": {
+    "ko": "Sandisk(SNDK) 주식은 206% 상승에도 불구하고 적정 가치 이하로 거래될 수 있습니다.",
+    "seen": "2026-11-28"
+  },
   "Sandisk (SNDK) Stock Fair Value Edges Higher On AI Memory Demand Optimism": {
     "ko": "Sandisk (SNDK) 주식 공정 가치는 AI 메모리 수요 낙관론에서 더 높습니다.",
     "seen": "2026-10-09"
@@ -9538,6 +9559,10 @@
   "Sandisk Stock $73.61: SNDK Pares a 14% Plunge Into Holiday": {
     "ko": "Sandisk 주가 $73.61: SNDK, 휴일에 14% 급락",
     "seen": "2026-11-26"
+  },
+  "Sandisk Stock $85.36: SNDK Week Ahead After a 16% Rebound": {
+    "ko": "Sandisk 주가 $85.36: 16% 반등 후 SNDK 일주일 앞두고",
+    "seen": "2026-11-28"
   },
   "Sandisk Stock $87.71: 11% Rally Meets Dell, HP Results": {
     "ko": "Sandisk 주가 $87.71: 11% 상승이 Dell을 충족, HP 결과",
@@ -10055,6 +10080,10 @@
     "ko": "소버린 AI 거래로 Palantir(PLTR) 투자 사례가 바뀔 수 있음",
     "seen": "2026-10-07"
   },
+  "SpaceX After Its First Profit: 20x EBITDA And A 41% Cost Edge (NASDAQ:SPCX)": {
+    "ko": "첫 번째 수익 이후 SpaceX: 20배의 EBITDA 및 41%의 비용 우위(NASDAQ:SPCX)",
+    "seen": "2026-11-28"
+  },
   "SpaceX Earnings Lift Nasdaq 1.05% as Tech Rebounds": {
     "ko": "SpaceX 수익, 기술 반등으로 Nasdaq 1.05% 상승",
     "seen": "2026-10-22"
@@ -10074,6 +10103,10 @@
   "SpaceX Stock Drops After Hours as Elon Musk-led Company Seeks $40 Billion to Buy Nvidia Chips": {
     "ko": "Elon Musk가 이끄는 회사가 Nvidia 칩 구매를 위해 400억 달러를 모색함에 따라 SpaceX 주식은 영업 시간 이후 하락합니다.",
     "seen": "2026-10-07"
+  },
+  "SpaceX Stock Rises: Baron Sees AI Opportunity, Moffett Challenges Wireless Narrative": {
+    "ko": "SpaceX 주가 상승: Baron은 AI 기회를 보고 Moffett는 무선 내러티브에 도전합니다.",
+    "seen": "2026-11-28"
   },
   "SpaceX vs. Nvidia: The Best AI Stock to Buy Now": {
     "ko": "SpaceX 대 Nvidia: 지금 구매할 수 있는 최고의 AI 주식",
@@ -10750,6 +10783,10 @@
   "The Stock Market Is Repeating a Pattern Seen Only Once Since 1871. Here's What History Says Comes Next.": {
     "ko": "주식 시장은 1871년 이후 단 한 번만 보였던 패턴을 반복하고 있습니다. 역사가 말하는 다음은 다음과 같습니다.",
     "seen": "2026-10-13"
+  },
+  "The Stock Market Just Dropped Into a Correction. History Is Crystal Clear About What Happens Next.": {
+    "ko": "주식시장은 조정 국면에 빠졌다. 역사는 다음에 무슨 일이 일어날지 명확하게 보여줍니다.",
+    "seen": "2026-11-28"
   },
   "The Stock Market Just Had Its Best Day Since April. Here’s What History Says a 62-Year-Old Retiree With $1,300,000 in Cash Should Do Now": {
     "ko": "주식시장은 4월 이후 최고의 날을 보냈습니다. 역사에 따르면 현금 1,300,000달러를 가진 62세 퇴직자가 지금 해야 할 일은 다음과 같습니다.",
