@@ -210,7 +210,7 @@ def stock_stages(page):
     if not rows:
         return None
     W, RH, TOP = 600, 28, 8
-    H = TOP + RH * len(rows) + 46
+    H = TOP + RH * len(rows) + 64
     L, TR, R = 104, 372, 600
     axis_max = max(70, int((max(x["ddNow"] for x in rows) + 9) // 10 * 10))
     X = lambda v: L + min(v, axis_max) / axis_max * (TR - L)
@@ -228,16 +228,19 @@ def stock_stages(page):
         op = [1, 0.5, 0.75, 1][min(lv, 3)]
         g.append(f'<rect x="{L}" y="{y + 9}" width="{max(2, X(x["ddNow"]) - L):.1f}" height="8" rx="4" fill="{col}" opacity="{op}"/>')
         g.append(text(TR + 12, y + 18, f"−{x['ddNow']:.1f}%", 13, INK, 700))
-        g.append(text(TR + 72, y + 18, f"{lv}단계" if lv else "단계 전", 13, ACC if lv else MUTED, 700 if lv else 400))
+        g.append(text(TR + 72, y + 18, f"{lv}단계" if lv else "관망", 13, ACC if lv else MUTED, 700 if lv else 400))
         nxt = next((s for s in steps if s > x["ddNow"]), None)
-        if nxt is not None and nxt - x["ddNow"] <= 5:   # 곧 다음 단계인 종목만(모두 적으면 휴대폰에서 붐볐다)
-            g.append(text(R, y + 18, f"다음 단계까지 {nxt - x['ddNow']:.1f}%", 12, MUTED, anchor="end"))
+        if lv >= len(steps):   # 마지막 단계: 화면 매수 단계 지도와 같은 말(2026-11-28, '가장 깊은 단계' 대신)
+            g.append(text(R - 3, y + 18, "적극 매수 구간", 12, MUTED, anchor="end"))   # 끝 글자가 그림 가장자리에 걸리지 않게 3px 안쪽
+        elif nxt is not None and nxt - x["ddNow"] <= 5:   # 곧 다음 단계인 종목만(모두 적으면 휴대폰에서 붐볐다)
+            g.append(text(R - 3, y + 18, f"{steps.index(nxt) + 1}단계까지 −{nxt - x['ddNow']:.1f}%", 12, MUTED, anchor="end"))
     yb = TOP + RH * len(rows) + 4
     for v in range(0, axis_max + 1, 20):
         g.append(text(X(v), yb + 14, "0" if v == 0 else f"−{v}%", 12, MUTED, anchor="middle"))
-    g.append(text(0, H - 6, "막대: 52주 고점 대비 하락률, 배경: 분할 1·2·3단계 구간(코인은 20·40·60%)", 12, MUTED))
+    g.append(text(0, H - 24, "막대는 52주 고점 대비 하락률, 배경은 분할 1·2·3단계 구간입니다(코인은 20·40·60%).", 12, MUTED))
+    g.append(text(0, H - 6, "1단계는 1차 매수, 2단계는 추가 매수, 3단계는 적극 매수 구간입니다.", 12, MUTED))
     return {"file": "stock-stages.png", "w": W, "h": H, "svg": "".join(g),
-            "title": "매수 단계 지도", "sub": "52주 고점 대비, 깊이 내려온 순",
+            "title": "매수 단계 지도", "sub": "52주 고점 대비 하락률이 큰 순",
             "alt": "관심 종목의 52주 고점 대비 하락률과 분할 매수 단계"}
 
 

@@ -2174,6 +2174,11 @@ function Format-Price {
 # 종목 한 줄 해설(카드 가격 아래, 메일 종목 칸). 증권 앱의 AI 종목 요약처럼 '지금 어떤 흐름이고 다음 매수 기준선이
 # 어디인지'를 문장으로 적는다. AI 를 부르지 않고 이 스크립트가 계산한 값으로 만든다. 문장: 추세, 매수 신호(있을 때),
 # 아래로 가장 가까운 매수 기준선(이평선·분할 매수 기준 중 현재가 바로 아래 값).
+# 분할 단계의 행동 이름(2026-11-28, 사용자 요청: '가장 깊은 단계' 같은 표현 대신 '적극 매수' 같은 매매 용어).
+# 표시(분할 N단계)는 신호 기록·과거 검증·화면이 함께 쓰는 이름이라 그대로 두고, 문장에서 뜻을 이 이름으로 말한다.
+# '추천'은 쓰지 않는다. 화면과 메일이 '본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다'라고 말하기 때문이다.
+function Get-StageAct { param([int]$lv) switch ($lv) { 3 { "적극 매수" } 2 { "추가 매수" } 1 { "1차 매수" } default { "관망" } } }
+
 function Get-StockComment {
     # 카드 위 해설은 카드의 다른 곳에 없는 말만 한다(2026-11-13 점검). 추세는 그림 위 추세 줄이, 분할 단계와 이평선 도달은
     # 시세 옆 표시가 이미 말하므로 여기서는 뺀다. 남는 것은 '고점 근처에서 닿아 참고로만 본다'와 '다음 매수 기준선'이다.
@@ -2193,7 +2198,7 @@ function Get-StockComment {
     $cands = New-Object System.Collections.ArrayList
     # 이평선은 그 값까지 내려가면 52주 고점보다 maMinDrawdownPct% 넘게 낮아지는 경우만 매수 기준선이다(아니면 '참고' 도달이 된다).
     $maCap = if ($st.rangeHigh) { [double]$st.rangeHigh * (1 - [double]$buyRules.maMinDrawdownPct / 100) } else { [double]::MaxValue }
-    foreach ($l in @($st.maLevels | Where-Object { $_ -and [double]$_.value -le $maCap })) { [void]$cands.Add([PSCustomObject]@{ name = "$($l.window)일선"; v = [double]$l.value; note = "" }) }
+    foreach ($l in @($st.maLevels | Where-Object { $_ -and [double]$_.value -le $maCap })) { [void]$cands.Add([PSCustomObject]@{ name = "$($l.window)일선"; v = [double]$l.value; stage = 0; ma = $true }) }
     if ($dip) {
         # 분할 매수 기준선은 지금 단계보다 높은 단계의 것만 '다음' 기준선이다(이미 지나온 낮은 단계 기준선은 뺀다).
         $lvlNow = [int]$dip.level
@@ -2203,14 +2208,14 @@ function Get-StockComment {
             if ($kMa -le $lvlNow) { continue }
             if (@($cands | Where-Object { $_.name -eq "${w}일선" }).Count) { continue }
             $ma = Get-MovingAverage -series $series -window ([int]$w)
-            if ($null -ne $ma[-1]) { [void]$cands.Add([PSCustomObject]@{ name = "${w}일선"; v = [double]$ma[-1]; note = "" }) }
+            if ($null -ne $ma[-1]) { [void]$cands.Add([PSCustomObject]@{ name = "${w}일선"; v = [double]$ma[-1]; stage = $kMa; ma = $true }) }
         }
         if ($st.rangeHigh) {
             $k = 0
             foreach ($stp in @($dip.steps | Select-Object -First 3)) {
                 $k++
                 if ($k -le $lvlNow) { continue }
-                [void]$cands.Add([PSCustomObject]@{ name = "분할 매수 ${k}단계 기준"; v = [double]$st.rangeHigh * (1 - [double]$stp / 100); note = "고점 대비 −$(([double]$stp).ToString('0.#'))%, " })
+                [void]$cands.Add([PSCustomObject]@{ name = "분할 ${k}단계"; v = [double]$st.rangeHigh * (1 - [double]$stp / 100); stage = $k; ma = $false })
             }
         }
     }
@@ -2219,8 +2224,14 @@ function Get-StockComment {
     if ($below.Count) {
         $b = $below[0]
         $gap = (1 - $b.v / $last) * 100
-        # 값 뒤에 조사를 붙이지 않는다(숫자 끝자리에 따라 '로/으로'가 바뀐다).
-        $out += "다음 매수 기준선은 현재가보다 $($gap.ToString('0.0'))% 아래인 $($b.name)($($b.note)$ccy$(Format-Price $b.v $ccy))입니다."
+        # 값 뒤에 조사를 붙이지 않는다(숫자 끝자리에 따라 '로/으로'가 바뀐다). '부터', '에'만 붙인다.
+        # 2026-11-28: '다음 매수 기준선은 현재가보다 8.1% 아래인 분할 매수 2단계 기준(고점 대비 −20%, 22,178.20)입니다'를
+        # '현재가보다 8.1% 아래인 22,178.20부터 추가 매수 구간(분할 2단계)입니다'처럼 가격과 할 일을 먼저 말하게 바꿨다.
+        $px = "$ccy$(Format-Price $b.v $ccy)"
+        $gapTxt = "현재가보다 $($gap.ToString('0.0'))% 아래인"
+        $out += if ($b.stage -ge 1 -and -not $b.ma) { "$gapTxt ${px}부터 $(Get-StageAct $b.stage) 구간(분할 $($b.stage)단계)입니다." }
+            elseif ($b.stage -ge 1) { "$gapTxt $($b.name)(${px})에 닿으면 $(Get-StageAct $b.stage) 구간(분할 $($b.stage)단계)입니다." }
+            else { "$gapTxt $($b.name)(${px})에 닿으면 이평선 매수 기준입니다." }
     }
     # '아래에 남은 매수 기준선은 없습니다'는 할 일이 없다는 말이라 적지 않는다.
     $out -join " "
@@ -2369,7 +2380,7 @@ foreach ($st in $stocks) {
             elseif ($dip.byMa) { "$($dip.byMa)일선에 닿아" } else { "$ddPart 내려와" }
         $prio = switch ([int]$dip.level) { 3 { 118 } 2 { 108 } default { 92 } }
         $stTxt = if ($st.signalStats.dip) { " $($st.signalStats.dip.short)" } else { "" }
-        Add-Highlight $dip.label "$topic 오늘 $how $($dip.label) 구간에 들어왔습니다.$stTxt" $prio $st.symbol
+        Add-Highlight $dip.label "$topic 오늘 $how $(Get-StageAct ([int]$dip.level)) 구간에 들어왔습니다.$stTxt" $prio $st.symbol
     }
     $tc = $st.targetChange
     if ($tc -and $tc.date -eq $todayKstStr) {
@@ -2392,10 +2403,10 @@ foreach ($lvl in 3, 2) {
     if (-not @($grp | Where-Object { $_.dip.byMa }).Count) {
         # 모두 고점 대비 하락으로 이 단계가 된 경우: '52주 고점 대비 A −48.9%, B −41.2%로'처럼 기준을 한 번만 적는다.
         $items = @($grp | ForEach-Object { "$($_.name) −$(([double]$_.dip.dd).ToString('0.0'))%" })
-        Add-Highlight $grpLabel "52주 고점 대비 $($items -join ', ')로 $grpLabel 구간입니다." $prioGrp $grp[0].symbol "dipGroup"
+        Add-Highlight $grpLabel "52주 고점 대비 $($items -join ', ')로 $(Get-StageAct $lvl) 구간입니다." $prioGrp $grp[0].symbol "dipGroup"
     } else {
         $items = @($grp | ForEach-Object { "$($_.name)($($_.dip.why))" })
-        Add-Highlight $grpLabel "$($items -join ', ')$(Get-Josa $items[-1] '이' '가') $grpLabel 구간입니다." $prioGrp $grp[0].symbol "dipGroup"
+        Add-Highlight $grpLabel "$($items -join ', ')$(Get-Josa $items[-1] '이' '가') $(Get-StageAct $lvl) 구간입니다." $prioGrp $grp[0].symbol "dipGroup"
     }
 }
 # 관련 지표(2026-11-23). 메모리 현물가가 크게 움직였을 때(칩은 하루 3%, 모듈·웨이퍼는 한 주 5% 이상), 외국인이 한 종목을
@@ -2604,10 +2615,10 @@ $lv3 = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq 3 })
 $lv2 = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq 2 })
 $lv1 = @($stocks | Where-Object { $_.dip -and [int]$_.dip.level -eq 1 })
 $cnt = @()
-if ($lv3.Count) { $cnt += "3단계 $($lv3.Count)개" }
-if ($lv2.Count) { $cnt += "2단계 $($lv2.Count)개" }
-if ($lv1.Count) { $cnt += "1단계 $($lv1.Count)개" }
-if ($cnt.Count) { $sig += "분할 매수 단계에 든 종목은 $($cnt -join ', ')입니다." }
+if ($lv3.Count) { $cnt += "적극 매수(3단계) $($lv3.Count)개" }
+if ($lv2.Count) { $cnt += "추가 매수(2단계) $($lv2.Count)개" }
+if ($lv1.Count) { $cnt += "1차 매수(1단계) $($lv1.Count)개" }
+if ($cnt.Count) { $sig += "분할 매수 구간에 든 종목은 $($cnt -join ', ')입니다." }
 # 오늘 새로 든 종목은 맨 위 결론이 말한다. 여기는 지금 상태(단계별 개수, 며칠째 이평선에 닿아 있는 종목)만 적는다.
 $maKeep = @($maHit | Where-Object { -not @($_.maLevels | Where-Object { $_ -and $_.buySignal -and $_.firstTouch }).Count })
 if ($maKeep.Count) {
@@ -2618,7 +2629,8 @@ Add-Brief "매수 신호" ($sig -join " ")
 
 # --- 먼저 볼 종목 (2026-11-08) ----------------------------------------------------------------
 # 시장 전체가 빠지면 관심 종목 대부분이 분할 매수 단계에 들어 신호만으로는 구분이 안 된다(11/7: 14개 중 12개).
-# 단계에 든 종목을 네 가지로 점수 내 '먼저 볼 3개'를 고른다. 사라는 뜻이 아니라 살펴볼 순서다.
+# 단계에 든 종목을 네 가지로 점수 내 '먼저 볼 3개'를 고른다. 2026-11-28 부터 화면과 메일에서 '우선 매수 후보'라고 부른다
+# (사용자 요청: 매매 용어로). 순서 매김 방법은 같다.
 #   과거 성적 35점: 그 분야·그 단계 신호의 1년 뒤 백분위(backtest-stats, 50 = 아무 날이나 산 것). 45 이하 0점, 70 이상 만점.
 #   단계 15점: 3단계 15, 2단계 10, 1단계 5.
 #   시장보다 더 빠짐 25점: 최근 1개월 수익률 - 시장(국내 코스피, 미국 나스닥) 수익률. -30%p 이하 만점. 지수는 중간값.
@@ -2652,7 +2664,7 @@ for ($i = 0; $i -lt $prioList.Count; $i++) {
 if ($prioList.Count -ge 3) {
     $top = @($prioList | Select-Object -First 3)
     # 괄호 속 '과거 성적 백분위 62, 시장보다 28%p 더 빠짐' 나열은 빼고 이름과 순서 기준만 적는다(이유는 화면의 ① ② ③ 설명에 있다).
-    Add-Brief "먼저 볼 종목" "$(($top | ForEach-Object { $_.name }) -join ', ') 순서입니다. 낙폭과 시장 대비 하락폭, 같은 신호의 과거 성과를 합친 점수로 정했습니다."
+    Add-Brief "우선 매수 후보" "$(($top | ForEach-Object { $_.name }) -join ', ') 순입니다. 낙폭과 시장 대비 약세가 크고 같은 신호의 과거 성과가 좋을수록 앞에 둡니다."
 }
 
 # --- 신호 실전 기록부 (2026-11-08) -------------------------------------------------------------
@@ -3043,7 +3055,7 @@ $ladderHtml = @"
 $(Get-MailLabel '오늘의 매수 단계')
 <div style="$($mailCard)border-left:4px solid #0f766e;">
   $ladderBody
-  <div style="font-size:12px;color:#898781;margin-top:6px;line-height:1.5;">괄호 안 %는 52주 고점 대비 하락률입니다. $($ruleParts -join ', ')입니다. 지수는 고점 대비 하락만 보고, 코인은 20%, 40%, 60% 기준입니다. 이평선 도달은 52주 고점보다 $($buyRules.maMinDrawdownPct)% 넘게 내려온 상태일 때만 매수 기준입니다. 과거 10년 검증에서 뚜렷하게 나았던 것은 지수와 대형주의 3단계와 이평선 매수 기준이었습니다. 본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다.</div>
+  <div style="font-size:12px;color:#898781;margin-top:6px;line-height:1.5;">괄호 안 %는 52주 고점 대비 하락률입니다. $($ruleParts -join ', ')입니다. 1단계는 1차 매수, 2단계는 추가 매수, 3단계는 적극 매수 구간입니다. 지수는 고점 대비 하락만 보고, 코인은 20%, 40%, 60% 기준입니다. 이평선 도달은 52주 고점보다 $($buyRules.maMinDrawdownPct)% 넘게 내려온 상태일 때만 매수 기준입니다. 과거 10년 검증에서 뚜렷하게 나았던 것은 지수와 대형주의 3단계와 이평선 매수 기준이었습니다. 본인 매매 기준을 그대로 적용한 표시이며 매매를 권하는 것이 아닙니다.</div>
 </div>
 "@
 
@@ -3210,11 +3222,11 @@ if ($fearGreed) {
         if ($prev) {
             $delta = $fearGreed.score - $prev.score
             $trendHtml = if ($delta -lt 0) {
-                "전일 $($prev.score) → 오늘 $($fearGreed.score) · <b>공포가 $([math]::Abs($delta))p 깊어지는 중</b>"
+                "전일 $($prev.score)에서 오늘 $($fearGreed.score)$(Get-JosaRo ([string]$fearGreed.score)) $([math]::Abs($delta))p 내려 <b>공포가 깊어졌습니다</b>."
             } elseif ($delta -gt 0) {
-                "전일 $($prev.score) → 오늘 $($fearGreed.score) · <b>공포가 ${delta}p 풀리는 중</b>"
+                "전일 $($prev.score)에서 오늘 $($fearGreed.score)$(Get-JosaRo ([string]$fearGreed.score)) ${delta}p 올라 <b>공포가 누그러졌습니다</b>."
             } else {
-                "전일과 같은 $($fearGreed.score)"
+                "전일과 같은 $($fearGreed.score)입니다."
             }
         }
         $trendRow = if ($trendHtml) { "<div style='font-size:12px;color:#52514e;margin-top:6px;'>$trendHtml</div>" } else { "" }

@@ -738,14 +738,14 @@
   .bm-bar.l1 { background: var(--accent); opacity: .5; } .bm-bar.l2 { background: var(--accent); opacity: .75; } .bm-bar.l3 { background: var(--accent); opacity: 1; }
   .bm-val { font-size: 12px; color: var(--ink-secondary); line-height: 1.3; font-variant-numeric: tabular-nums; }
   .bm-val b { color: var(--ink-primary); }
-  .bm-next { display: block; color: var(--ink-muted); }
+  .bm-next { display: block; color: var(--ink-muted); white-space: nowrap; }
   .bm-axis { display: grid; grid-template-columns: 96px minmax(0, 1fr) 112px; gap: 8px; }
   .bm-axis-in { grid-column: 2; position: relative; height: 18px; }
   .bm-axis-in span { position: absolute; top: 2px; transform: translateX(-50%); font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
   .bm-axis-in span:first-child { transform: none; }
   .bm-axis-in span:last-child { transform: translateX(-100%); }
   @media (max-width: 640px) {
-    .bm-row, .bm-axis { grid-template-columns: 86px minmax(0, 1fr) 92px; gap: 6px; }   /* '마이크로소프트'가 들어가는 폭 */
+    .bm-row, .bm-axis { grid-template-columns: 86px minmax(0, 1fr) 104px; gap: 6px; }   /* '마이크로소프트'가 들어가는 폭, 값 칸은 '3단계까지 −15.1%' 한 줄(2026-11-28) */
     .bm-name { font-size: 12px; }
     .bm-axis-in span.o { display: none; }   /* 좁은 화면은 20% 간격만 */
   }
@@ -3790,7 +3790,7 @@
             '<span class="hm-name">' + esc(x.st.name) + '</span><span class="hm-pct ' + dirCls(v) + '">' + fmtPct(v) + '</span>' +
             (function () { const ms = maSummary(x.st); return ms && /^(touch|dip2|dip3)$/.test(ms.cls) ? '<span class="hm-ma">' + esc(ms.text) + '</span>' : ""; })() +
             // 단계에 든 종목이 셋 이상이면 생성 스크립트가 매긴 '먼저 볼' 순서 1~3위를 붙인다(이유는 칸 설명에).
-            (x.st.prio && x.st.prio.rank <= 3 && x.st.prio.of >= 3 ? '<span class="hm-prio" title="' + esc("먼저 볼 순서 " + x.st.prio.rank + "위: " + (x.st.prio.why || []).join(", ")) + '">먼저 ' + "①②③"[x.st.prio.rank - 1] + '</span>' : "") + '</button>';
+            (x.st.prio && x.st.prio.rank <= 3 && x.st.prio.of >= 3 ? '<span class="hm-prio" title="' + esc("우선 매수 후보 " + x.st.prio.rank + "위: " + (x.st.prio.why || []).join(", ")) + '">우선 ' + "①②③"[x.st.prio.rank - 1] + '</span>' : "") + '</button>';
         }).join("");
         return '<div class="hm-row"><div class="hm-label"><b>' + esc(g) + '</b><span class="hm-dir ' + dir + '">' + esc(dirTxt) + '</span></div>' +
           '<div class="hm-tiles">' + tiles + '</div></div>';
@@ -3905,7 +3905,7 @@
           const parts = r.defSteps.slice(0, 3).map((s, i) => (i ? "" : "52주 고점보다 ") + s + "% 낮" +
             (r.maSteps && r.maSteps[i] ? "거나 " + r.maSteps[i] + "일선에 닿으면 " : "으면 ") + (i + 1) + "단계");
           const coin = stocks.find(st => st.kind === "crypto" && st.dip && st.dip.steps && st.dip.steps.join() !== r.defSteps.join());
-          return ' 청록색 \'분할 n단계\'는 분할 매수 단계입니다(파랑은 가격이 내린 것만 뜻합니다). ' + parts.join(", ") + '입니다. 지수는 고점 대비 하락만 봅니다.' +
+          return ' 청록색 \'분할 n단계\'는 분할 매수 단계입니다(파랑은 가격이 내린 것만 뜻합니다). ' + parts.join(", ") + '입니다. 1단계는 1차 매수, 2단계는 추가 매수, 3단계는 적극 매수 구간입니다. 지수는 고점 대비 하락만 봅니다.' +
             (coin ? ' 코인은 ' + coin.dip.steps.slice(0, 3).join("%, ") + '% 기준입니다.' : '') +
             ' 카드의 \'과거 성적\'은 같은 규칙을 지난 10년 시세에 적용했을 때 그 분야(지수, 개별 종목, 레버리지 ETF, 코인)의 결과입니다.' +
             ' 지수와 대형주의 3단계, 이평선 매수 기준은 날마다 샀을 때보다 1년 뒤 오른 비율이 높았고, 1·2단계와 코인 신호는 비슷했습니다.';
@@ -4035,12 +4035,13 @@
         const bands = s.map((v, k) => '<span class="bm-band b' + (k + 1) + '" style="left:' + P(v) + ';right:calc(100% - ' + P(k + 1 < s.length ? s[k + 1] : axisMax) + ')"></span>').join("");
         const ticks = s.map(v => '<span class="bm-tick" style="left:' + P(v) + '"></span>').join("");
         const next = s.find(v => v > x.dd);
-        const nextTxt = next !== undefined ? (s.indexOf(next) + 1) + "단계까지 " + (next - x.dd).toFixed(1) + "%" : "가장 깊은 단계";
+        // 단계마다 행동 이름(2026-11-28): 1단계 1차 매수, 2단계 추가 매수, 3단계 적극 매수, 단계 전 관망. 마지막 단계는 '가장 깊은 단계'가 아니라 '적극 매수 구간'.
+        const nextTxt = next !== undefined ? (s.indexOf(next) + 1) + "단계까지 −" + (next - x.dd).toFixed(1) + "%" : "적극 매수 구간";
         const title = st.name + ": 52주 고점보다 " + x.dd.toFixed(1) + "% 낮습니다. 단계 기준은 " + s.map(v => "−" + v + "%").join(", ") + "입니다." +
           (st.dip && st.dip.detail ? " " + st.dip.detail : "");
         return '<div class="bm-row" data-i="' + x.i + '" title="' + esc(title) + '"><span class="bm-name">' + esc(st.name) + '</span>' +
           '<span class="bm-track">' + bands + ticks + '<span class="bm-bar l' + x.lv + '" style="width:' + P(x.dd) + '"></span></span>' +
-          '<span class="bm-val"><b>−' + x.dd.toFixed(1) + '%</b> ' + (x.lv ? x.lv + "단계" : "단계 전") + '<span class="bm-next">' + esc(nextTxt) + '</span></span></div>';
+          '<span class="bm-val"><b>−' + x.dd.toFixed(1) + '%</b> ' + (x.lv ? x.lv + "단계" : "관망") + '<span class="bm-next">' + esc(nextTxt) + '</span></span></div>';
       }).join("");
       const ax = [];
       // 좁은 화면은 처음·가운데·끝만 남긴다(휴대폰에서 '−20%−40%−60%'처럼 붙었다, 2026-11-27).
@@ -4088,8 +4089,8 @@
         placed.push({ l, w: wq, y });
         return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="' + a + '" class="qd-q">' + t + '</text>';
       };
-      if (!narrow) g += q(W - R - 4, [T + 14, y0 - 6], "end", "많이 빠졌고 최근 오름") + q(W - R - 4, [H - B - 6, y0 + 15], "end", "많이 빠졌고 아직 내림") +
-        q(L + 4, [T + 14, y0 - 6], "start", "고점 근처, 최근 오름") + q(L + 4, [H - B - 6, y0 + 15], "start", "고점 근처, 최근 내림");
+      if (!narrow) g += q(W - R - 4, [T + 14, y0 - 6], "end", "낙폭 과대, 반등") + q(W - R - 4, [H - B - 6, y0 + 15], "end", "낙폭 과대, 하락 지속") +
+        q(L + 4, [T + 14, y0 - 6], "start", "고점권, 상승") + q(L + 4, [H - B - 6, y0 + 15], "start", "고점권, 조정");
       g += '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end" class="qd-title">' + (W < 430 ? '고점 대비 하락률 →' : '52주 고점 대비 하락률 →') + '</text>' +
         '<text x="' + L + '" y="' + (H - 6) + '" text-anchor="start" class="qd-title">' + (W < 430 ? '세로: 1개월 수익률' : '세로: 최근 1개월 수익률') + '</text>';
       pts.slice().sort((a, b) => Y(a.m1) - Y(b.m1)).forEach(p => {
@@ -4173,9 +4174,9 @@
 
     function render() {
       host.innerHTML = '<h3>그림으로 보기</h3><div class="vis-grid">' +
-        '<div class="vis-panel"><h4>매수 단계 지도</h4><div class="vis-sub">막대는 52주 고점보다 내려온 정도이고, 배경 칸은 그 종목의 분할 매수 1·2·3단계 구간입니다. 깊이 내려온 순서입니다.</div>' +
+        '<div class="vis-panel"><h4>매수 단계 지도</h4><div class="vis-sub">막대는 52주 고점 대비 하락률이고, 배경 칸은 그 종목의 분할 매수 1·2·3단계 구간입니다. 하락률이 큰 순서입니다. 숫자 아래 줄은 다음 단계까지 남은 하락률입니다.</div>' +
         '<div class="bm-list">' + mapHtml() + '</div></div>' +
-        '<div class="vis-panel" id="vis-quad"><h4>하락폭과 최근 흐름</h4><div class="vis-sub">오른쪽일수록 고점에서 많이 빠졌고, 위쪽일수록 최근 1개월에 올랐습니다. 색칠한 칸에는 고점보다 20% 넘게 내려온 뒤 최근 1개월에 오른 종목이 놓입니다.' +
+        '<div class="vis-panel" id="vis-quad"><h4>낙폭과 최근 1개월 수익률</h4><div class="vis-sub">오른쪽일수록 52주 고점 대비 낙폭이 크고, 위쪽일수록 최근 1개월 수익률이 높습니다. 색칠한 칸은 고점보다 20% 넘게 빠진 뒤 최근 1개월에 반등한 종목 자리입니다.' +
         (Object.keys(holdingValues()).length ? ' 점 크기는 내 보유 금액입니다.' : '') + '</div><div class="qd-wrap"></div></div>' +
         (fearGreed ? '<div class="vis-panel vis-wide" id="vis-fg"><h4>시장 심리 (CNN 공포·탐욕지수)</h4><div class="fg-wrap"></div></div>' : '') + '</div>';
       drawSized();
