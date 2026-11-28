@@ -5812,9 +5812,9 @@
     "seen": "2026-11-25"
   },
   "Musk Will Give Every U.S. Child a SpaceX Share “Every Year.” That’s About $9 Billion a Year at Today’s Price": {
-    "ko": "머스크는 모든 미국 어린이에게 “매년” SpaceX 주식을 제공할 것입니다. 현재 가격으로 환산하면 연간 약 90억 달러에 달합니다.",
     "seen": "2026-11-28",
-    "fix": 1
+    "fix": 1,
+    "ko": "머스크는 모든 미국 어린이에게 “매년” SpaceX 주식을 제공할 것입니다. 현재 가격으로 환산하면 연간 약 90억 달러에 달합니다."
   },
   "My Current View Of The SP 500 Index: October 2026 Edition (SPY)": {
     "ko": "SP 500 지수에 대한 나의 현재 견해: 2026년 10월판(SPY)",
@@ -10138,6 +10138,10 @@
   },
   "SpaceX Stock Rises: What's Going On?": {
     "ko": "SpaceX 주가 상승: 무슨 일이 일어나고 있나요?",
+    "seen": "2026-11-28"
+  },
+  "SpaceX Stock Surges on AI Satellite Approval and Trump Accounts Plan": {
+    "ko": "AI 위성 승인 및 트럼프 계정 계획으로 SpaceX 주가 급등",
     "seen": "2026-11-28"
   },
   "SpaceX vs. Nvidia: The Best AI Stock to Buy Now": {
