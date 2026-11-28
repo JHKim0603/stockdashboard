@@ -183,7 +183,7 @@ function Import-TranslationCache {
     try {
         $raw = Get-Content -Path $translationCachePath -Raw -Encoding UTF8 | ConvertFrom-Json
         foreach ($p in $raw.PSObject.Properties) {
-            $cache[$p.Name] = [PSCustomObject]@{ ko = $p.Value.ko; seen = $p.Value.seen }
+            $cache[$p.Name] = [PSCustomObject]@{ ko = $p.Value.ko; seen = $p.Value.seen; fix = $p.Value.fix }
         }
     } catch {
         Write-Warning "번역 캐시를 읽지 못해 빈 캐시로 시작합니다: $($_.Exception.Message)"
@@ -198,7 +198,7 @@ function Export-TranslationCache {
     $out = [ordered]@{}
     foreach ($k in ($cache.Keys | Sort-Object)) {
         $v = $cache[$k]
-        if ($v.ko -and $v.seen -ge $cutoff) { $out[$k] = @{ ko = $v.ko; seen = $v.seen } }
+        if ($v.ko -and $v.seen -ge $cutoff) { $out[$k] = if ($v.fix) { @{ ko = $v.ko; seen = $v.seen; fix = 1 } } else { @{ ko = $v.ko; seen = $v.seen } } }
     }
     $json = ConvertTo-Json -InputObject $out -Depth 4
     [System.IO.File]::WriteAllText($translationCachePath, $json, (New-Object System.Text.UTF8Encoding $false))
@@ -242,6 +242,37 @@ function Invoke-TranslationBatch {
         Start-Sleep -Milliseconds 700
     }
     $done
+}
+
+# 번역기가 주식 기사의 'shares'(주식)를 동사 '공유하다'로 읽는 경우가 있다. 'Palantir shares technical analysis' → '…는 기술적 분석을
+# 공유합니다', 'a SpaceX Share' → 'SpaceX 공유'(2026-11-28 캐시 3,071건 중 5건). 대부분은 '주가'·'주식'·'주'로 잘 옮기므로 모든 제목을
+# 바꾸지 않는다. 번역에 '공유'가 나왔고 'shares'가 그 종목 이름이나 종목 코드 바로 뒤에 붙은 제목만, 그 'shares'를 'stock'으로 바꿔
+# 한 번 더 번역한다. 'Jensen Huang shares vision'(사람 뒤), 'to share data', 'Nvidia shares its plan'(뒤에 목적어)은 동사라 그대로 둔다.
+# 다시 번역한 항목은 fix 표시를 남겨 다음 실행에서 또 묻지 않는다.
+function Get-ShareNounPattern {
+    param([string]$symbol)
+    $cfg = @($tickers | Where-Object { $_.Symbol -eq $symbol })[0]
+    $words = @((([string]$cfg.NewsQuery) + " " + $symbol) -split '[^A-Za-z0-9&]+' |
+        Where-Object { $_.Length -ge 2 -and $_ -notmatch '^(?i:stock|index|etf)$' } | Select-Object -Unique | ForEach-Object { [regex]::Escape($_) })
+    if (-not $words.Count) { return $null }
+    '(?i)(?<=\b(?:' + ($words -join '|') + ')\)?\s+)shares?\b(?!\s+(?:tokens?|its|his|her|their|our|how|what|why|plans?|vision|views|details|updates?|insights|thoughts|data)\b)'
+}
+function Repair-ShareTranslations {
+    param($pairs, $cache, $today)
+    $bad = @($pairs | Where-Object { $cache.ContainsKey($_.title) -and -not $cache[$_.title].fix -and ($cache[$_.title].ko -match '공유') -and ($_.title -match $_.pat) } |
+        Sort-Object title -Unique | Select-Object -First 10)
+    if ($bad.Count -eq 0) { return 0 }
+    $send = @($bad | ForEach-Object { [regex]::Replace($_.title, $_.pat, 'stock') })
+    $res = Get-KoreanTranslation ($send -join "`n")
+    if (-not $res) { return 0 }
+    $lines = @($res -split "`r?`n")
+    if ($lines.Count -ne $bad.Count) { Write-Warning "다시 번역 줄 수 불일치 ($($lines.Count)/$($bad.Count)) — 처음 번역을 그대로 둡니다."; return 0 }
+    $n = 0
+    for ($j = 0; $j -lt $bad.Count; $j++) {
+        $ko = $lines[$j].Trim()
+        if ($ko) { $cache[$bad[$j].title] = [PSCustomObject]@{ ko = $ko; seen = $today; fix = 1 }; $n++ }
+    }
+    $n
 }
 
 # 호재/악재 판별 키워드. 기사 제목만 보고 판단하는 단순 규칙 기반 분류라 100% 정확하지 않음 —
@@ -831,6 +862,20 @@ function Get-StockSnapshot {
     $rangeHigh = if ($meta.fiftyTwoWeekHigh -and $meta.fiftyTwoWeekHigh -gt 0) { $meta.fiftyTwoWeekHigh } else { ($lastYear | Measure-Object -Maximum).Maximum }
     $rangeLow  = if ($meta.fiftyTwoWeekLow  -and $meta.fiftyTwoWeekLow  -gt 0) { $meta.fiftyTwoWeekLow }  else { ($lastYear | Measure-Object -Minimum).Minimum }
 
+    # 상장일. 받은 2년치 일봉이 상장 첫날부터 시작하는 종목(샌디스크, 스페이스X처럼 늦게 상장한 종목)만 남긴다.
+    # '최근 2년 중'처럼 자료 기간으로 말하는 문장을 '상장 뒤'로 바꾼다. 상장한 지 1년이 안 된 종목은 '52주 고점'이 곧 상장 뒤 고점이라
+    # 종목 코드 줄에 상장일을 적는다(2026-11-28 스페이스X, 2026-06-12 상장).
+    $listed = $null
+    if ($meta.firstTradeDate) {
+        $ftd = ConvertTo-ExchangeDate ([long]$meta.firstTradeDate)
+        if ($ftd -ge $fullDates[0]) { $listed = $ftd }
+    }
+    $tickerTxt = "$($cfg.Symbol) · $($cfg.MarketLabel)"
+    if ($listed -and $listed -gt $yearAgo) {
+        $ld = [datetime]::ParseExact($listed, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+        $tickerTxt += " · $($ld.Year)년 $($ld.Month)월 상장"
+    }
+
     # trailing-20-session stats for the auto-summary sentence (independent of the chart's own zoom range)
     $recent = $pairs | Select-Object -Last 20
     $rSeries = @($recent.Close)
@@ -880,7 +925,8 @@ function Get-StockSnapshot {
     [PSCustomObject]@{
         name      = $name
         symbol    = $cfg.Symbol
-        ticker    = "$($cfg.Symbol) · $($cfg.MarketLabel)"
+        ticker    = $tickerTxt
+        listed    = $listed
         market    = $market
         currency  = $currency
         pageUrl   = $pageUrl
@@ -1300,6 +1346,12 @@ function Resolve-NewsTranslations {
     $missing = @($titles | Where-Object { -not $cache.ContainsKey($_) })
     $fetched = 0
     if ($missing.Count -gt 0) { $fetched = Invoke-TranslationBatch -texts $missing -cache $cache -today $today }
+    $sharePairs = @(foreach ($s in $stocks) {
+        $pat = Get-ShareNounPattern $s.symbol
+        if ($pat) { foreach ($n in @($s.news)) { if ($n.needsKo) { [PSCustomObject]@{ title = $n.title; pat = $pat } } } }
+    })
+    $repaired = Repair-ShareTranslations -pairs $sharePairs -cache $cache -today $today
+    if ($repaired) { Write-Host "  'shares'를 '공유'로 옮긴 제목 $repaired 건을 다시 번역했습니다." }
 
     $applied = 0
     foreach ($n in $items) {
@@ -1938,7 +1990,8 @@ foreach ($st in $stocks) {
 
 # 오늘 움직임의 맥락. 증권 시황 기사처럼 크기를 말로 쓰고("평소 하루 움직임의 9배", 급등·급락), 언제 이후인지
 # ("2024년 8월 이후 가장 큰 하루 하락", "2025년 4월 이후 가장 낮은 가격"), 며칠째인지("5거래일 연속 하락")를 붙인다.
-# 자료는 카드와 같은 2년치 일봉이다. 그래서 기록 전체에서 처음이면 '최근 2년 중'이라고 적는다.
+# 자료는 카드와 같은 2년치 일봉이다. 그래서 기록 전체에서 처음이면 '최근 2년 중'이라고 적는다. 늦게 상장해 자료가 상장 첫날부터인
+# 종목은 '상장 뒤'라고 적는다(상장 5개월 된 스페이스X에 '최근 1년 중'은 틀린 말이다).
 function Get-MoveContext {
     param($st)
     $ci = [Globalization.CultureInfo]::InvariantCulture
@@ -1951,6 +2004,7 @@ function Get-MoveContext {
     $thrD = if ($st.perf -and $st.perf.thr -and $st.perf.thr.d1) { [double]$st.perf.thr.d1 } else { $null }
     $ratio = if ($thrD) { [math]::Round([math]::Abs($today) / $thrD, 1) } else { $null }
     $yrs = [math]::Max(1, [int][math]::Round(($ds[-1] - $ds[0]).TotalDays / 365))
+    $span = if ($st.listed) { "상장 뒤" } else { "최근 ${yrs}년 중" }
     # 하루 변화가 오늘만큼 컸던 가장 최근 날(평소의 2배 이상일 때만 본다)
     $dayRec = ""
     if ($null -ne $ratio -and $ratio -ge 2) {
@@ -1960,7 +2014,7 @@ function Get-MoveContext {
             $c = & $chgAt $i
             if (($today -lt 0 -and $c -le $today) -or ($today -ge 0 -and $c -ge $today)) { $j = $i; break }
         }
-        if ($j -lt 0) { $dayRec = "최근 ${yrs}년 중 가장 큰 하루 ${kind}입니다" }
+        if ($j -lt 0) { $dayRec = "$span 가장 큰 하루 ${kind}입니다" }
         elseif (($ds[-1] - $ds[$j]).TotalDays -ge 90) { $dayRec = "$($ds[$j].Year)년 $($ds[$j].Month)월 이후 가장 큰 하루 ${kind}입니다" }
     }
     # 며칠째 같은 방향인지
@@ -1996,7 +2050,7 @@ function Get-MoveContext {
         $word = if ($pd -eq "high") { "높은" } else { "낮은" }
         $lvl = if ($exact) { "가장 $word 가격입니다" } else { "가장 $word 수준입니다" }
         if ($j -lt 0) {
-            if (($ds[-1] - $ds[0]).TotalDays -ge 365) { $priceSince = [PSCustomObject]@{ dir = $pd; text = "최근 ${yrs}년 중 $lvl"; far = $true }; break }
+            if (($ds[-1] - $ds[0]).TotalDays -ge 365) { $priceSince = [PSCustomObject]@{ dir = $pd; text = "$span $lvl"; far = $true }; break }
         } elseif (($ds[-1] - $ds[$j]).TotalDays -ge 180) {
             $priceSince = [PSCustomObject]@{ dir = $pd; text = "$($ds[$j].Year)년 $($ds[$j].Month)월 이후 $lvl"; far = (($ds[-1] - $ds[$j]).TotalDays -ge 365) }
             break
@@ -2589,6 +2643,8 @@ if ($prioList.Count -ge 3) {
 #   단계가 0으로 돌아오면 구간이 끝난다(끝난 날을 적는다). 끝난 뒤 5일 안에 다시 들면 같은 구간으로 이어 본다(오락가락 방지).
 #   이평선 매수 기준: 켜진 날 한 줄. 같은 종목에서 20일 안에 다시 켜지면 새로 적지 않는다.
 #   기록을 처음 시작한 날 이미 단계 안에 있던 종목은 atStart = true 로 표시한다(신호 첫날 가격이 아니다).
+#   관심 종목에 새로 넣은 날 이미 단계 안에 있던 종목도 같다(2026-11-28 스페이스X). 기록이 없는 종목이 오늘 처음 단계에 든 것이
+#   아니면(어제도 단계 안) 새로 넣은 종목으로 본다.
 $signalLogPath = Join-Path $PSScriptRoot "signal-log.json"
 $sigLog = $null
 if (Test-Path $signalLogPath) {
@@ -2611,6 +2667,7 @@ foreach ($s in $stocks) {
     $bPx = if ($bSt) { [double]@($bSt.series)[-1] } else { $null }
     $lvl = if ($s.dip) { [int]$s.dip.level } else { 0 }
     $ep = $episodes[[string]$s.symbol]
+    $newHere = (-not $ep) -and $lvl -ge 1 -and -not $s.dip.firstDay
     if ($lvl -ge 1) {
         $reopen = $ep -and $ep.end -and ((([DateTime]$day) - ([DateTime]$ep.end)).TotalDays -le 5)
         if (-not $ep -or ($ep.end -and -not $reopen)) {
@@ -2618,7 +2675,7 @@ foreach ($s in $stocks) {
         } elseif ($reopen) { $ep.end = $null }
         if ($lvl -gt [int]$ep.maxLevel) {
             [void]$entries.Add([PSCustomObject]@{ symbol = $s.symbol; name = $s.name; kind = $s.kind; signal = [string]$s.dip.label; level = $lvl
-                date = $day; price = $px; currency = $s.currency; bench = $bSym; benchPrice = $bPx; atStart = [bool]$firstLog })
+                date = $day; price = $px; currency = $s.currency; bench = $bSym; benchPrice = $bPx; atStart = [bool]($firstLog -or $newHere) })
             $ep.maxLevel = $lvl
             Write-Host "  신호 기록: $($s.name) $($s.dip.label) $day $px"
         }
@@ -2632,7 +2689,7 @@ foreach ($s in $stocks) {
         $recent = @($entries | Where-Object { $_.symbol -eq $s.symbol -and $_.signal -like "이평선*" -and ((([DateTime]$day) - ([DateTime]$_.date)).TotalDays -lt 20) })
         if (-not $recent.Count) {
             [void]$entries.Add([PSCustomObject]@{ symbol = $s.symbol; name = $s.name; kind = $s.kind; signal = "이평선 매수 기준($($hit[0].window)일선)"; level = 0
-                date = $day; price = $px; currency = $s.currency; bench = $bSym; benchPrice = $bPx; atStart = $false })
+                date = $day; price = $px; currency = $s.currency; bench = $bSym; benchPrice = $bPx; atStart = [bool]$newHere })
             Write-Host "  신호 기록: $($s.name) 이평선 $($hit[0].window)일선 $day $px"
         }
     }

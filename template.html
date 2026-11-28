@@ -886,6 +886,7 @@
   }
   .card-head .ticker {
     font-size: 12px;
+    word-break: keep-all;   /* 'SPCX · NASDAQ · 2026년 6월 상장'이 좁은 카드에서 '상 / 장'으로 끊기지 않게 */
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-muted);
@@ -4867,7 +4868,7 @@
           '<text x="' + (W - R + 6) + '" y="' + (cy + 4).toFixed(1) + '" class="qd-ax">' + fmtPct(r.ret) + '</text>';
       });
       return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="신호별 지금까지의 수익률">' + g + '</svg>' +
-        '<div class="hd-note">막대는 신호가 켜진 날부터 지금까지의 수익률이고(옅은 막대는 기록 시작일에 이미 켜져 있던 신호), 막대 위 짧은 세로선은 같은 기간 시장의 수익률입니다(국내 종목은 코스피, 미국 종목은 나스닥). ' +
+        '<div class="hd-note">막대는 신호가 켜진 날부터 지금까지의 수익률이고(옅은 막대는 기록을 시작한 날이나 종목을 새로 넣은 날 이미 켜져 있던 신호), 막대 위 짧은 세로선은 같은 기간 시장의 수익률입니다(국내 종목은 코스피, 미국 종목은 나스닥). ' +
         '기록이 20거래일 쌓이면 날짜별 수익률 선 그래프로 바뀝니다.</div>';
     };
     const chartHtml = width => {
@@ -4900,7 +4901,7 @@
       if (la !== null) g += '<text x="' + (X(lastK) + 6).toFixed(1) + '" y="' + (Y(la) - 6).toFixed(1) + '" class="qd-lb">' + nAt + '건 평균 ' + fmtPct(la) + '</text>';
       if (lm !== null && lm !== undefined) g += '<text x="' + (X(lastK) + 6).toFixed(1) + '" y="' + (Y(lm) + (Math.abs(Y(lm) - Y(la || 0)) < 14 ? 16 : 4)).toFixed(1) + '" class="qd-ax">시장 ' + fmtPct(lm) + '</text>';
       return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="신호가 켜진 뒤 날짜별 수익률">' + g + '</svg>' +
-        '<div class="hd-note">가는 선은 신호마다의 수익률(점선은 기록 시작일에 이미 켜져 있던 신호), 굵은 청록 선은 평균, 회색 점선은 같은 날짜들의 시장(코스피, 나스닥) 평균입니다. 평균은 그날까지 온 신호가 ' + need + '건 넘을 때까지만 잇습니다.</div>';
+        '<div class="hd-note">가는 선은 신호마다의 수익률(점선은 기록을 시작한 날이나 종목을 새로 넣은 날 이미 켜져 있던 신호), 굵은 청록 선은 평균, 회색 점선은 같은 날짜들의 시장(코스피, 나스닥) 평균입니다. 평균은 그날까지 온 신호가 ' + need + '건 넘을 때까지만 잇습니다.</div>';
     };
     host.innerHTML = '<h3>신호 실전 기록</h3>' +
       '<div class="sl-sum">' + esc(md(log.started)) + '부터 기록했습니다. ' +

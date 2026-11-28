@@ -23,7 +23,8 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   a "최근 이슈" news list (real article titles/links, not AI-written summaries), 실적/목표주가
   popups. See "What's on the page" below.
 - `translation-cache.json` — English headline → Korean translations, committed back by the
-  workflow so each run doesn't re-translate (and hit 429s) from an empty cache.
+  workflow so each run doesn't re-translate (and hit 429s) from an empty cache. `fix: 1` 은 'shares'를 '공유'로
+  옮겨 한 번 더 번역한 항목입니다(다음 실행에서 다시 묻지 않음).
 - `earnings-cache.json` — next earnings dates as fetched by the day's (KST) first run; later runs
   that day reuse them instead of asking Nasdaq again. Committed back by the workflow.
 - `signal-log.json` — 신호 실전 기록부(신호가 켜진 날짜·종가·시장 지수 값, 분할 단계 구간). 스크립트가 쓰고 workflow 가 커밋합니다.
@@ -323,6 +324,21 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
     (분양권 잔금처럼 쓸 곳이 정해진 돈은 빼고 넣는 칸).
   - 점검: 가상 보유(삼성전자·엔비디아·QLD)로 평가액, 직전 거래일 대비, 누적 손익, 환율 몫, 더 살 금액을 손으로 검산했습니다.
     1440·390px, 밝은·어두운 화면 JS 오류 0건, 가로 넘침 없음.
+- **스페이스X 추가 (2026-11-28)**: 사용자 요청("주식대시보드에 스페이스엑스 종목 추가해줘"). SpaceX 는 2026-02 에 xAI 를 합병했고
+  2026-06-12 나스닥에 상장했습니다(종목 코드 SPCX). 그록과 X 까지 한 회사라 빅테크·AI 묶음에 넣었습니다.
+  - 시세(야후), 분기 실적과 목표주가(네이버 SPCX.O), 다음 실적 발표일(Nasdaq, 2027-01-19 추정)이 모두 받아집니다.
+  - 상장 117거래일이라 20·60일선만 있고 120·180·200일선은 자료가 쌓이면 저절로 나옵니다. 연초 대비·1년 등락은 '–'입니다.
+  - 분할 단계는 다른 개별 종목과 같은 기준(고점 대비 10·20·30%)입니다. 52주 고점 225.64달러가 상장 첫 주 고점이라,
+    넣은 날(11/27 종가 133.59달러, 고점 대비 −40.8%)부터 3단계입니다.
+  - 상장한 지 1년이 안 된 종목은 종목 코드 줄에 'SPCX · NASDAQ · 2026년 6월 상장'처럼 상장 달을 적습니다(이런 종목의 52주 고점은 곧 상장 뒤 고점).
+  - 자료가 상장 첫날부터인 종목(스페이스X, 샌디스크)은 '최근 2년 중 가장 큰 하루 하락' 대신 '상장 뒤 가장 큰 하루 하락'이라고 씁니다.
+    5개월 된 종목에 '최근 1년 중'은 틀린 말이었습니다. 상장일은 야후 `firstTradeDate` 입니다.
+  - 신호 실전 기록부: 새로 넣은 날 이미 단계 안이던 종목은 기록 첫날처럼 '시작일' 신호로 적습니다. 그날 종가는 신호가 처음 켜진 날의 가격이 아니라
+    '새로 켜진 신호' 성적에 섞으면 안 됩니다. 기록부 설명도 '기록을 시작한 날이나 종목을 새로 넣은 날'로 고쳤습니다.
+  - 뉴스 번역: 'a SpaceX Share'를 'SpaceX 공유'로, 'Palantir shares technical analysis'를 '…를 공유합니다'로 옮긴 것처럼, 번역기가
+    주식(shares)을 동사로 읽은 제목이 캐시 3,071건 중 5건 있었습니다. 번역에 '공유'가 있고 'shares'가 그 종목 이름이나 종목 코드 바로 뒤에 붙은
+    제목만 'stock'으로 바꿔 한 번 더 번역합니다. 'Jensen Huang shares vision'(사람 뒤), 'to share data', 'Nvidia shares its plan'(뒤에 목적어)은 그대로 둡니다.
+  - 점검: 메일 없는 시험 실행 두 번(가지), 1440·390px, 밝은·어두운 화면 JS 오류 0건, 가로 넘침 없음. 카드를 펼친 글까지 읽었습니다.
 
 ## Usage
 
@@ -345,6 +361,9 @@ auto-derived from the symbol: `.KS` → KOSPI, `.KQ` → KOSDAQ, `^` prefix → 
 is assumed NASDAQ. Add an explicit `"DisplayName"`, `"NewsQuery"`, `"MarketLabel"`, or
 `"FinanceCode"` in the same entry to override any of those. NYSE tickers need an explicit
 `"FinanceCode": "SYMBOL.N"` since the auto-default assumes NASDAQ (`SYMBOL.O`).
+
+갓 상장한 종목도 그대로 넣으면 됩니다(예: SPCX). 자료가 모자란 이평선과 기간 등락은 빈칸으로 두고, 상장 1년 안이면 카드에 상장 달을 적습니다.
+넣은 날 이미 분할 단계 안이면 신호 실전 기록부에 '시작일' 신호로 남습니다.
 
 ### Price alerts (알림가)
 
