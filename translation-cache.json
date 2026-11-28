@@ -91,6 +91,10 @@
     "ko": "Google이 YouTube를 인수했을 때 GOOGL 주식에 투자한 1,000달러는 이제 가치가 있습니다.",
     "seen": "2026-10-10"
   },
+  "$1,000 invested in Micron (MU) stock 2 months ago is now worth": {
+    "ko": "2개월 전 Micron(MU) 주식에 투자한 1,000달러는 현재 가치가 있습니다.",
+    "seen": "2026-11-28"
+  },
   "$10,000 Invested Equally in Alphabet and Nvidia Could Be Worth This Much by 2030": {
     "ko": "Alphabet과 Nvidia에 동일하게 투자된 10,000달러는 2030년까지 이만큼 가치가 있을 수 있습니다.",
     "seen": "2026-10-13"
@@ -307,6 +311,10 @@
     "ko": "Copeland Capital Management LLC가 구매한 NVIDIA Corporation $NVDA 주식 7,519개",
     "seen": "2026-11-05"
   },
+  "A $500,000 Stake in VOO Lost $41,700 in the S&P 500’s Worst Week Since April 2025. Since 1950, Buying After a 10% Drop Has Returned 15% on Average a Year Later": {
+    "ko": "VOO의 50만 달러 지분은 2025년 4월 이후 S&P 500 지수 최악의 주에 41,700달러 손실을 입었습니다. 1950년 이후 10% 하락 후 매수는 1년 후 평균 15% 수익을 올렸습니다.",
+    "seen": "2026-11-28"
+  },
   "A 60-Year-Old Who Bought 1,000 Micron Shares at $192 Just Lost $138,840. He's Still Up $464,000. Here's What Happens Next.": {
     "ko": "192달러에 마이크론 주식 1,000주를 구입한 60세 남성은 138,840달러를 잃었습니다. 그는 아직 $464,000를 갖고 있습니다. 다음에 일어날 일은 다음과 같습니다.",
     "seen": "2026-11-06"
@@ -418,6 +426,10 @@
   "After selling 600 shares, Sandisk (SNDK) legal chief holds 25,588 shares directly.": {
     "ko": "샌디스크(SNDK) 법률책임자는 600주를 매각한 후 25,588주를 직접 보유하고 있다.",
     "seen": "2026-10-03"
+  },
+  "After the AI Trade Unwinds, US Stocks Are Trapped in a 'Fragile Equilibrium.' Goldman Sachs Says Credit Markets Hold the Key.": {
+    "ko": "AI 거래가 풀린 후 미국 주식은 '취약한 균형'에 갇혀 있습니다. Goldman Sachs는 신용 시장이 열쇠를 쥐고 있다고 말합니다.",
+    "seen": "2026-11-28"
   },
   "After the Nvidia stock crash, here’s what I’m doing in my ISA and SIPP": {
     "ko": "Nvidia 주식 폭락 후 ISA와 SIPP에서 내가 하고 있는 일은 다음과 같습니다.",
@@ -577,7 +589,7 @@
   },
   "Alphabet (GOOGL) Stock Quotes, Company News And Chart Analysis": {
     "ko": "알파벳(GOOGL) 주식 시세, 회사 뉴스 및 차트 분석",
-    "seen": "2026-11-26"
+    "seen": "2026-11-28"
   },
   "Alphabet (GOOGL) Stock Rises 4% as Anthropic IPO Values Google’s Stake at $149B": {
     "ko": "인류애적 IPO가 Google 지분을 1,490억 달러로 평가함에 따라 Alphabet(GOOGL) 주식이 4% 상승했습니다.",
@@ -2179,6 +2191,10 @@
     "ko": "FY27 1분기 - 보도 자료",
     "seen": "2026-11-04"
   },
+  "Gene Munster Admits Focusing On AI Fundamentals Was A Mistake, But Believes Investors Buying NVDA Stock Now Could Be Rewarded": {
+    "ko": "Gene Munster는 AI 기초에 초점을 맞춘 것이 실수였다고 인정하지만 이제 NVDA 주식을 구매하는 투자자가 보상을 받을 수 있다고 믿습니다.",
+    "seen": "2026-11-28"
+  },
   "GF Securities Lowers NAND Price Outlook, Impacting Micron Techno": {
     "ko": "GF 증권, NAND 가격 전망 하향 조정해 마이크론 테크노에 영향",
     "seen": "2026-11-17"
@@ -2322,6 +2338,10 @@
   "GOOGL Stock Ticks Up After Alphabet Picks Jeff Bezos’ Blue Origin to Launch AI Satellites in 2029": {
     "ko": "알파벳이 2029년에 AI 위성을 발사하기 위해 Jeff Bezos의 Blue Origin을 선택한 후 GOOGL 주가 상승",
     "seen": "2026-11-20"
+  },
+  "GOOGL Stock Week Ahead: Levels and Scenarios for November 30 – December 4": {
+    "ko": "앞으로의 GOOGL 주식 주간: 11월 30일~12월 4일의 수준 및 시나리오",
+    "seen": "2026-11-28"
   },
   "GOOGL Stock: 3 Things to Watch in Alphabet’s Q3 Earnings Tomorrow": {
     "ko": "GOOGL 주식: 내일 알파벳의 3분기 실적에서 주목해야 할 3가지",
@@ -8779,6 +8799,10 @@
     "ko": "S&P 500 NTR Daily Risk Control 10% 지수 (USD) TR Today — SP:SPXN10UT 지수 차트",
     "seen": "2026-10-09"
   },
+  "S&P 500 Posts Best Thanksgiving Week Since 2008 With 5.6% Surge": {
+    "ko": "S&P 500 지수, 5.6% 급등으로 2008년 이후 최고의 추수감사절 주간 기록",
+    "seen": "2026-11-28"
+  },
   "S&P 500 Posts Slight Weekly Drop Amid AI Spending Worries": {
     "ko": "S&P 500은 AI 지출 우려로 인해 주간 소폭 하락세를 기록했습니다.",
     "seen": "2026-10-24"
@@ -11150,6 +11174,10 @@
   "US Stocks Are Predicted to Extend Their Historic Rally as Gains Moderate": {
     "ko": "미국 주식은 적당한 상승세를 보이면서 역사적 반등을 확대할 것으로 예상됩니다.",
     "seen": "2026-11-20"
+  },
+  "US stocks close higher": {
+    "ko": "미국 증시는 상승 마감",
+    "seen": "2026-11-28"
   },
   "US stocks close mixed": {
     "ko": "미국 증시는 혼조세로 마감",
