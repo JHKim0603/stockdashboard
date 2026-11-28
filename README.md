@@ -359,6 +359,10 @@ Local stock-summary dashboard. No backend, no build step — just PowerShell + a
   - 숫자 표기: 순위 막대는 표처럼 소수 첫째 자리, 결론 문장과 카드 기간 수익률은 공통 규칙 4(10% 이상 정수, 0.0%는 보합)입니다.
   - 그대로 둔 것: 한눈 요약 타일과 표(타일 색은 그 종목의 평소 등락 폭 대비 크기라 순위 막대와 하는 일이 다름), 메일(공통 파일인 mail_charts.py 를 두 저장소에서 함께 고쳐야 해서 이번에는 화면만).
   - 점검: 기간 7개와 원화 기준에서 결론 문장, 순위, 카드 기간 수익률을 단추를 눌러 뽑아 표 값과 맞춰 봤습니다. 1440·390px, 밝은·어두운 화면 JS 오류 0건, 가로 넘침 없음.
+- **메일 08:00 도착 (2026-11-28)**: 사용자 요청("3개 대시보드는 매일 내가 설정한 이메일로 08시에 도착하게, 시간이 안맞는 것도 개선방안 검토").
+  11/17~28 실제 발송은 11~14시, 이틀은 자정이었습니다. 예약 실행이 4~10시간 늦게 시작하고 '그날 첫 실행이 보낸다'였기 때문입니다.
+  전날 저녁·밤 예약을 더하고, 03:00~07:30 에 시작한 실행은 07:30 까지 기다려 자료를 받은 뒤 08:00:00 에 보냅니다. 07:30 전 실행은 보내지 않습니다.
+  주식 메일은 사용자 결정대로 화~토만 보냅니다(월·일 아침은 금요일 종가 반복). 바깥 예약 서비스(cron-job.org)는 가입과 토큰이 필요해 쓰지 않았습니다.
 - **메일에도 수익률 순위 (2026-11-28)**: 사용자 요청("이어서 해줘", 위 기록에서 메일은 그대로 둔 것을 이어서).
   - 메일 '기간별 등락' 상자 맨 위에 화면 수익률 비교의 기본 화면(3개월)과 같은 결론 줄과 '3개월 수익률 순위' 그림을 넣었습니다.
     결론 줄은 수집 스크립트가 글로 만들어 그림을 못 만든 날에도 나갑니다. 그림은 `mail_charts.py` 가 `<!--MAIL_CHART_RETURNS-->` 자리에 끼웁니다.
@@ -496,6 +500,12 @@ the Actions workflow has the secrets, and CI-only sending is intentional so test
 doesn't spam the inbox.
 
 ### Once a day, four slots
+
+**2026-11-28: the mail now arrives at 08:00 KST (Tue–Sat).** Across 11/18–28 the scheduled runs started 4–10 hours
+late (the 06:14 slot landed 11:11–14:18, the 13:43 slot after midnight), so "first run sends" meant mail at noon or
+midnight. Evening and night slots (KST 16:23, 18:41, 20:23, 22:17, 00:23, 02:13) now aim to land between 03:00 and
+07:30; such a run waits until 07:30 (`Hold early runs for the 08:00 mail`), builds, and holds the mail until 08:00:00
+(`Wait until 08:00 KST`). Runs starting before 07:30 never mail. The morning slots below remain as fallbacks.
 
 The schedule has four morning slots (KST 08:11 / 09:37 / 11:19 / 13:43, Tue–Sat) because GitHub
 drops or delays scheduled runs under load — this repo's runs were drifting 2–5 hours. The first

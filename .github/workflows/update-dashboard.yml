@@ -22,6 +22,14 @@ on:
     # 것과 같은 방법이다. 06:14 보다 더 당기지 않는 이유: 미국 정규장 마감이 겨울(EST) 기준
     # KST 06:00 이라, 그보다 이른 슬롯이 제시간에 돌면 전날 종가로 메일이 나가고 마커 때문에
     # 그날은 다시 보내지 않는다.
+    # 2026-11-28: 08시 메일을 위해 전날 저녁·밤 예약을 더했다(아래 'Hold early runs for the 08:00 mail' 설명).
+    # 이 예약들은 4~10시간 늦게 KST 03:00~07:30 사이에 시작하기를 노린다. UTC 월~금 = KST 월~금 저녁, 화~토 새벽.
+    - cron: '23 7 * * 1-5'    # KST 16:23 (월~금)
+    - cron: '41 9 * * 1-5'    # KST 18:41 (월~금)
+    - cron: '23 11 * * 1-5'   # KST 20:23 (월~금)
+    - cron: '17 13 * * 1-5'   # KST 22:17 (월~금)
+    - cron: '23 15 * * 1-5'   # KST 00:23 (화~토)
+    - cron: '13 17 * * 1-5'   # KST 02:13 (화~토)
     - cron: '14 21 * * 1-5'   # KST 06:14 (화~토)
     - cron: '07 22 * * 1-5'   # KST 07:07 (화~토)
     - cron: '11 23 * * 1-5'   # KST 08:11 (화~토)
@@ -55,6 +63,28 @@ jobs:
       CI: true
     steps:
       - uses: actions/checkout@v7
+
+      # 08시 메일(2026-11-28, 사용자 요청: "3개 대시보드는 매일 내가 설정한 이메일로 08시에 도착하게").
+      # GitHub 예약 실행은 4~10시간 늦게 시작한다(11/18~28 실측: 06:14 예약 → 11~14시, 13:43 예약 → 다음날 0시대).
+      # 그래서 전날 저녁·밤에도 예약을 걸어 두고, KST 03:00~07:30 사이에 시작한 실행은 07:30 까지 기다렸다가 자료를 받는다
+      # (03:00 보다 일찍부터 기다리면 수집·08:00 대기까지 합쳐 실행 제한 6시간에 걸린다).
+      # 메일은 07:30 이후에만 만들고, 08:00 전이면 08:00:00 까지 기다렸다 보낸다(아래 'Wait until 08:00 KST').
+      # 07:30 전에 시작한 실행은 메일을 보내지 않는다(자정 발송 방지). 오늘 이미 보냈으면 기다리지 않는다.
+      - name: Hold early runs for the 08:00 mail
+        if: github.event_name == 'schedule'
+        run: |
+          now=$(date +%s); d=$(TZ=Asia/Seoul date +%F)
+          t0=$(TZ=Asia/Seoul date -d "$d 03:00" +%s); t1=$(TZ=Asia/Seoul date -d "$d 07:30" +%s)
+          last=$(cat .last-digest 2>/dev/null | tr -d '[:space:]')
+          dow=$(TZ=Asia/Seoul date +%u)
+          if [[ "$dow" == "1" || "$dow" == "7" ]]; then echo "월·일 아침은 메일이 없어 기다리지 않음"; exit 0; fi
+          if [[ "$last" != "$d" && $now -ge $t0 && $now -lt $t1 ]]; then
+            echo "KST $(TZ=Asia/Seoul date +%H:%M) 시작: 07:30 까지 $(( (t1 - now) / 60 ))분 기다린 뒤 자료를 받습니다"
+            sleep $(( t1 - now ))
+          else
+            echo "기다리지 않음(KST $(TZ=Asia/Seoul date +%H:%M), 마지막 발송 ${last:-없음})"
+          fi
+
 
       # news-filter.ps1 은 stockdashboard·work-dashboard 가 똑같이 쓰는 뉴스 제목 거르기다. 한쪽만 고치면 다른 쪽과
       # 어긋나므로 실행 때마다 work-dashboard 의 같은 파일과 비교해 다르면 경고만 남긴다(배포는 막지 않는다).
@@ -108,9 +138,16 @@ jobs:
             exit 0
           fi
           last=$(cat .last-digest 2>/dev/null | tr -d '[:space:]')
+          hm=$(TZ=Asia/Seoul date +%H%M); dow=$(TZ=Asia/Seoul date +%u)
           if [[ "$last" == "$today" ]]; then
             echo "send=false" >> "$GITHUB_OUTPUT"
             echo "already delivered for $today KST - skipping mail"
+          elif [[ "$dow" == "1" || "$dow" == "7" ]]; then
+            echo "send=false" >> "$GITHUB_OUTPUT"
+            echo "월·일 아침은 보내지 않습니다(미국장이 쉰 뒤라 금요일 종가가 반복됨, 사용자 결정 2026-11-28)"
+          elif (( 10#$hm < 730 )); then
+            echo "send=false" >> "$GITHUB_OUTPUT"
+            echo "KST $hm: 07:30 전 실행은 보내지 않습니다(아침 메일은 08:00, 자정 발송 방지)"
           else
             echo "send=true" >> "$GITHUB_OUTPUT"
             echo "last delivery was '${last:-never}', today is $today KST - sending"
@@ -124,6 +161,13 @@ jobs:
         run: |
           sudo apt-get update -qq > /dev/null && sudo apt-get install -y -qq fonts-nanum > /dev/null && fc-cache -f > /dev/null
           python3 mail_charts.py stock
+
+      # 08:00 전에 메일이 준비되면 08:00:00 까지 기다렸다 보낸다. 지금 한 통 보내기(force_email)는 기다리지 않는다.
+      - name: Wait until 08:00 KST
+        if: steps.mailgate.outputs.send == 'true' && inputs.force_email != true
+        run: |
+          now=$(date +%s); t=$(TZ=Asia/Seoul date -d "$(TZ=Asia/Seoul date +%F) 08:00" +%s)
+          if (( now < t )); then echo "08:00 까지 $(( t - now ))초 기다립니다"; sleep $(( t - now )); else echo "08:00 이 지나 바로 보냅니다"; fi
 
       # Non-blocking. 배포된 페이지가 이 실행의 주 산출물이라, 메일 실패(만료된 Gmail 앱
       # 비밀번호, SMTP 장애)가 아래 Pages 배포까지 막으면 안 된다. 예전에는 막았다 —
