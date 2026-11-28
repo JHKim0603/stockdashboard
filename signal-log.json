@@ -277,27 +277,7 @@
     }
   ],
   "episodes": {
-    "GOOGL": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "^IXIC": {
-      "start": "2026-11-16",
-      "maxLevel": 1,
-      "end": null
-    },
     "NVDA": {
-      "start": "2026-11-06",
-      "maxLevel": 3,
-      "end": null
-    },
-    "BTC-KRW": {
-      "start": "2026-11-08",
-      "maxLevel": 2,
-      "end": null
-    },
-    "PLTR": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -307,7 +287,7 @@
       "maxLevel": 3,
       "end": null
     },
-    "ETH-USD": {
+    "BTC-KRW": {
       "start": "2026-11-08",
       "maxLevel": 2,
       "end": null
@@ -322,12 +302,12 @@
       "maxLevel": 3,
       "end": null
     },
-    "^KS11": {
+    "PLTR": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
-    "SNDK": {
+    "MU": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
@@ -337,12 +317,32 @@
       "maxLevel": 1,
       "end": "2026-11-25"
     },
-    "MU": {
+    "ETH-USD": {
+      "start": "2026-11-08",
+      "maxLevel": 2,
+      "end": null
+    },
+    "^KS11": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
     },
+    "^IXIC": {
+      "start": "2026-11-16",
+      "maxLevel": 1,
+      "end": null
+    },
     "QLD": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "GOOGL": {
+      "start": "2026-11-06",
+      "maxLevel": 3,
+      "end": null
+    },
+    "SNDK": {
       "start": "2026-11-06",
       "maxLevel": 3,
       "end": null
