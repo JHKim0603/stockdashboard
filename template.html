@@ -678,6 +678,18 @@
   .hd-bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; color: var(--ink-secondary); margin: 8px 0; }
   .hd-bar button { font: inherit; font-size: 12.5px; padding: 3px 9px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--ink-secondary); cursor: pointer; }
   .hd-note { font-size: 12px; color: var(--ink-muted); line-height: 1.55; margin-top: 6px; }
+  /* 맨 위 '내 계좌' 한 줄(2026-11-28): 보유를 넣은 이 브라우저에서만 보인다. 공개 페이지에는 아무것도 남지 않는다 */
+  .acct { max-width: var(--page-max); margin: 0 auto 12px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 12px; padding: 10px 16px; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; color: var(--ink-secondary); }
+  .acct[hidden] { display: none; }
+  .acct-h, .acct-s { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
+  .acct-h .t { font-size: 13px; font-weight: 700; color: var(--ink-primary); }
+  .acct-h .t small { font-size: 12px; font-weight: 500; color: var(--ink-muted); margin-left: 6px; }
+  .acct-h .v { font-size: 19px; font-weight: 750; color: var(--ink-primary); font-variant-numeric: tabular-nums; }
+  .acct b { font-variant-numeric: tabular-nums; color: var(--ink-primary); } .acct b.up { color: var(--rise); } .acct b.down { color: var(--fall); }
+  .acct small { font-size: 12px; color: var(--ink-muted); }
+  .acct-s { font-size: 13px; }
+  .acct-go { margin-left: auto; font: inherit; font-size: 12.5px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--ink-secondary); cursor: pointer; }
 
   /* 그림으로 보기(매수 단계 지도, 하락폭과 최근 흐름, 시장 심리) */
   .vis-box { max-width: var(--page-max); margin: 0 auto 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px 12px; scroll-margin-top: 64px; }
@@ -1520,6 +1532,7 @@
   </div>
 
   <nav class="jump-nav" id="jump-nav" aria-label="구역 바로가기"></nav>
+  <div class="acct" id="acct" hidden></div>
   <div class="mkt-strip" id="mkt-strip" hidden></div>
   <div class="overview" id="overview" hidden></div>
   <div class="vis-box" id="visual" hidden></div>
@@ -4916,7 +4929,8 @@
     const box = document.getElementById("holdings"), body = document.getElementById("holdBody");
     if (!box || !body) return;
     const STORE = "stock-holdings-v1";
-    const state = { alloc: [30, 30, 40], rows: {} };
+    // cash: 투자 가능 현금(잔금처럼 쓸 곳이 정해진 돈을 뺀 금액), fxBuy: 달러 자산 평균 매수 환율. 둘 다 넣지 않아도 된다(2026-11-28).
+    const state = { alloc: [30, 30, 40], rows: {}, cash: "", fxBuy: "" };
     try { const s = JSON.parse(localStorage.getItem(STORE) || "null"); if (s && typeof s === "object") Object.assign(state, s); } catch (e) { /* 빈 상태로 시작 */ }
     // 저장할 때 다른 그림(하락폭과 최근 흐름의 점 크기, 보유 금액 지도)도 다시 그리게 알린다.
     const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* 저장 못 해도 화면은 그대로 */ } document.dispatchEvent(new CustomEvent("holdings-change")); };
@@ -4992,6 +5006,10 @@
       body.innerHTML = charts +
         '<div class="hd-bar"><span>단계별로 나눠 살 비율(%)</span>' + [0, 1, 2].map(allocIn).join(" ") +
         '<button type="button" data-hd="export">내보내기(복사)</button><button type="button" data-hd="import">가져오기</button></div>' +
+        '<div class="hd-bar"><label>투자 가능 현금(원) <input class="hd-in wide" data-g="cash" inputmode="decimal" autocomplete="off" value="' + (num(state.cash) ? esc(String(num(state.cash))) : "") + '" placeholder="예: 5000000" aria-label="투자 가능 현금"></label>' +
+        '<span class="sl-start">잔금처럼 쓸 곳이 정해진 돈을 뺀 금액입니다. 맨 위 내 계좌 줄에서 지금 단계까지 더 살 금액과 견줍니다.</span>' +
+        '<label>달러 자산 평균 매수 환율(원) <input class="hd-in" data-g="fxBuy" inputmode="decimal" autocomplete="off" value="' + (num(state.fxBuy) ? esc(String(num(state.fxBuy))) : "") + '" placeholder="예: 1400" aria-label="달러 자산 평균 매수 환율"></label>' +
+        '<span class="sl-start">넣으면 원화 손익을 주가 몫과 환율 몫으로 나눕니다.</span></div>' +
         '<div class="hd-wrap"><table class="hd-table"><tr><th>종목</th><th>수량</th><th>평단</th><th>지금</th><th>평가손익</th><th>평가금액</th><th>비중</th>' +
         '<th>종목 예산(원)</th><th>지금 단계</th><th>단계까지 더 살 금액</th><th>다음 단계 가격</th></tr>' +
         out.map(r => '<tr><td>' + esc(r.s.name) + '</td><td>' + inp(r.s.symbol, "qty", r.q) + '</td><td>' + inp(r.s.symbol, "avg", r.avg) + '</td>' +
@@ -5006,9 +5024,52 @@
         fmtNum(usdKrw || 0, "₩") + '원)로 원화 평가했습니다. "단계까지 더 살 금액"은 종목 예산 × 지금 단계까지의 비율 합에서 이미 산 금액(수량 × 평단)을 뺀 값입니다. ' +
         '다음 단계 가격은 52주 고점 대비 하락 기준입니다(이평선 기준은 카드 참고).</div>';
     }
+    // ---- 맨 위 '내 계좌' 한 줄(2026-11-28) ----
+    // 사용자 요청: 내 투자 상황에 맞게. 관심 종목이 아니라 내 계좌가 오늘 얼마나 움직였는지, 누적 손익과 그중 환율 몫,
+    // 지금 단계까지 더 살 금액이 투자 가능 현금 안인지를 한 줄로 먼저 보인다. 보유를 넣지 않은 브라우저(공개 화면)에서는 숨는다.
+    const wonK = v => { const k = koWon(Math.abs(v)); return (v < 0 ? "−" : "") + k + (/[만억]$/.test(k) ? " 원" : "원"); };
+    const sgW = v => (v > 0 ? "+" : "") + wonK(v);
+    const pr = v => (v > 0 ? "+" : v < 0 ? "−" : "") + (Math.abs(v) >= 9.95 ? String(Math.round(Math.abs(v))) : Math.abs(v).toFixed(1)) + "%";
+    function renderAcct() {
+      const el = document.getElementById("acct"); if (!el) return;
+      const rows = list.map(s => { const r = state.rows[s.symbol] || {}, n = s.series.length;
+        return { s, q: num(r.qty), avg: num(r.avg), last: s.series[n - 1], prev: n > 1 ? s.series[n - 2] : null, usd: s.currency === "$" }; }).filter(r => r.q > 0);
+      if (!rows.length) { el.hidden = true; el.innerHTML = ""; return; }
+      const fxNow = usdKrw || 0, fxBuy = num(state.fxBuy), cash = num(state.cash);
+      const value = rows.reduce((a, r) => a + r.q * r.last * fx(r.s), 0);
+      const today = rows.reduce((a, r) => a + (r.prev ? r.q * (r.last - r.prev) * fx(r.s) : 0), 0);
+      const withAvg = rows.filter(r => r.avg > 0);
+      const valA = withAvg.reduce((a, r) => a + r.q * r.last * fx(r.s), 0);
+      const costNow = withAvg.reduce((a, r) => a + r.q * r.avg * fx(r.s), 0);   // 달러 종목 원가를 오늘 환율로(환율 효과를 뺀 값)
+      const usdCost = withAvg.filter(r => r.usd).reduce((a, r) => a + r.q * r.avg, 0);
+      const useFx = fxBuy > 0 && usdCost > 0 && fxNow > 0;
+      const costKrw = useFx ? costNow - usdCost * fxNow + usdCost * fxBuy : costNow;
+      const pl = valA - costKrw, plPct = costKrw ? pl / costKrw * 100 : null, fxPart = useFx ? usdCost * (fxNow - fxBuy) : null;
+      const todayPct = value - today ? today / (value - today) * 100 : null;
+      const more = calc().more;
+      const h = ['<span class="t">내 계좌<small>이 브라우저에만 저장</small></span>', '<span class="v">' + wonK(value) + '</span>'];
+      if (todayPct !== null) h.push('<span>직전 거래일 대비 <b class="' + dirCls(todayPct) + '">' + sgW(today) + '(' + pr(todayPct) + ')</b></span>');
+      if (plPct !== null) h.push('<span>누적 손익 <b class="' + dirCls(plPct) + '">' + pr(plPct) + '(' + sgW(pl) + ')</b>' +
+        (useFx ? '' : usdCost > 0 ? ' <small>달러 종목은 환율 효과를 뺀 값</small>' : '') + '</span>');
+      h.push('<button type="button" class="acct-go">내 보유 열기</button>');
+      const s = [];
+      if (useFx) s.push('<span>그중 환율 몫 <b class="' + dirCls(fxPart) + '">' + sgW(fxPart) + '</b><small>(달러 자산 매수 환율 ' + Math.round(fxBuy).toLocaleString("en-US") + '원, 지금 ' + Math.round(fxNow).toLocaleString("en-US") + '원)</small></span>');
+      if (more > 0) s.push('<span>지금 단계까지 더 살 금액 <b>' + wonK(more) + '</b>' + (cash > 0 ? (more > cash ? ', 투자 가능 현금(' + wonK(cash) + ')보다 <b>' + wonK(more - cash) + '</b> 많음' : ', 투자 가능 현금(' + wonK(cash) + ')으로 충분') : '') + '</span>');
+      else if (cash > 0) s.push('<span>투자 가능 현금 <b>' + wonK(cash) + '</b></span>');
+      el.innerHTML = '<div class="acct-h">' + h.join("") + '</div>' + (s.length ? '<div class="acct-s">' + s.join("") + '</div>' : '');
+      el.hidden = false;
+    }
+    document.getElementById("acct").addEventListener("click", e => {
+      if (!e.target.closest(".acct-go")) return;
+      box.open = true; box.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
     box.hidden = false;
     render();
+    renderAcct();
+    document.addEventListener("holdings-change", renderAcct);
     body.addEventListener("change", e => {
+      const g = e.target.closest("[data-g]");
+      if (g) { state[g.dataset.g] = g.value.replace(/[^\d.]/g, ""); save(); render(); return; }
       const a = e.target.closest("[data-alloc]");
       if (a) { state.alloc[+a.dataset.alloc] = num(a.value); save(); render(); return; }
       const h = e.target.closest("[data-h]");
