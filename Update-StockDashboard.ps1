@@ -1546,6 +1546,14 @@ function Format-IndPct {
     $a = [math]::Abs($p)
     if ($a -ge 10) { $a.ToString("0", $indInv) } else { $a.ToString("0.0", $indInv) }
 }
+# 변화율 표기(공통 규칙 4): 10% 이상 정수, 미만 소수 첫째 자리, 0.0%는 보합. 부호는 +/−(2026-11-28).
+function Format-RulePct {
+    param([double]$v)
+    $inv = [Globalization.CultureInfo]::InvariantCulture
+    $a = [math]::Abs($v)
+    if ($a -lt 0.05) { return "보합" }
+    "$(if ($v -gt 0) { '+' } else { '−' })$(if ($a -ge 9.95) { $a.ToString('0', $inv) } else { $a.ToString('0.0', $inv) })%"
+}
 function Format-Eok {
     # 억원 단위 값을 '26.08조원', '9,701억원'처럼 적는다. 음수는 '−'.
     param([double]$v)
@@ -1940,7 +1948,9 @@ function Get-PerfStats {
     $pctFrom = {
         param([int]$j)
         if ($j -lt 0 -or $vals[$j] -eq 0) { return $null }
-        [math]::Round(($vals[$li] / $vals[$j] - 1) * 100, 2)
+        # 넷째 자리까지 둔다(2026-11-28). 둘째 자리로 먼저 줄이면 화면·메일이 첫째 자리로 다시 줄일 때 두 번 반올림돼
+        # 원래 값에서 바로 줄이는 수익률 비교와 0.1씩 어긋났다(SK하이닉스 −32.8473 → −32.85 → −32.9, 수익률 비교는 −32.8).
+        [math]::Round(($vals[$li] / $vals[$j] - 1) * 100, 4)
     }
     $idxBefore = {
         param([DateTime]$cut)
@@ -1969,6 +1979,9 @@ function Get-PerfStats {
         d1  = & $pctFrom ($li - 1)
         w1  = & $pctFrom (& $idxBefore $ds[$li].AddDays(-7))
         m1  = & $pctFrom (& $idxBefore $ds[$li].AddDays(-30))
+        # 3개월(91일 전 그날 또는 그 전 마지막 종가). 화면 수익률 비교의 기본 기간과 같은 계산이다. 메일 '기간별 등락'의
+        # 결론 줄과 순위 그림(mail_charts.py)에 쓴다(2026-11-28). 자료가 91일보다 짧으면 비운다.
+        m3  = & $pctFrom (& $idxBefore $ds[$li].AddDays(-91))
         ytd = & $pctFrom (& $idxBefore ([DateTime]::new($ds[$li].Year - 1, 12, 31)))
         y1  = & $pctFrom (& $idxBefore $ds[$li].AddDays(-365))
         thr = [PSCustomObject]@{
@@ -2825,6 +2838,9 @@ $rowsHtml = foreach ($s in $stocks) {
     $color = if ($up) { "#c62828" } else { "#1f5fcc" }
     $arrow = if ($up) { "▲" } else { "▼" }
     $priceFmt = if ($s.currency -eq "₩") { "{0:N0}" -f $last } else { "{0:N2}" -f $last }
+    # 메일 종목별 상세의 등락률은 기간별 등락 표의 '오늘'(perf.d1)과 같은 값을 공통 규칙 4로 적는다(2026-11-28). 전에는 여기서 따로
+    # 계산해 소수 둘째 자리로 적어 같은 메일에 +4.6%와 4.55%가 함께 나왔다.
+    $dayPct = if ($s.perf -and $null -ne $s.perf.d1) { [double]$s.perf.d1 } else { $pct }
 
     if ([math]::Abs($pct) -ge $MOVE_THRESHOLD_PCT) {
         $dir = if ($up) { "급등" } else { "급락" }
@@ -2937,7 +2953,7 @@ $rowsHtml = foreach ($s in $stocks) {
     # 1개월 등락은 위 기간별 표로 옮겼다(이 칸에는 오늘 값만 둔다).
     $priceInner = @"
 <div style="font-weight:650;font-size:14px;color:#0b0b0b;">$($s.currency)$priceFmt</div>
-    <div style="font-size:12px;font-weight:600;color:$color;">$arrow $([math]::Abs($pct).ToString("N2"))%</div>
+    $(if ([math]::Abs($dayPct) -lt 0.05) { "<div style='font-size:12px;font-weight:600;color:#52514e;'>보합</div>" } else { "<div style='font-size:12px;font-weight:600;color:$color;'>$arrow $((Format-RulePct $dayPct) -replace '^[+−]', '')</div>" })
 "@
     $priceHtml = if ($s.pageUrl) { "<a href='$($s.pageUrl)' style='text-decoration:none;display:block;'>$priceInner</a>" } else { $priceInner }
 
@@ -3031,6 +3047,30 @@ $(Get-MailLabel '오늘의 매수 단계')
 </div>
 "@
 
+# 3개월 수익률 결론 줄(2026-11-28). 화면 수익률 비교의 기본 화면(3개월, 원화 기준 꺼짐)과 같은 계산과 같은 문장이다.
+# 모두 내림, 모두 오름, 섞임에 따라 문장을 나눈다. 값은 공통 규칙 4(10% 이상 정수, 0.0%는 보합)다.
+# 순위 그림은 mail_charts.py 가 <!--MAIL_CHART_RETURNS--> 자리에 끼운다. 그림을 못 만든 날에도 이 줄은 글로 나간다.
+function Get-RulePctHtml {
+    param([double]$v)
+    $c = if ([math]::Abs($v) -lt 0.05) { "#52514e" } elseif ($v -gt 0) { "#c62828" } else { "#1f5fcc" }
+    "<b style='color:$c;'>$(Format-RulePct $v)</b>"
+}
+$retLine = ""
+$retStk = @($stocks | Where-Object { $_.kind -ne "index" -and $_.perf -and $null -ne $_.perf.m3 } | Sort-Object { [double]$_.perf.m3 } -Descending)
+if ($retStk.Count -ge 2) {
+    $retTop = $retStk[0]; $retBot = $retStk[-1]
+    $retTv = [double]$retTop.perf.m3; $retBv = [double]$retBot.perf.m3
+    $retA = "$($retTop.name)($(Get-RulePctHtml $retTv))"; $retB = "$($retBot.name)($(Get-RulePctHtml $retBv))"
+    $retAllDown = @($retStk | Where-Object { [double]$_.perf.m3 -gt -0.05 }).Count -eq 0
+    $retAllUp = @($retStk | Where-Object { [double]$_.perf.m3 -lt 0.05 }).Count -eq 0
+    $retLine = if ($retAllDown) { "3개월 동안 관심 종목이 모두 내렸습니다. 가장 적게 내린 종목은 $retA, 가장 많이 내린 종목은 ${retB}입니다." }
+        elseif ($retAllUp) { "3개월 동안 관심 종목이 모두 올랐습니다. 가장 많이 오른 종목은 $retA, 가장 적게 오른 종목은 ${retB}입니다." }
+        elseif ($retTv -ge 0.05 -and $retBv -le -0.05) { "3개월 동안 가장 많이 오른 종목은 $retA, 가장 많이 내린 종목은 ${retB}입니다." }
+        else { "3개월 동안 수익률이 가장 높은 종목은 $retA, 가장 낮은 종목은 ${retB}입니다." }
+    $retIdx = @($stocks | Where-Object { $_.kind -eq "index" -and $_.perf -and $null -ne $_.perf.m3 } | ForEach-Object { "$($_.name) $(Get-RulePctHtml ([double]$_.perf.m3))" })
+    if ($retIdx.Count) { $retLine += " 같은 기간 시장 지수는 $($retIdx -join ', ')입니다." }
+}
+
 # 기간별 등락. 페이지 한눈 요약의 기간별 표와 분야별 등락 지도를 합친 모양이다(분야 소제목에 오늘 상승과 하락 종목 수).
 $perfRows = @(foreach ($g in $groupOrder) {
     $members = @($stocks | Where-Object { (Get-GroupName $_) -eq $g })
@@ -3056,6 +3096,7 @@ $perfRows = @(foreach ($g in $groupOrder) {
 $perfHtml = @"
 $(Get-MailLabel '기간별 등락')
 <div style="$mailCard">
+  $(if ($retLine) { "<div style='font-size:13.5px;line-height:1.6;color:#0b0b0b;margin:0 0 10px;'>$retLine</div>" })<!--MAIL_CHART_RETURNS-->
   <table width="100%" cellpadding=4 cellspacing=0 style="margin-top:2px;font-size:12.5px;color:#0b0b0b;">
     <tr style="font-size:12px;color:#898781;"><td>종목 (최근 흐름)</td><td align=right>현재가</td><td align=right>오늘</td><td align=right>1주</td><td align=right>1개월</td><td align=right>1년</td></tr>
     $($perfRows -join "")
@@ -3218,6 +3259,7 @@ $dashboardUrl = "https://jhkim0603.github.io/stockdashboard/"
 # guesswork. Kept as a PowerShell comment rather than an HTML one so it is not mailed.
 # 메일 그림: <!--MAIL_CHARTS--> 자리에 워크플로의 mail_charts.py 가 브리핑 바로 아래 그림 두 장(매수 단계 지도,
 # 공포·탐욕지수 1년)을 끼운다(첨부 그림을 cid 로 부름). 그림을 못 만들면 주석 그대로 남아 글로만 나간다.
+# 3개월 수익률 순위 그림은 기간별 등락 상자 안 <!--MAIL_CHART_RETURNS--> 자리에 따로 들어간다(2026-11-28).
 $emailHtml = @"
 <!DOCTYPE html>
 <html lang="ko">

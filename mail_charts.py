@@ -2,12 +2,14 @@
 
 업무 대시보드와 주식 대시보드가 같은 파일을 쓴다(두 저장소에 같은 내용으로 둔다).
   python3 mail_charts.py work    # 업무 참고지표 메일: 핵심 지표 6개월 흐름, 내륙운송료
-  python3 mail_charts.py stock   # 주식 메일: 매수 단계 지도, 공포·탐욕지수 1년
+  python3 mail_charts.py stock   # 주식 메일: 매수 단계 지도, 공포·탐욕지수 1년, 3개월 수익률 순위
 
 메일 프로그램은 화면의 그래프(SVG, 자바스크립트)를 보여 주지 않는다. 그래서 대시보드와 같은 자료(생성된
 dashboard.html 안의 JSON)로 SVG 를 그리고 크롬으로 2배 해상도 PNG 를 찍는다. 메일 발송 도구
 (dawidd6/action-send-mail)는 첨부 파일마다 파일 이름을 cid 로 붙이므로 본문에서 <img src="cid:파일이름"> 으로 부른다.
 그림을 하나도 만들지 못하면 자리표시를 그대로 두어(보이지 않는 주석) 메일은 지금처럼 글로만 나간다.
+그림에 "marker" 를 적으면 공통 자리(<!--MAIL_CHARTS-->)가 아니라 그 자리표시에 따로 들어간다(주식의 수익률 순위는
+'기간별 등락' 상자 안). 따로 들어가는 그림은 FALLBACK 부분을 지우지 않는다.
 표준 라이브러리만 쓴다(실행 환경에 따로 설치할 것 없음, 한글 글꼴만 필요).
 """
 import datetime as dt
@@ -281,6 +283,55 @@ def stock_fg(page):
             "alt": f"공포·탐욕지수 최근 1년 흐름, 지금 {now:.0f}"}
 
 
+# ------------------------------------------------------------------ 주식: 3개월 수익률 순위
+def pct_list(v):
+    # 화면 순위 막대와 같은 표기: 100% 이상 정수, 그 밖은 소수 첫째 자리, 0.0%는 보합
+    if abs(v) < 0.05:
+        return "보합"
+    return ("+" if v > 0 else "−") + (f"{abs(v):.0f}" if abs(v) >= 100 else f"{abs(v):.1f}") + "%"
+
+
+def stock_returns(page):
+    # 화면 '수익률 비교'의 기본 화면(3개월 순위 막대)과 같은 값이다. 생성 스크립트가 perf.m3(91일 전 그날 또는 그 전
+    # 마지막 종가 기준)으로 넣는다. 오르면 빨강, 내리면 파랑, 시장 지수는 회색 막대(2026-11-28).
+    st = grab(page, "stocks") or []
+    rows = [x for x in st if isinstance((x.get("perf") or {}).get("m3"), (int, float))]
+    if len(rows) < 3:
+        return None
+    rows.sort(key=lambda x: -x["perf"]["m3"])
+    UP, DN, IDX = "#c62828", "#1f5fcc", "#a8a69e"
+    # '기간별 등락' 상자 안(본문 600 − 여백)에 들어가므로 상자 폭 536px 로 그린다. 600px 로 그리면 줄어들어 12px 글자가
+    # 11px 아래로 작아졌다(공통 규칙 6: 메일 그림도 12px 이상).
+    W, RH, TOP = 536, 26, 4
+    L, TR = 112, 452
+    vs = [x["perf"]["m3"] for x in rows]
+    lo, hi = min(0.0, min(vs)), max(0.0, max(vs))
+    span = (hi - lo) or 1.0
+    X = lambda v: L + (v - lo) / span * (TR - L)
+    missing = [x.get("name", x.get("symbol", "")) for x in st
+               if x.get("kind") != "index" and not isinstance((x.get("perf") or {}).get("m3"), (int, float))]
+    H = TOP + RH * len(rows) + (48 if missing else 30)
+    zx = X(0)
+    g = []
+    for i, x in enumerate(rows):
+        y = TOP + i * RH
+        v = x["perf"]["m3"]
+        idx = x.get("kind") == "index"
+        g.append(text(0, y + 17, x.get("name", x.get("symbol", "")), 13, INK2 if idx else INK, 400 if idx else 600))
+        col = IDX if idx or abs(v) < 0.05 else (UP if v > 0 else DN)
+        x0, x1 = sorted((zx, X(v)))
+        g.append(f'<rect x="{x0:.1f}" y="{y + 6}" width="{max(1.5, x1 - x0):.1f}" height="12" rx="2" fill="{col}"/>')
+        g.append(text(W, y + 17, pct_list(v), 13, MUTED if abs(v) < 0.05 else (UP if v > 0 else DN), 600, anchor="end"))
+    g.append(f'<line x1="{zx:.1f}" x2="{zx:.1f}" y1="{TOP}" y2="{TOP + RH * len(rows)}" stroke="{MUTED}" stroke-width="1"/>')
+    yf = TOP + RH * len(rows) + 22
+    g.append(text(0, yf, "회색 막대는 시장 지수입니다. 91일 전 종가에서 잰 수익률입니다.", 12, MUTED))
+    if missing:
+        g.append(text(0, yf + 18, f"{', '.join(missing)} 종목은 자료가 3개월에 못 미쳐 뺐습니다.", 12, MUTED))
+    return {"file": "stock-returns.png", "w": W, "h": H, "svg": "".join(g), "marker": "<!--MAIL_CHART_RETURNS-->", "width": W,
+            "title": "3개월 수익률 순위", "sub": "관심 종목과 시장 지수, 높은 순",
+            "alt": "3개월 수익률 순위: " + ", ".join(f"{x.get('name', '')} {pct_list(x['perf']['m3'])}" for x in rows)}
+
+
 # ------------------------------------------------------------------ 그림 찍기, 메일에 끼우기
 def find_chrome():
     for c in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome"):
@@ -322,7 +373,7 @@ def main():
     kind = sys.argv[1] if len(sys.argv) > 1 else ""
     page_path = ROOT / (sys.argv[2] if len(sys.argv) > 2 else "dashboard.html")
     mail_path = ROOT / (sys.argv[3] if len(sys.argv) > 3 else "email-summary.html")
-    makers = {"work": ([work_trends, work_freight], 536), "stock": ([stock_stages, stock_fg], 568)}
+    makers = {"work": ([work_trends, work_freight], 536), "stock": ([stock_stages, stock_fg, stock_returns], 568)}
     if kind not in makers:
         sys.exit("사용법: python3 mail_charts.py work|stock")
     funcs, width = makers[kind]
@@ -338,7 +389,7 @@ def main():
     OUT.mkdir(exist_ok=True)
     for f in OUT.glob("*.png"):
         f.unlink()
-    done = []
+    done, extra = [], []   # extra: 자기 자리표시("marker")에 따로 들어가는 그림
     with tempfile.TemporaryDirectory() as tmp:
         for fn in funcs:
             try:
@@ -350,7 +401,7 @@ def main():
                 print(f"자료가 부족해 건너뜀: {fn.__name__}")
                 continue
             if shoot(chrome, chart, tmp):
-                done.append(chart)
+                (extra if chart.get("marker") else done).append(chart)
                 print(f"그림 {chart['file']}: {(OUT / chart['file']).stat().st_size // 1024}KB")
             else:
                 print(f"그림 찍기 실패: {chart['file']}")
@@ -359,8 +410,17 @@ def main():
         # 그림이 대신하는 부분(업무: 타일 줄, 주식: 매수 단계 상자·공포탐욕 상자)은 그림이 들어갔을 때만 지운다.
         # 그림을 못 만든 날은 그대로 남아 메일이 글로 같은 내용을 전한다.
         mail = re.sub(r"<!--FALLBACK_START-->.*?<!--FALLBACK_END-->", "", mail, flags=re.S)
+    placed = 0
+    for c in extra:
+        if c["marker"] in mail:
+            mail = mail.replace(c["marker"], block(c, c.get("width", width)), 1)
+            placed += 1
+        else:
+            print(f"메일 본문에 {c['marker']} 자리가 없어 넣지 않음: {c['file']}")
+            (OUT / c["file"]).unlink()   # 넣지 않은 그림이 첨부 파일로만 붙지 않게
+    if done or placed:
         mail_path.write_text(mail, encoding="utf-8")
-    print(f"메일 그림 {len(done)}장 넣음")
+    print(f"메일 그림 {len(done) + placed}장 넣음")
 
 
 if __name__ == "__main__":
